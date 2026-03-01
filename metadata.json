@@ -1,0 +1,7 @@
+{
+  "name": "魔法小课桌",
+  "description": "一个充满魔力的AI学习助手小精灵，陪伴你探索知识的奥秘。",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
