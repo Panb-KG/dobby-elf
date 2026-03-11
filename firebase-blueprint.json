@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user preferences and global stats",
+      "type": "object",
+      "properties": {
+        "preferences": {
+          "type": "object",
+          "description": "User specific settings and preferences"
+        },
+        "points": {
+          "type": "integer",
+          "description": "Total magic points earned"
+        },
+        "level": {
+          "type": "string",
+          "description": "Current magic level title"
+        },
+        "treeGrowth": {
+          "type": "integer",
+          "description": "Growth stage of the Knowledge Tree"
+        },
+        "dailyTasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "completed": { "type": "boolean" },
+              "reward": { "type": "integer" }
+            }
+          }
+        },
+        "outfit": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "required": ["points"]
+    },
+    "Course": {
+      "title": "Magic Course",
+      "description": "A scheduled magic class",
+      "type": "object",
+      "properties": {
+        "day": { "type": "string", "enum": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] },
+        "subject": { "type": "string" },
+        "time": { "type": "string" },
+        "type": { "type": "string", "enum": ["校内", "课外"] },
+        "color": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["day", "subject", "time", "type", "uid"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "Badges and trophies earned by the user",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string" },
+        "iconName": { "type": "string" },
+        "color": { "type": "string" },
+        "uid": { "type": "string" }
+      },
+      "required": ["title", "uid"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Individual user profiles"
+    },
+    "/users/{userId}/courses/{courseId}": {
+      "schema": "Course",
+      "description": "User's personalized schedule"
+    },
+    "/users/{userId}/achievements/{achievementId}": {
+      "schema": "Achievement",
+      "description": "User's earned achievements"
+    }
+  }
+}
