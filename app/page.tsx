@@ -1,5 +1,10 @@
-import App from "../src/App";
+import MagicApp from "./MagicApp";
 
 export default function Home() {
-  return <App />;
+  return (
+    <main>
+      <div id="loading-check" style={{ display: 'none' }}>Next.js Loaded</div>
+      <MagicApp />
+    </main>
+  );
 }
