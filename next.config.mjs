@@ -13,7 +13,15 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "bailian.aliyun.com",
+      },
+      {
+        protocol: "https",
         hostname: "**.aliyuncs.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.aliyun.com",
       }
     ],
   },

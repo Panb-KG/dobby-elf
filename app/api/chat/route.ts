@@ -1,18 +1,19 @@
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
 
-const apiKey = process.env.DASHSCOPE_API_KEY;
+const apiKey = process.env.BAILIAN_API_KEY || process.env.DASHSCOPE_API_KEY;
+const baseURL = process.env.BAILIAN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 let client: OpenAI | null = null;
 
 function getClient() {
   if (!client) {
     if (!apiKey) {
-      throw new Error('DASHSCOPE_API_KEY is not configured');
+      throw new Error('BAILIAN_API_KEY or DASHSCOPE_API_KEY is not configured');
     }
     client = new OpenAI({
       apiKey: apiKey,
-      baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      baseURL: baseURL,
     });
   }
   return client;
@@ -20,7 +21,7 @@ function getClient() {
 
 export async function POST(req: Request) {
   if (!apiKey) {
-    return NextResponse.json({ error: 'DASHSCOPE_API_KEY is not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'BAILIAN_API_KEY or DASHSCOPE_API_KEY is not configured' }, { status: 500 });
   }
 
   try {
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/x-ndjson' },
     });
   } catch (error: any) {
-    console.error('DashScope API error:', error);
+    console.error('Bailian API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
