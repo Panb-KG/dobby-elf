@@ -1,7 +1,13 @@
 {
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
+  "/api/achievements/route": "app/api/achievements/route.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/auth/register/route": "app/api/auth/register/route.js",
   "/api/chat/route": "app/api/chat/route.js",
+  "/api/courses/route": "app/api/courses/route.js",
   "/api/image/route": "app/api/image/route.js",
+  "/api/knowledge/route": "app/api/knowledge/route.js",
+  "/api/users/route": "app/api/users/route.js",
   "/page": "app/page.js"
 }

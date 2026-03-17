@@ -1,7 +1,13 @@
 {
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
+  "/api/achievements/route": "/api/achievements",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/register/route": "/api/auth/register",
   "/api/chat/route": "/api/chat",
+  "/api/courses/route": "/api/courses",
   "/api/image/route": "/api/image",
+  "/api/knowledge/route": "/api/knowledge",
+  "/api/users/route": "/api/users",
   "/page": "/"
 }

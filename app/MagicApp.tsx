@@ -54,30 +54,9 @@ import Markdown from 'react-markdown';
 import { dobby, type Message } from './services/magicElf';
 import { cn } from './lib/utils';
 import { DobbyAvatar } from './components/DobbyAvatar';
-import { 
-  auth, 
-  db, 
-  loginWithGoogle, 
-  logout, 
-  handleFirestoreError, 
-  OperationType 
-} from './firebase';
-import { 
-  onAuthStateChanged, 
-  User as FirebaseUser 
-} from 'firebase/auth';
-import { 
-  doc, 
-  collection, 
-  onSnapshot, 
-  setDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where,
-  getDoc
-} from 'firebase/firestore';
+import { authService } from './services/auth';
+import { dataService } from './services/data';
+import { User, Course, Achievement } from './services/types';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean, error: any }> {
@@ -139,8 +118,13 @@ export default function App() {
 }
 
 function MagicApp() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ username: '', password: '', confirmPassword: '' });
+  const [authError, setAuthError] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨' }
   ]);
@@ -153,7 +137,7 @@ function MagicApp() {
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
   const [newCourse, setNewCourse] = useState({ day: '周一', subject: '', time: '', type: '校内' as '校内' | '课外' });
-  const [courses, setCourses] = useState([
+  const [courses, setCourses] = useState<Course[]>([
     { day: '周一', subject: '魔法数学', time: '09:00 - 10:30', type: '校内', color: 'bg-blue-500/20 border-blue-500/30' },
     { day: '周一', subject: '飞行课', time: '11:00 - 12:00', type: '校内', color: 'bg-sky-500/20 border-sky-500/30' },
     { day: '周二', subject: '咒语文学', time: '10:45 - 12:15', type: '校内', color: 'bg-purple-500/20 border-purple-500/30' },
@@ -177,10 +161,10 @@ function MagicApp() {
     { id: 'task2', text: '背诵5个新单词', completed: false, reward: 30 },
     { id: 'task3', text: '查看今日课程表', completed: false, reward: 10 },
   ]);
-  const [achievements, setAchievements] = useState([
-    { id: 1, title: '三好学生', date: '2025-12', type: 'school', iconName: 'Award', color: 'text-amber-400' },
-    { id: 2, title: '奥数竞赛一等奖', date: '2026-01', type: 'competition', iconName: 'Trophy', color: 'text-yellow-500' },
-    { id: 3, title: '单词达人', date: '2026-02', type: 'learning', iconName: 'Star', color: 'text-blue-400' },
+  const [achievements, setAchievements] = useState<Achievement[]>([
+    { id: '1', title: '三好学生', date: '2025-12', type: 'school', iconName: 'Award', color: 'text-amber-400' },
+    { id: '2', title: '奥数竞赛一等奖', date: '2026-01', type: 'competition', iconName: 'Trophy', color: 'text-yellow-500' },
+    { id: '3', title: '单词达人', date: '2026-02', type: 'learning', iconName: 'Star', color: 'text-blue-400' },
   ]);
   const [activeReminder, setActiveReminder] = useState<{subject: string, time: string} | null>(null);
 
@@ -208,11 +192,11 @@ function MagicApp() {
 
   // Auth Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = authService.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
       setIsAuthReady(true);
-      if (firebaseUser) {
-        setMessages(prev => [...prev, { role: 'model', text: `呼啦啦！欢迎回来，${firebaseUser.displayName}！多比已经准备好为你服务了。✨` }]);
+      if (currentUser) {
+        setMessages(prev => [...prev, { role: 'model', text: `呼啦啦！欢迎回来，${currentUser.displayName}！多比已经准备好为你服务了。✨` }]);
       }
     });
     return () => unsubscribe();
@@ -222,63 +206,60 @@ function MagicApp() {
   useEffect(() => {
     if (!user || !isAuthReady) return;
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(userDocRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data.points !== undefined) setPoints(data.points);
-        if (data.level !== undefined) setLevel(data.level);
-        if (data.treeGrowth !== undefined) setTreeGrowth(data.treeGrowth);
-        if (data.dailyTasks !== undefined) setDailyTasks(data.dailyTasks);
-      } else {
-        // Initialize user profile
-        setDoc(userDocRef, {
-          points: 1250,
-          level: '魔法学徒',
-          treeGrowth: 0,
-          dailyTasks: [
-            { id: 'task1', text: '完成3道奥数题', completed: false, reward: 50 },
-            { id: 'task2', text: '背诵5个新单词', completed: false, reward: 30 },
-            { id: 'task3', text: '查看今日课程表', completed: false, reward: 10 },
-          ],
-          displayName: user.displayName,
-          email: user.email,
-          role: 'client'
-        }).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`));
+    const loadUserData = async () => {
+      try {
+        const userData = await dataService.getUser(user.id);
+        if (userData) {
+          if (userData.points !== undefined) setPoints(userData.points);
+          if (userData.level !== undefined) setLevel(userData.level);
+          if (userData.treeGrowth !== undefined) setTreeGrowth(userData.treeGrowth);
+          if (userData.dailyTasks !== undefined) setDailyTasks(userData.dailyTasks);
+        } else {
+          // Initialize user profile
+          await dataService.saveUser(user);
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`));
+    };
 
-    return () => unsubscribe();
+    loadUserData();
   }, [user, isAuthReady]);
 
   // Sync Courses
   useEffect(() => {
     if (!user || !isAuthReady) return;
 
-    const coursesRef = collection(db, 'users', user.uid, 'courses');
-    const unsubscribe = onSnapshot(coursesRef, (snapshot) => {
-      const fetchedCourses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-      if (fetchedCourses.length > 0) {
-        setCourses(fetchedCourses);
+    const loadCourses = async () => {
+      try {
+        const fetchedCourses = await dataService.getCourses(user.id);
+        if (fetchedCourses.length > 0) {
+          setCourses(fetchedCourses);
+        }
+      } catch (error) {
+        console.error('Failed to load courses:', error);
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}/courses`));
+    };
 
-    return () => unsubscribe();
+    loadCourses();
   }, [user, isAuthReady]);
 
   // Sync Achievements
   useEffect(() => {
     if (!user || !isAuthReady) return;
 
-    const achievementsRef = collection(db, 'users', user.uid, 'achievements');
-    const unsubscribe = onSnapshot(achievementsRef, (snapshot) => {
-      const fetchedAchievements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-      if (fetchedAchievements.length > 0) {
-        setAchievements(fetchedAchievements);
+    const loadAchievements = async () => {
+      try {
+        const fetchedAchievements = await dataService.getAchievements(user.id);
+        if (fetchedAchievements.length > 0) {
+          setAchievements(fetchedAchievements);
+        }
+      } catch (error) {
+        console.error('Failed to load achievements:', error);
       }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}/achievements`));
+    };
 
-    return () => unsubscribe();
+    loadAchievements();
   }, [user, isAuthReady]);
 
   // Smart Reminder System
@@ -587,14 +568,11 @@ function MagicApp() {
 
     if (user) {
       try {
-        await addDoc(collection(db, 'users', user.uid, 'courses'), {
-          ...finalCourse,
-          uid: user.uid
-        });
+        await dataService.saveCourse(user.id, finalCourse);
         // Complete "View Schedule" task if adding a course
         completeTask('task3');
       } catch (err) {
-        handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/courses`);
+        console.error('Failed to save course:', err);
       }
     } else {
       setCourses(prev => [...prev, finalCourse]);
@@ -617,7 +595,7 @@ function MagicApp() {
     else if (newPoints >= 1000) newLevel = '初级魔法师';
 
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await dataService.updateUser(user.id, {
         dailyTasks: newTasks,
         points: newPoints,
         level: newLevel
@@ -626,7 +604,7 @@ function MagicApp() {
       // Celebration effect (simulated by message)
       setMessages(prev => [...prev, { role: 'model', text: `🎉 呼啦啦！恭喜小主人完成了任务：**${task.text}**！获得了 **${task.reward}** 魔法积分！变！✨` }]);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      console.error('Failed to complete task:', err);
     }
   };
 
@@ -634,13 +612,13 @@ function MagicApp() {
     if (!user || points < 50) return;
     
     try {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await dataService.updateUser(user.id, {
         points: points - 50,
         treeGrowth: treeGrowth + 1
       });
       setMessages(prev => [...prev, { role: 'model', text: `💧 你用 50 积分灌溉了“知识之树”，它又长大了一点点！瞧，它的叶子更绿了。🌿` }]);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      console.error('Failed to water tree:', err);
     }
   };
 
@@ -659,6 +637,42 @@ function MagicApp() {
     } else if (spell.id === 'focus') {
       setIsRightSidebarOpen(true);
       setSidebarContentType('focus');
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    
+    try {
+      await authService.login(loginForm.username, loginForm.password);
+      setShowLoginModal(false);
+      setLoginForm({ username: '', password: '' });
+    } catch (error: any) {
+      setAuthError(error.message || '登录失败');
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setAuthError('两次输入的密码不一致');
+      return;
+    }
+    
+    if (registerForm.password.length < 6) {
+      setAuthError('密码长度至少6位');
+      return;
+    }
+    
+    try {
+      await authService.register(registerForm.username, registerForm.password);
+      setShowRegisterModal(false);
+      setRegisterForm({ username: '', password: '', confirmPassword: '' });
+    } catch (error: any) {
+      setAuthError(error.message || '注册失败');
     }
   };
 
@@ -729,7 +743,7 @@ function MagicApp() {
                 <span className="text-[8px] text-white/40 uppercase tracking-widest">魔法师</span>
               </div>
               <button 
-                onClick={logout}
+                onClick={() => authService.logout()}
                 className="p-2 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all"
                 title="登出魔法世界"
               >
@@ -738,7 +752,7 @@ function MagicApp() {
             </div>
           ) : (
             <button 
-              onClick={loginWithGoogle}
+              onClick={() => setShowLoginModal(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-magic-accent text-white text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-magic-accent/20"
             >
               <LogIn className="w-4 h-4" />
@@ -1623,6 +1637,170 @@ function MagicApp() {
           <span className="text-[10px] font-bold uppercase tracking-tighter">我的</span>
         </button>
       </nav>
+
+      {/* Login Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowLoginModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-panel p-8 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-6">
+                <Sparkles className="w-12 h-12 text-magic-accent mx-auto mb-4" />
+                <h2 className="text-2xl font-serif font-bold text-white mb-2">魔法登录</h2>
+                <p className="text-sm text-white/60">欢迎回到魔法小课桌</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/80 mb-2">魔法用户名</label>
+                  <input
+                    type="text"
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-magic-accent/50"
+                    placeholder="输入你的魔法用户名"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/80 mb-2">魔法密码</label>
+                  <input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-magic-accent/50"
+                    placeholder="输入你的魔法密码"
+                    required
+                  />
+                </div>
+                {authError && (
+                  <div className="text-red-400 text-xs text-center">{authError}</div>
+                )}
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-magic-accent text-white rounded-xl font-bold hover:scale-105 transition-all"
+                >
+                  开始魔法之旅
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <p className="text-xs text-white/60">
+                  还没有魔法账号？{' '}
+                  <button
+                    onClick={() => {
+                      setShowLoginModal(false);
+                      setShowRegisterModal(true);
+                    }}
+                    className="text-magic-accent hover:underline"
+                  >
+                    立即注册
+                  </button>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Register Modal */}
+      <AnimatePresence>
+        {showRegisterModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowRegisterModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-panel p-8 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center mb-6">
+                <Wand2 className="w-12 h-12 text-magic-accent mx-auto mb-4" />
+                <h2 className="text-2xl font-serif font-bold text-white mb-2">魔法注册</h2>
+                <p className="text-sm text-white/60">加入魔法小课桌大家庭</p>
+              </div>
+
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/80 mb-2">魔法用户名</label>
+                  <input
+                    type="text"
+                    value={registerForm.username}
+                    onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-magic-accent/50"
+                    placeholder="选择你的魔法用户名"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/80 mb-2">魔法密码</label>
+                  <input
+                    type="password"
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-magic-accent/50"
+                    placeholder="设置你的魔法密码（至少6位）"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/80 mb-2">确认密码</label>
+                  <input
+                    type="password"
+                    value={registerForm.confirmPassword}
+                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-magic-accent/50"
+                    placeholder="再次输入密码"
+                    required
+                  />
+                </div>
+                {authError && (
+                  <div className="text-red-400 text-xs text-center">{authError}</div>
+                )}
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-magic-accent text-white rounded-xl font-bold hover:scale-105 transition-all"
+                >
+                  创建魔法账号
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <p className="text-xs text-white/60">
+                  已有魔法账号？{' '}
+                  <button
+                    onClick={() => {
+                      setShowRegisterModal(false);
+                      setShowLoginModal(true);
+                    }}
+                    className="text-magic-accent hover:underline"
+                  >
+                    立即登录
+                  </button>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
