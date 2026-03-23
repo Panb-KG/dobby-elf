@@ -12,9 +12,31 @@ export class DataService {
     return DataService.instance;
   }
 
+  // 获取认证令牌
+  private getAuthToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dobby_auth_token');
+    }
+    return null;
+  }
+
+  // 创建带认证的请求头
+  private createAuthHeaders(): HeadersInit {
+    const token = this.getAuthToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async getUser(userId: string): Promise<User | null> {
     try {
-      const response = await fetch(`/api/users?userId=${userId}`);
+      const response = await fetch(`/api/users?userId=${userId}`, {
+        headers: this.createAuthHeaders(),
+      });
       if (!response.ok) return null;
       return await response.json();
     } catch (error) {
@@ -27,7 +49,7 @@ export class DataService {
     try {
       await fetch('/api/users', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createAuthHeaders(),
         body: JSON.stringify({ userId: user.id, updates: user }),
       });
     } catch (error) {
@@ -39,7 +61,7 @@ export class DataService {
     try {
       await fetch('/api/users', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createAuthHeaders(),
         body: JSON.stringify({ userId, updates }),
       });
     } catch (error) {
@@ -49,7 +71,9 @@ export class DataService {
 
   async getCourses(userId: string): Promise<Course[]> {
     try {
-      const response = await fetch(`/api/courses?userId=${userId}`);
+      const response = await fetch(`/api/courses?userId=${userId}`, {
+        headers: this.createAuthHeaders(),
+      });
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
@@ -62,7 +86,7 @@ export class DataService {
     try {
       await fetch('/api/courses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createAuthHeaders(),
         body: JSON.stringify({ userId, course }),
       });
     } catch (error) {
@@ -74,6 +98,7 @@ export class DataService {
     try {
       await fetch(`/api/courses?userId=${userId}&courseId=${courseId}`, {
         method: 'DELETE',
+        headers: this.createAuthHeaders(),
       });
     } catch (error) {
       console.error('Failed to delete course:', error);
@@ -82,7 +107,9 @@ export class DataService {
 
   async getAchievements(userId: string): Promise<Achievement[]> {
     try {
-      const response = await fetch(`/api/achievements?userId=${userId}`);
+      const response = await fetch(`/api/achievements?userId=${userId}`, {
+        headers: this.createAuthHeaders(),
+      });
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
@@ -95,7 +122,7 @@ export class DataService {
     try {
       await fetch('/api/achievements', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createAuthHeaders(),
         body: JSON.stringify({ userId, achievement }),
       });
     } catch (error) {
@@ -105,7 +132,9 @@ export class DataService {
 
   async getKnowledgeGraph(userId: string): Promise<KnowledgePoint[]> {
     try {
-      const response = await fetch(`/api/knowledge?userId=${userId}`);
+      const response = await fetch(`/api/knowledge?userId=${userId}`, {
+        headers: this.createAuthHeaders(),
+      });
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
@@ -118,7 +147,7 @@ export class DataService {
     try {
       await fetch('/api/knowledge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createAuthHeaders(),
         body: JSON.stringify({ userId, points }),
       });
     } catch (error) {

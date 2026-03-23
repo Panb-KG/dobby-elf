@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import bcrypt from 'bcrypt';
 
 const dbPath = path.join(process.cwd(), 'data', 'dobby.db');
 
@@ -109,7 +110,8 @@ export async function POST(req: Request) {
     
     // Create new user
     const userId = `user_${Date.now()}`;
-    const hashedPassword = password; // In production, use proper hashing
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
     
     db.prepare(`
       INSERT INTO users (id, username, password, display_name, email, created_at)
