@@ -26,22 +26,32 @@ export class AuthService {
 
   private loadUserFromStorage() {
     try {
-      const userData = localStorage.getItem(USER_DATA_KEY);
-      if (userData) {
-        this.currentUser = JSON.parse(userData);
-        this.notifyListeners();
+      // Only use localStorage in browser environment
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem(USER_DATA_KEY);
+        if (userData) {
+          this.currentUser = JSON.parse(userData);
+          this.notifyListeners();
+        }
       }
     } catch (error) {
       console.error('Failed to load user from storage:', error);
     }
   }
 
-  private saveUserToStorage() {
+  private saveUserToStorage(token?: string) {
     try {
-      if (this.currentUser) {
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify(this.currentUser));
-      } else {
-        localStorage.removeItem(USER_DATA_KEY);
+      // Only use localStorage in browser environment
+      if (typeof window !== 'undefined') {
+        if (this.currentUser) {
+          localStorage.setItem(USER_DATA_KEY, JSON.stringify(this.currentUser));
+          if (token) {
+            localStorage.setItem(AUTH_TOKEN_KEY, token);
+          }
+        } else {
+          localStorage.removeItem(USER_DATA_KEY);
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+        }
       }
     } catch (error) {
       console.error('Failed to save user to storage:', error);
@@ -75,7 +85,7 @@ export class AuthService {
     
     const data = await response.json();
     this.currentUser = data.user;
-    this.saveUserToStorage();
+    this.saveUserToStorage(data.token);
     this.notifyListeners();
     
     return data.user;
@@ -95,7 +105,18 @@ export class AuthService {
     
     const data = await response.json();
     this.currentUser = data.user;
-    this.saveUserToStorage();
+    // 注册成功后自动登录
+    const loginResponse = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    
+    if (loginResponse.ok) {
+      const loginData = await loginResponse.json();
+      this.saveUserToStorage(loginData.token);
+    }
+    
     this.notifyListeners();
     
     return data.user;

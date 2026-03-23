@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const dbPath = path.join(process.cwd(), 'data', 'dobby.db');
 
@@ -20,15 +22,21 @@ export async function POST(req: Request) {
     
     const db = getDb();
     
-    // Check user credentials
+    // Get user by username
     const user = db.prepare(`
       SELECT id, username, password, display_name, email, created_at, points, level, tree_growth
-      FROM users WHERE username = ? AND password = ?
-    `).get(username, password) as any;
+      FROM users WHERE username = ?
+    `).get(username) as any;
     
     db.close();
     
     if (!user) {
+      return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
+    }
+    
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
     
@@ -39,6 +47,14 @@ export async function POST(req: Request) {
     `).all(user.id);
     
     taskDb.close();
+    
+    // Generate JWT token
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const token = jwt.sign(
+      { userId: user.id, username: user.username },
+      secret,
+      { expiresIn: '7d' } // 7天过期
+    );
     
     return NextResponse.json({ 
       success: true, 
@@ -52,7 +68,8 @@ export async function POST(req: Request) {
         level: user.level,
         treeGrowth: user.tree_growth,
         dailyTasks: tasks
-      } 
+      },
+      token
     });
   } catch (error: any) {
     console.error('Login error:', error);

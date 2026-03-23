@@ -196,7 +196,7 @@ function MagicApp() {
       setUser(currentUser);
       setIsAuthReady(true);
       if (currentUser) {
-        setMessages(prev => [...prev, { role: 'model', text: `呼啦啦！欢迎回来，${currentUser.displayName}！多比已经准备好为你服务了。✨` }]);
+        setMessages(prev => [...prev, { role: 'model', text: `呼啦啦！欢迎回来，${currentUser.displayName}！多比已经准备好为你服务了。✨`, timestamp: Date.now() }]);
       }
     });
     return () => unsubscribe();
@@ -395,7 +395,7 @@ function MagicApp() {
 
   const handleSend = async (textOverride?: string) => {
     const textToSend = textOverride || input;
-    if ((!textToSend.trim() && attachments.length === 0) || isLoading) return;
+    if ((!textToSend || !textToSend.trim()) && attachments.length === 0) return;
 
     // Convert attachments to base64
     const fileData = await Promise.all(attachments.map(async (file) => {
@@ -405,8 +405,9 @@ function MagicApp() {
 
     const userMsg: Message = { 
       role: 'user', 
-      text: textToSend || (attachments.length > 0 ? "[发送了附件]" : ""),
-      files: fileData.length > 0 ? fileData : undefined
+      text: textToSend || (attachments.length > 0 ? "请帮我识别这张图片中的课表信息，并帮我记录到课程表中" : ""),
+      files: fileData.length > 0 ? fileData : undefined,
+      timestamp: Date.now()
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -414,11 +415,12 @@ function MagicApp() {
     setIsLoading(true);
 
     try {
-      const history = [...messages, userMsg];
+      const updatedMessages = [...messages, userMsg];
+      const history = updatedMessages;
       let fullResponse = '';
       
       // Add a placeholder message for streaming
-      setMessages(prev => [...prev, { role: 'model', text: '' }]);
+      setMessages(prev => [...prev, { role: 'model', text: '', timestamp: Date.now() }]);
 
       const stream = dobby.chatStream(history);
       for await (const chunk of stream) {
@@ -467,7 +469,7 @@ function MagicApp() {
             
             setMessages(prev => {
               const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = { role: 'model', text: cleanText };
+              newMessages[newMessages.length - 1] = { role: 'model', text: cleanText, timestamp: Date.now() };
               return newMessages;
             });
 
@@ -482,7 +484,7 @@ function MagicApp() {
           } else {
             setMessages(prev => {
               const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = { role: 'model', text: fullResponse };
+              newMessages[newMessages.length - 1] = { role: 'model', text: fullResponse, timestamp: Date.now() };
               return newMessages;
             });
           }
@@ -490,11 +492,15 @@ function MagicApp() {
       }
     } catch (error: any) {
       console.error('Magic failed:', error);
+      const errorMessage = error.message || '未知魔法干扰';
+      const errorDetails = error.stack ? `\n\n调试信息：${errorMessage}` : errorMessage;
+      
       setMessages(prev => {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = { 
           role: 'model', 
-          text: `哎呀，魔法能量好像有点不稳定... 错误信息：${error.message || '未知魔法干扰'}` 
+          text: `哎呀，魔法能量好像有点不稳定... 错误信息：${errorDetails}`,
+          timestamp: Date.now()
         };
         return newMessages;
       });
