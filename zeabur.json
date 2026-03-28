@@ -1,13 +1,21 @@
 {
   "build": {
-    "command": "npm run build"
+    "command": "npm run build",
+    "dockerfile": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "npm start",
+    "startCommand": "node server.js",
     "healthcheckPath": "/api/users"
   },
   "env": {
     "NODE_ENV": "production",
-    "PORT": "3000"
+    "PORT": "3000",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "services": {
+    "app": {
+      "type": "nodejs",
+      "version": "20"
+    }
   }
 }
