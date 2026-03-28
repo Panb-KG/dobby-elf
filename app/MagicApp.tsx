@@ -131,8 +131,8 @@ function MagicApp() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus'>('none');
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus'>('schedule');
   const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
