@@ -1,11 +1,51 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-const apiKey = process.env.BAILIAN_API_KEY || process.env.DASHSCOPE_API_KEY;
+// 读取 .env 文件
+function loadEnv() {
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) {
+    console.error('Error: .env file not found');
+    return {};
+  }
 
-// 使用 DashScope API 格式，因为这是有效的
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const env = {};
+  
+  envContent.split('\n').forEach(line => {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) {
+      const [, key, value] = match;
+      env[key.trim()] = value.trim();
+    }
+  });
+
+  return env;
+}
+
+// 获取 API Key
+const env = loadEnv();
+const dashscopeApiKey = env.DASHSCOPE_API_KEY || '';
+const apiKey = dashscopeApiKey;
+const baseUrl = env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+
+console.log('Environment variables (from .env):', {
+  dashscopeApiKey: dashscopeApiKey ? '***' + dashscopeApiKey.slice(-4) : 'empty',
+  baseUrl: baseUrl
+});
+
+console.log('API key status:', {
+  apiKey: apiKey ? '***' + apiKey.slice(-4) : 'empty',
+  apiKeyLength: apiKey.length
+});
+
 export async function POST(req: Request) {
-  if (!apiKey) {
-    return NextResponse.json({ error: 'BAILIAN_API_KEY or DASHSCOPE_API_KEY is not configured' }, { status: 500 });
+  if (!apiKey || !apiKey.trim()) {
+    return NextResponse.json(
+      { error: 'DASHSCOPE_API_KEY is not configured' },
+      { status: 500 }
+    );
   }
 
   try {
@@ -16,25 +56,20 @@ export async function POST(req: Request) {
       systemInstruction: systemInstruction
     });
 
-    // 构建消息，处理附件（图片）
     const processedMessages = messages
       .map((msg: any) => {
         const role = msg.role === 'model' ? 'assistant' : msg.role;
         const text = msg.content || msg.text;
         
-        // 如果消息包含附件（图片），需要使用多模态内容格式
         if (msg.files && msg.files.length > 0) {
           const content: any[] = [];
           
-          // 添加文本内容
           if (text && text.trim()) {
             content.push({ type: 'text', text });
           }
           
-          // 添加图片内容
           for (const file of msg.files) {
             if (file.mimeType && file.mimeType.startsWith('image/') && file.data) {
-              // 检查图片数据长度
               console.log('Image file:', {
                 mimeType: file.mimeType,
                 dataLength: file.data.length,
@@ -56,7 +91,6 @@ export async function POST(req: Request) {
           return null;
         }
         
-        // 普通文本消息
         if (text && text.trim()) {
           return { role, content: text };
         }
@@ -64,14 +98,14 @@ export async function POST(req: Request) {
       })
       .filter((msg: any) => msg !== null);
 
-    // 检查是否有有效的消息
     if (processedMessages.length === 0) {
-      return NextResponse.json({ error: 'No valid messages to send' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No valid messages to send' },
+        { status: 400 }
+      );
     }
 
-    // 检查是否包含图片消息，如果是则使用 qwen3-vl-plus 模型
     const hasImages = processedMessages.some((msg: any) => {
-      // 检查消息是否包含图片内容
       if (Array.isArray(msg.content)) {
         return msg.content.some((c: any) => c.type === 'image_url');
       }
@@ -81,12 +115,10 @@ export async function POST(req: Request) {
     
     console.log('Using model:', model, 'Has images:', hasImages);
 
-    // 使用 OpenAI 兼容模式 API 端点
-    const apiEndpoint = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    const apiEndpoint = baseUrl + '/chat/completions';
     
     console.log('Using API endpoint:', apiEndpoint);
 
-    // OpenAI 兼容模式格式
     const requestBody = {
       model: model,
       messages: [
@@ -96,10 +128,9 @@ export async function POST(req: Request) {
       stream: false
     };
     
-    console.log('Request to OpenAI compatible API:', {
+    console.log('Request to API:', {
       url: apiEndpoint,
       body: JSON.stringify(requestBody, (key, value) => {
-        // 隐藏base64数据太长的问题
         if (key === 'image' && typeof value === 'string' && value.length > 100) {
           return value.substring(0, 50) + '...[base64 data]';
         }
@@ -116,7 +147,7 @@ export async function POST(req: Request) {
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Response from DashScope API:', {
+    console.log('Response from API:', {
       status: response.status,
       statusText: response.statusText,
       headers: Object.fromEntries(response.headers.entries())
@@ -128,19 +159,29 @@ export async function POST(req: Request) {
       try {
         const error = JSON.parse(errorText);
         console.error('API error details:', error);
+        
+        // 处理 API Key 错误
+        if (error.error && error.error.code === 'invalid_api_key') {
+          return NextResponse.json(
+            {
+              error: 'Invalid API key provided',
+              message: 'Please check your DASHSCOPE_API_KEY in .env file',
+              details: error.error.message
+            },
+            { status: 401 }
+          );
+        }
+        
         throw new Error(`API error: ${error.error?.message || error.message || 'Unknown error'}`);
       } catch (e) {
         throw new Error(`API error: ${errorText || 'Unknown error'}`);
       }
     }
 
-    // 处理 OpenAI 兼容模式响应
     const data = await response.json();
     console.log('Response data:', data);
     
-    // 检查响应格式
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      // OpenAI 格式响应
       const message = data.choices[0].message;
       const ndjsonResponse = JSON.stringify({
         output: {
@@ -153,7 +194,6 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/x-ndjson' },
       });
     } else if (data.output && data.output.text) {
-      // 原始 DashScope 格式响应
       const ndjsonResponse = JSON.stringify({
         output: {
           text: data.output.text,
@@ -165,7 +205,6 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/x-ndjson' },
       });
     } else if (data.output && data.output.tool_calls) {
-      // 如果有工具调用，转换为 ndjson 格式
       const ndjsonResponse = JSON.stringify({
         toolCalls: data.output.tool_calls
       }) + '\n';
@@ -174,7 +213,6 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/x-ndjson' },
       });
     } else {
-      // 其他情况，返回原始数据
       const ndjsonResponse = JSON.stringify(data) + '\n';
       
       return new Response(ndjsonResponse, {
@@ -184,9 +222,12 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Chat API error:', error);
     const errorMessage = error.message || 'Unknown error';
-    return NextResponse.json({ 
-      error: errorMessage,
-      details: error.stack || ''
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: errorMessage,
+        details: error.stack || ''
+      },
+      { status: 500 }
+    );
   }
 }
