@@ -133,7 +133,7 @@ function MagicApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus'>('schedule');
+  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus' | 'content'>('schedule');
   const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
@@ -197,6 +197,10 @@ function MagicApp() {
   const [isFocusActive, setIsFocusActive] = useState(false);
   const [isHourglassBroken, setIsHourglassBroken] = useState(false);
   const [whiteNoise, setWhiteNoise] = useState<'none' | 'library' | 'rain' | 'fire'>('none');
+
+  // Complex Content States
+  const [selectedContent, setSelectedContent] = useState<string | null>(null);
+  const [contentTitle, setContentTitle] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Auth Listener
@@ -729,6 +733,28 @@ function MagicApp() {
     }
   };
 
+  // 检查消息是否包含复杂内容
+  const isComplexContent = (text: string) => {
+    // 检查是否包含表格、HTML、长文本等复杂内容
+    return (
+      text.includes('<table') ||
+      text.includes('<div') ||
+      text.includes('<h1') ||
+      text.includes('<h2') ||
+      text.length > 500
+    );
+  };
+
+  // 处理复杂内容点击
+  const handleComplexContentClick = (text: string) => {
+    setSelectedContent(text);
+    // 提取标题
+    const titleMatch = text.match(/<h1[^>]*>(.*?)<\/h1>/);
+    setContentTitle(titleMatch ? titleMatch[1] : '详细内容');
+    setSidebarContentType('content'); // 使用新的内容类型
+    setIsRightSidebarOpen(true);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -925,6 +951,16 @@ function MagicApp() {
                         ))}
                       </div>
                     )}
+                    {/* 复杂内容显示 */}
+                    {msg.role === 'model' && isComplexContent(msg.text) && (
+                      <div 
+                        className="flex items-center gap-2 mb-3 p-2 rounded-xl bg-black/20 border border-white/5 cursor-pointer hover:bg-black/30 transition-colors"
+                        onClick={() => handleComplexContentClick(msg.text)}
+                      >
+                        <FileText className="w-4 h-4 text-magic-accent" />
+                        <span className="text-sm text-white/70">查看详细内容 →</span>
+                      </div>
+                    )}
                     {msg.role === 'model' ? (
                       <div className="markdown-body">
                         <Markdown rehypePlugins={[rehypeRaw]}>{msg.text}</Markdown>
@@ -1096,6 +1132,25 @@ function MagicApp() {
                         等待多比为你展示魔法内容...<br/>
                         你可以试着点击左侧的“课程表”或“作业”。
                       </p>
+                    </div>
+                  )}
+
+                  {sidebarContentType === 'content' && selectedContent && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                      <div className="sticky top-0 z-20 pt-1 pb-4 space-y-4">
+                        <div className="p-4 rounded-2xl bg-magic-accent/10 border border-magic-accent/20 flex items-center justify-between backdrop-blur-xl shadow-lg shadow-black/5">
+                          <div>
+                            <h3 className="text-lg font-serif font-bold text-white mb-1">{contentTitle}</h3>
+                            <p className="text-xs text-white/40">多比的魔法内容</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <div className="markdown-body">
+                          <Markdown rehypePlugins={[rehypeRaw]}>{selectedContent}</Markdown>
+                        </div>
+                      </div>
                     </div>
                   )}
 
