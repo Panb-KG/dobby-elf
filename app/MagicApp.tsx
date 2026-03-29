@@ -51,6 +51,7 @@ import {
   Flame
 } from 'lucide-react';
 import Markdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { dobby, type Message } from './services/magicElf';
 import { cn } from './lib/utils';
 import { DobbyAvatar } from './components/DobbyAvatar';
@@ -926,7 +927,7 @@ function MagicApp() {
                     )}
                     {msg.role === 'model' ? (
                       <div className="markdown-body">
-                        <Markdown>{msg.text}</Markdown>
+                        <Markdown rehypePlugins={[rehypeRaw]}>{msg.text}</Markdown>
                       </div>
                     ) : (
                       <p>{msg.text}</p>
