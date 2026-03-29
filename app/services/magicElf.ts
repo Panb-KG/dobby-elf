@@ -165,17 +165,15 @@ export class DobbyService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Chat API error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText: errorText || '(empty response)'
-        });
+        console.error('Chat API error - Status:', response.status, response.statusText);
+        console.error('Chat API error - Text:', errorText || '(empty response)');
         
         // 尝试解析错误信息
         let errorMessage = `Chat failed: ${response.status} ${response.statusText}`;
         if (errorText) {
           try {
             const errorJson = JSON.parse(errorText);
+            console.error('Chat API error - JSON:', errorJson);
             if (errorJson.error) {
               errorMessage = `API Error: ${errorJson.error}`;
             } else if (errorJson.message) {

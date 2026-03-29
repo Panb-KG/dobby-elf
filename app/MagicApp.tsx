@@ -102,7 +102,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 const SPELLS = [
   { id: 'schedule', name: '课程表', icon: Calendar, prompt: '多比，帮我看看我的课程安排，或者帮我制定一个学习计划吧！' },
-  { id: 'homework', name: '批改作业', icon: Pencil, prompt: '多比，这是我的作业照片，请帮我批改一下：' },
+  { id: 'homework', name: '作业', icon: Pencil, prompt: '多比，这是我的作业照片，请帮我批改一下：' },
   { id: 'words', name: '学单词', icon: Languages, prompt: '多比，我想学习一些新单词，或者帮我翻译一下：' },
   { id: 'math', name: '互动练习', icon: BrainCircuit, prompt: '多比，我想练习一下最近学的知识点，帮我出几道题吧！' },
   { id: 'focus', name: '魔法专注', icon: Hourglass, prompt: '多比，我想开始一段专注学习，帮我开启魔法沙漏吧！' },
@@ -131,7 +131,7 @@ function MagicApp() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus'>('schedule');
   const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState('周一');
@@ -161,6 +161,14 @@ function MagicApp() {
     { id: 'task2', text: '背诵5个新单词', completed: false, reward: 30 },
     { id: 'task3', text: '查看今日课程表', completed: false, reward: 10 },
   ]);
+  const [homeworkTasks, setHomeworkTasks] = useState<any[]>([
+    { id: 'hw1', subject: '数学', title: '分数乘法练习', status: 'pending', dueDate: '2026-03-30', image: null },
+    { id: 'hw2', subject: '语文', title: '古诗背诵', status: 'completed', dueDate: '2026-03-28', image: null },
+    { id: 'hw3', subject: '英语', title: '单词拼写', status: 'pending', dueDate: '2026-03-31', image: null },
+  ]);
+  const [isAddingHomework, setIsAddingHomework] = useState(false);
+  const [newHomework, setNewHomework] = useState({ subject: '', title: '', dueDate: '' });
+  const [homeworkImage, setHomeworkImage] = useState<string | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([
     { id: '1', title: '三好学生', date: '2025-12', type: 'school', iconName: 'Award', color: 'text-amber-400' },
     { id: '2', title: '奥数竞赛一等奖', date: '2026-01', type: 'competition', iconName: 'Trophy', color: 'text-yellow-500' },
@@ -292,6 +300,7 @@ function MagicApp() {
 
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -364,7 +373,23 @@ function MagicApp() {
   // Initialize Speech Recognition
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    
+    // 检查浏览器是否支持语音识别
+    if (!SpeechRecognition) {
+      console.log('Speech recognition not supported by browser');
+      setSpeechRecognitionSupported(false);
+      return;
+    }
+
+    // 检查是否在安全环境中（HTTPS 或 localhost）
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+    if (!isSecure) {
+      console.log('Speech recognition requires HTTPS or localhost');
+      setSpeechRecognitionSupported(false);
+      return;
+    }
+
+    try {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
@@ -379,11 +404,33 @@ function MagicApp() {
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
+        
+        // 给用户友好的错误提示
+        let errorMessage = '语音识别出错了';
+        switch (event.error) {
+          case 'network':
+            errorMessage = '网络连接问题，请检查网络后重试';
+            break;
+          case 'not-allowed':
+            errorMessage = '请允许麦克风权限';
+            setSpeechRecognitionSupported(false);
+            break;
+          case 'no-speech':
+            errorMessage = '没有检测到语音';
+            break;
+          case 'audio-capture':
+            errorMessage = '无法捕获音频，请检查麦克风';
+            break;
+        }
+        console.warn(errorMessage);
       };
 
       recognitionRef.current.onend = () => {
         setIsRecording(false);
       };
+    } catch (error) {
+      console.error('Failed to initialize speech recognition:', error);
+      setSpeechRecognitionSupported(false);
     }
   }, []);
 
@@ -525,11 +572,11 @@ function MagicApp() {
     if (isRecording) {
       recognitionRef.current?.stop();
     } else {
-      if (recognitionRef.current) {
+      if (recognitionRef.current && speechRecognitionSupported) {
         setIsRecording(true);
         recognitionRef.current.start();
-      } else {
-        alert("哎呀，你的浏览器好像不支持魔法语音，换个现代点的浏览器试试吧！");
+      } else if (!speechRecognitionSupported) {
+        console.warn("语音识别功能不可用，请使用 HTTPS 或现代浏览器（Chrome/Edge/Safari）");
       }
     }
   };
@@ -544,6 +591,41 @@ function MagicApp() {
       };
       reader.onerror = (error) => reject(error);
     });
+  };
+
+  const handleAddHomework = async () => {
+    if (!newHomework.subject || !newHomework.title || !newHomework.dueDate) return;
+    
+    const homework = {
+      id: `hw${Date.now()}`,
+      subject: newHomework.subject,
+      title: newHomework.title,
+      status: 'pending',
+      dueDate: newHomework.dueDate,
+      image: homeworkImage
+    };
+    
+    setHomeworkTasks(prev => [...prev, homework]);
+    setIsAddingHomework(false);
+    setNewHomework({ subject: '', title: '', dueDate: '' });
+    setHomeworkImage(null);
+  };
+
+  const handleHomeworkImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      fileToBase64(file).then(setHomeworkImage);
+    }
+  };
+
+  const toggleHomeworkStatus = (id: string) => {
+    setHomeworkTasks(prev => prev.map(hw => 
+      hw.id === id ? { ...hw, status: hw.status === 'pending' ? 'completed' : 'pending' } : hw
+    ));
+  };
+
+  const deleteHomework = (id: string) => {
+    setHomeworkTasks(prev => prev.filter(hw => hw.id !== id));
   };
 
   const handleAddCourse = async () => {
@@ -769,7 +851,10 @@ function MagicApp() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col md:flex-row gap-6 p-4 md:p-6 overflow-hidden z-10">
+      <main 
+        className="flex-1 flex flex-col md:flex-row gap-6 p-4 md:p-6 overflow-hidden z-10 transition-all duration-300 ease-in-out"
+        style={{ marginRight: isRightSidebarOpen ? '24rem' : '0' }}
+      >
         {/* Left Sidebar - Spells (Desktop) */}
         <aside className="hidden md:flex flex-col gap-4 w-64">
           <div className="glass-panel p-6 flex-1 flex flex-col gap-6">
@@ -952,11 +1037,14 @@ function MagicApp() {
                   </button>
                   <button
                     onClick={toggleRecording}
+                    disabled={!speechRecognitionSupported}
                     className={cn(
                       "p-2 rounded-lg transition-all",
-                      isRecording ? "bg-red-500/20 text-red-500 animate-pulse" : "hover:bg-white/10 text-white/40 hover:text-white"
+                      isRecording ? "bg-red-500/20 text-red-500 animate-pulse" : 
+                      !speechRecognitionSupported ? "opacity-30 cursor-not-allowed text-white/20" : 
+                      "hover:bg-white/10 text-white/40 hover:text-white"
                     )}
-                    title={isRecording ? "停止录音" : "语音输入"}
+                    title={!speechRecognitionSupported ? "语音识别不可用（需HTTPS或现代浏览器）" : isRecording ? "停止录音" : "语音输入"}
                   >
                     <Mic className="w-5 h-5" />
                   </button>
@@ -978,10 +1066,10 @@ function MagicApp() {
           {isRightSidebarOpen && (
             <motion.aside
               initial={{ width: 0, opacity: 0, x: 20 }}
-              animate={{ width: '28rem', opacity: 1, x: 0 }}
+              animate={{ width: '24rem', opacity: 1, x: 0 }}
               exit={{ width: 0, opacity: 0, x: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="hidden lg:flex flex-col glass-panel overflow-hidden"
+              className="fixed right-0 top-0 h-full z-50 flex flex-col glass-panel overflow-hidden shadow-2xl"
             >
               <div className="p-6 flex flex-col h-full">
                 <div className="flex items-center justify-between mb-6">

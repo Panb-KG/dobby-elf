@@ -1,3 +1,0 @@
-module.exports=[22564,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(38486);a.n(d("[project]/TRAE/dobby-elf/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},97707,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(38486);a.n(d("[project]/TRAE/dobby-elf/node_modules/next/dist/client/components/builtin/global-error.js"))},59626,a=>{"use strict";a.i(22564);var b=a.i(97707);a.n(b)}];
-
-//# sourceMappingURL=44691_next_dist_client_components_builtin_global-error_282b96b3.js.map
