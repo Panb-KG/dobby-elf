@@ -1,44 +1,17 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
-// 读取 .env 文件
-function loadEnv() {
-  const envPath = path.join(process.cwd(), '.env');
-  if (!fs.existsSync(envPath)) {
-    console.error('Error: .env file not found');
-    return {};
-  }
-
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  const env = {};
-  
-  envContent.split('\n').forEach(line => {
-    const match = line.match(/^([^#=]+)=(.*)$/);
-    if (match) {
-      const [, key, value] = match;
-      env[key.trim()] = value.trim();
-    }
-  });
-
-  return env;
-}
-
-// 获取 API Key
-const env = loadEnv();
-const dashscopeApiKey = env.DASHSCOPE_API_KEY || '';
+// 获取 API Key - 使用 process.env 以兼容 Zeabur 等云平台环境变量
+const dashscopeApiKey = process.env.DASHSCOPE_API_KEY || '';
 const apiKey = dashscopeApiKey;
-const baseUrl = env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const baseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
-console.log('Environment variables (from .env):', {
-  dashscopeApiKey: dashscopeApiKey ? '***' + dashscopeApiKey.slice(-4) : 'empty',
-  baseUrl: baseUrl
-});
-
-console.log('API key status:', {
-  apiKey: apiKey ? '***' + apiKey.slice(-4) : 'empty',
-  apiKeyLength: apiKey.length
-});
+console.log('=== API Environment Debug ===');
+console.log('process.cwd():', process.cwd());
+console.log('DASHSCOPE_API_KEY exists:', !!process.env.DASHSCOPE_API_KEY);
+console.log('DASHSCOPE_API_KEY length:', process.env.DASHSCOPE_API_KEY?.length || 0);
+console.log('DASHSCOPE_BASE_URL:', process.env.DASHSCOPE_BASE_URL);
+console.log('All env vars starting with DASHSCOPE:', Object.keys(process.env).filter(k => k.startsWith('DASHSCOPE')));
+console.log('===========================');
 
 export async function POST(req: Request) {
   if (!apiKey || !apiKey.trim()) {
