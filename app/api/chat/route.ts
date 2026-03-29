@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 
-// 获取 API Key - 使用 process.env 以兼容 Zeabur 等云平台环境变量
-const dashscopeApiKey = process.env.DASHSCOPE_API_KEY || '';
-const apiKey = dashscopeApiKey;
-const baseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-
-console.log('=== API Environment Debug ===');
-console.log('process.cwd():', process.cwd());
-console.log('DASHSCOPE_API_KEY exists:', !!process.env.DASHSCOPE_API_KEY);
-console.log('DASHSCOPE_API_KEY length:', process.env.DASHSCOPE_API_KEY?.length || 0);
-console.log('DASHSCOPE_BASE_URL:', process.env.DASHSCOPE_BASE_URL);
-console.log('All env vars starting with DASHSCOPE:', Object.keys(process.env).filter(k => k.startsWith('DASHSCOPE')));
-console.log('===========================');
-
 export async function POST(req: Request) {
+  // 在请求处理函数中获取环境变量，确保每次请求都能获取最新的配置
+  const dashscopeApiKey = process.env.DASHSCOPE_API_KEY || '';
+  const apiKey = dashscopeApiKey;
+  const baseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+
+  console.log('=== API Environment Debug ===');
+  console.log('process.cwd():', process.cwd());
+  console.log('DASHSCOPE_API_KEY exists:', !!process.env.DASHSCOPE_API_KEY);
+  console.log('DASHSCOPE_API_KEY length:', process.env.DASHSCOPE_API_KEY?.length || 0);
+  console.log('DASHSCOPE_BASE_URL:', process.env.DASHSCOPE_BASE_URL);
+  console.log('All env vars starting with DASHSCOPE:', Object.keys(process.env).filter(k => k.startsWith('DASHSCOPE')));
+  console.log('===========================');
+
   if (!apiKey || !apiKey.trim()) {
     return NextResponse.json(
       { error: 'DASHSCOPE_API_KEY is not configured' },

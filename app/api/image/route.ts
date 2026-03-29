@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-const apiKey = process.env.DASHSCOPE_API_KEY || '';
-const dashscopeBaseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
-
 export async function POST(req: Request) {
+  const apiKey = process.env.DASHSCOPE_API_KEY || '';
+  const dashscopeBaseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+
   if (!apiKey) {
     return NextResponse.json({ error: 'DASHSCOPE_API_KEY is not configured' }, { status: 500 });
   }
