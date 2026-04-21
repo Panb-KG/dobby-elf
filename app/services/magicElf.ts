@@ -6,7 +6,31 @@ export interface Message {
   timestamp?: number;
 }
 
+export interface ChatOptions {
+  messages: { role: string; content: string }[];
+  signal?: AbortSignal;
+}
+
+export interface ChatResponse {
+  text: string;
+}
+
 export class DobbyService {
+  async chat(options: ChatOptions): Promise<ChatResponse> {
+    const { messages, signal } = options;
+    let fullText = '';
+    
+    for await (const chunk of this.chatStream({ 
+      messages: messages.map(m => ({ role: m.role as 'user' | 'model', text: m.content })) 
+    })) {
+      if (typeof chunk === 'string') {
+        fullText += chunk;
+      }
+    }
+    
+    return { text: fullText };
+  }
+
   async generateMagicImage(prompt: string): Promise<string | null> {
     try {
       // 获取认证令牌
