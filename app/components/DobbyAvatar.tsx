@@ -1,7 +1,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
 
-export const DobbyAvatar = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
+interface DobbyAvatarProps {
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export const DobbyAvatar = ({ size = "md", className = "" }: DobbyAvatarProps) => {
   const sizes = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
@@ -10,7 +15,7 @@ export const DobbyAvatar = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
 
   return (
     <motion.div 
-      className={`${sizes[size]} relative flex items-center justify-center`}
+      className={`${sizes[size]} relative flex items-center justify-center ${className}`
       animate={{ 
         y: [0, -4, 0],
       }}
