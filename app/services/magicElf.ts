@@ -20,9 +20,9 @@ export class DobbyService {
     const { messages, signal } = options;
     let fullText = '';
     
-    for await (const chunk of this.chatStream({ 
-      messages: messages.map(m => ({ role: m.role as 'user' | 'model', text: m.content })) 
-    })) {
+    for await (const chunk of this.chatStream(
+      messages.map(m => ({ role: m.role as 'user' | 'model', text: m.content }))
+    )) {
       if (typeof chunk === 'string') {
         fullText += chunk;
       }
