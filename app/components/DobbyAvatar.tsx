@@ -15,7 +15,7 @@ export const DobbyAvatar = ({ size = "md", className = "" }: DobbyAvatarProps) =
 
   return (
     <motion.div 
-      className={`${sizes[size]} relative flex items-center justify-center ${className}`
+      className={`${sizes[size]} relative flex items-center justify-center ${className}`}
       animate={{ 
         y: [0, -4, 0],
       }}
