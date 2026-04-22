@@ -38,7 +38,9 @@ import Sidebar from './layout/Sidebar';
 import RightSidebar from './layout/RightSidebar';
 import ChatModule from './chat/ChatModule';
 import CourseModule from './course/CourseModule';
-// HomeworkModule, AchievementModule, FocusModule 待集成
+import HomeworkModule from './homework/HomeworkModule';
+import AchievementModule from './achievements/AchievementModule';
+import FocusModule from './focus/FocusModule';
 
 interface MagicLayoutProps {
   // 用户信息
@@ -170,15 +172,15 @@ export default function MagicLayout({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="h-full p-4"
+                className="h-full overflow-y-auto p-4"
               >
-                <div className="glass-panel rounded-2xl p-6 h-full flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <Pencil className="w-16 h-16 text-white/40 mx-auto" />
-                    <h2 className="text-2xl font-serif text-white/60">作业模块</h2>
-                    <p className="text-white/40">待集成 HomeworkModule 组件</p>
-                  </div>
-                </div>
+                <HomeworkModule
+                  tasks={homework.tasks}
+                  onAddTask={homework.addTask}
+                  onToggleStatus={homework.updateTaskStatus}
+                  onDeleteTask={homework.deleteTask}
+                  onImageUpload={() => {}}
+                />
               </motion.div>
             )}
             
@@ -189,15 +191,18 @@ export default function MagicLayout({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="h-full p-4"
+                className="h-full overflow-y-auto p-4"
               >
-                <div className="glass-panel rounded-2xl p-6 h-full flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <Trophy className="w-16 h-16 text-white/40 mx-auto" />
-                    <h2 className="text-2xl font-serif text-white/60">成就模块</h2>
-                    <p className="text-white/40">待集成 AchievementModule 组件</p>
-                  </div>
-                </div>
+                <AchievementModule
+                  points={achievements.totalPoints}
+                  level={achievements.userLevel}
+                  treeGrowth={0}
+                  dailyTasks={[]}
+                  achievements={achievements.achievements}
+                  onCompleteTask={() => {}}
+                  onWaterTree={() => {}}
+                  onAddAchievement={achievements.addAchievement}
+                />
               </motion.div>
             )}
             
@@ -208,15 +213,20 @@ export default function MagicLayout({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.2 }}
-                className="h-full p-4"
+                className="h-full overflow-y-auto p-4"
               >
-                <div className="glass-panel rounded-2xl p-6 h-full flex items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <Hourglass className="w-16 h-16 text-white/40 mx-auto" />
-                    <h2 className="text-2xl font-serif text-white/60">专注模块</h2>
-                    <p className="text-white/40">待集成 FocusModule 组件</p>
-                  </div>
-                </div>
+                <FocusModule
+                  focusTime={focus.elapsedTime}
+                  isFocusActive={focus.isFocusing}
+                  isHourglassBroken={false}
+                  whiteNoise={focus.whiteNoise}
+                  onStartFocus={() => focus.startFocus(25)}
+                  onPauseFocus={focus.pauseFocus}
+                  onResetFocus={focus.stopFocus}
+                  onSetFocusTime={(mins) => focus.startFocus(mins)}
+                  onToggleWhiteNoise={focus.setWhiteNoise}
+                  onFixHourglass={() => {}}
+                />
               </motion.div>
             )}
           </AnimatePresence>

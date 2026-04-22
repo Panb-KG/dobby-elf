@@ -3,15 +3,7 @@
 import React, { useState } from 'react';
 import { Pencil, CheckCircle, Circle, Plus, X, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-export interface HomeworkTask {
-  id: string;
-  subject: string;
-  title: string;
-  status: 'pending' | 'completed' | 'overdue';
-  dueDate: string;
-  image: string | null;
-}
+import type { HomeworkTask } from '../../types';
 
 interface HomeworkModuleProps {
   tasks: HomeworkTask[];

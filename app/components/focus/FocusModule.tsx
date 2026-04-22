@@ -4,8 +4,7 @@ import React from 'react';
 import { Hourglass, X, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-
-export type WhiteNoiseType = 'none' | 'library' | 'rain' | 'fire';
+import type { WhiteNoiseType } from '../../types';
 
 interface FocusModuleProps {
   focusTime: number;

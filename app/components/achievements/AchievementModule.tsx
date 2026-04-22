@@ -4,26 +4,11 @@ import React from 'react';
 import { Award, Trophy, Star, Medal, TrendingUp, Leaf, CheckCircle, Circle, Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-
-export interface Achievement {
-  id: string;
-  title: string;
-  date: string;
-  type: 'school' | 'competition' | 'learning';
-  iconName: 'Award' | 'Trophy' | 'Star' | 'Medal';
-  color: string;
-}
-
-export interface DailyTask {
-  id: string;
-  text: string;
-  completed: boolean;
-  reward: number;
-}
+import type { Achievement, DailyTask } from '../../types';
 
 interface AchievementModuleProps {
   points: number;
-  level: number;
+  level: string;
   treeGrowth: number;
   dailyTasks: DailyTask[];
   achievements: Achievement[];
