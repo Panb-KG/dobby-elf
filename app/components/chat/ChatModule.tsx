@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { Send, Paperclip, Mic, Sparkles } from 'lucide-react';
-import { Message } from '../../services/types';
+import type { Message } from '../../types';
 import { DobbyAvatar } from '../DobbyAvatar';
 
 interface ChatModuleProps {

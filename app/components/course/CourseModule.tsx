@@ -3,15 +3,15 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Calendar, Plus, X } from 'lucide-react';
-import { Course } from '../../services/types';
+import type { Course, ScheduleView } from '../../types';
 
-interface CourseModuleProps {
+export interface CourseModuleProps {
   courses: Course[];
-  scheduleView: 'week' | 'day';
+  scheduleView: ScheduleView;
   selectedDay: string;
   isAddingCourse: boolean;
   newCourse: Omit<Course, 'id' | 'color'>;
-  onScheduleViewChange: (view: 'week' | 'day') => void;
+  onScheduleViewChange: (view: ScheduleView) => void;
   onSelectedDayChange: (day: string) => void;
   onIsAddingCourseChange: (adding: boolean) => void;
   onNewCourseChange: (course: Omit<Course, 'id' | 'color'>) => void;
