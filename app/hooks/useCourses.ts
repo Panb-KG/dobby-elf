@@ -1,20 +1,25 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { Course } from '../services/types';
+import type { Course, ScheduleView } from '../types';
 
-interface UseCoursesReturn {
+export interface UseCoursesReturn {
   courses: Course[];
-  scheduleView: 'week' | 'day';
+  scheduleView: ScheduleView;
   selectedDay: string;
   isAddingCourse: boolean;
   newCourse: Omit<Course, 'id' | 'color'> & { color?: string };
-  setScheduleView: (view: 'week' | 'day') => void;
+  setScheduleView: (view: ScheduleView) => void;
   setSelectedDay: (day: string) => void;
   setIsAddingCourse: (adding: boolean) => void;
   setNewCourse: (course: Omit<Course, 'id' | 'color'> & { color?: string }) => void;
   addCourse: () => void;
   removeCourse: (index: number) => void;
+}
+
+export interface UseCoursesOptions {
+  initialCourses?: Course[];
+  defaultView?: ScheduleView;
 }
 
 const COURSE_COLORS = [
@@ -34,9 +39,10 @@ const COURSE_COLORS = [
   'bg-lime-500/20 border-lime-500/30',
 ];
 
-export function useCourses(initialCourses: Course[] = []): UseCoursesReturn {
+export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
+  const { initialCourses = [], defaultView = 'week' } = options;
   const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
+  const [scheduleView, setScheduleView] = useState<ScheduleView>(defaultView);
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
   const [newCourse, setNewCourse] = useState<Omit<Course, 'id' | 'color'> & { color?: string }>({

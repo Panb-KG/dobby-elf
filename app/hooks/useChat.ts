@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef } from 'react';
-import { Message } from '../services/types';
+import type { Message } from '../types';
 import { dobby } from '../services/magicElf';
 
-interface UseChatReturn {
+export interface UseChatReturn {
   messages: Message[];
   input: string;
   isLoading: boolean;
@@ -13,13 +13,18 @@ interface UseChatReturn {
   handleShortcut: (prompt: string) => Promise<void>;
 }
 
-const INITIAL_MESSAGE: Message = {
-  role: 'model',
-  text: '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨'
-};
+export interface UseChatOptions {
+  initialMessage?: string;
+}
 
-export function useChat(): UseChatReturn {
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+const DEFAULT_INITIAL_MESSAGE = '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨';
+
+export function useChat(options: UseChatOptions = {}): UseChatReturn {
+  const { initialMessage = DEFAULT_INITIAL_MESSAGE } = options;
+  
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'model', text: initialMessage }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -27,12 +32,24 @@ export function useChat(): UseChatReturn {
   const sendMessage = useCallback(async (text: string, image: string | null = null) => {
     if (!text.trim()) return;
 
-    const userMessage: Message = { role: 'user', text, image, timestamp: new Date().toISOString() };
+    const userMessage: Message = { 
+      role: 'user', 
+      text, 
+      image, 
+      timestamp: new Date().toISOString() 
+    };
+    
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
       abortControllerRef.current = new AbortController();
+      
+      // 使用函数式更新，避免依赖 messages 状态
+      setMessages(prev => {
+        const updatedMessages = [...prev, userMessage];
+        return updatedMessages;
+      });
       
       const response = await dobby.chat({
         messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.text })),
@@ -59,7 +76,7 @@ export function useChat(): UseChatReturn {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages]);
+  }, []); // 移除 messages 依赖，使用函数式更新
 
   const handleInputChange = useCallback((value: string) => {
     setInput(value);
