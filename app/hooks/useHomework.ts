@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from 'react';
+import { useLocalStorage } from './useLocalStorage';
+import { StorageKeys } from '../lib/storage';
 import type { HomeworkTask, HomeworkStatus, HomeworkType } from '../types';
 
 export interface UseHomeworkReturn {
@@ -43,7 +45,10 @@ export interface UseHomeworkOptions {
  */
 export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn {
   const { initialTasks = [] } = options;
-  const [tasks, setTasks] = useState<HomeworkTask[]>(initialTasks);
+  const [tasks, setTasks] = useLocalStorage<HomeworkTask[]>({
+    key: StorageKeys.HOMEWORK,
+    defaultValue: initialTasks,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<HomeworkStatus | 'all'>('all');
 

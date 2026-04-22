@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
+import { useLocalStorage } from './useLocalStorage';
+import { StorageKeys } from '../lib/storage';
 import type { Achievement, User } from '../types';
 
 export interface UseAchievementsReturn {
@@ -42,7 +44,10 @@ export interface UseAchievementsOptions {
  */
 export function useAchievements(options: UseAchievementsOptions = {}): UseAchievementsReturn {
   const { initialAchievements = [], user } = options;
-  const [achievements, setAchievements] = useState<Achievement[]>(initialAchievements);
+  const [achievements, setAchievements] = useLocalStorage<Achievement[]>({
+    key: StorageKeys.ACHIEVEMENTS,
+    defaultValue: initialAchievements,
+  });
 
   const addAchievement = useCallback((achievement: Omit<Achievement, 'id'>) => {
     const newAchievement: Achievement = {

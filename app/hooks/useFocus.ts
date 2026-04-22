@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { getStorage, setStorage } from '../lib/storage';
+import { StorageKeys } from '../lib/storage';
 import type { FocusSession, WhiteNoiseType } from '../types';
 
 export interface UseFocusReturn {
@@ -60,13 +62,9 @@ export function useFocus(options: UseFocusOptions = {}): UseFocusReturn {
   // 保存会话到本地存储
   useEffect(() => {
     if (autoSave) {
-      const saved = localStorage.getItem('dobby_focus_sessions');
-      if (saved) {
-        try {
-          setSessions(JSON.parse(saved));
-        } catch (e) {
-          console.error('Failed to load focus sessions:', e);
-        }
+      const saved = getStorage<FocusSession[]>(StorageKeys.FOCUS_SESSIONS, []);
+      if (saved && saved.length > 0) {
+        setSessions(saved);
       }
     }
   }, [autoSave]);
@@ -135,7 +133,7 @@ export function useFocus(options: UseFocusOptions = {}): UseFocusReturn {
     setSessions(prev => {
       const updated = [session, ...prev];
       if (autoSave) {
-        localStorage.setItem('dobby_focus_sessions', JSON.stringify(updated));
+        setStorage(StorageKeys.FOCUS_SESSIONS, updated);
       }
       return updated;
     });

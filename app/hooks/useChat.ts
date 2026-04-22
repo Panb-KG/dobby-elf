@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useLocalStorage } from './useLocalStorage';
+import { StorageKeys, setStorage } from '../lib/storage';
 import type { Message } from '../types';
 import { dobby } from '../services/magicElf';
 
@@ -18,16 +20,30 @@ export interface UseChatOptions {
 }
 
 const DEFAULT_INITIAL_MESSAGE = '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨';
+const MAX_CHAT_HISTORY = 50; // 最多保留 50 条消息
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const { initialMessage = DEFAULT_INITIAL_MESSAGE } = options;
   
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: initialMessage }
-  ]);
+  const [storedMessages] = useLocalStorage<Message[]>({
+    key: StorageKeys.CHAT_HISTORY,
+    defaultValue: [],
+  });
+  
+  const [messages, setMessages] = useState<Message[]>(
+    storedMessages.length > 0
+      ? storedMessages
+      : [{ role: 'model', text: initialMessage }]
+  );
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 自动保存聊天记录
+  useEffect(() => {
+    const toSave = messages.slice(-MAX_CHAT_HISTORY);
+    setStorage(StorageKeys.CHAT_HISTORY, toSave);
+  }, [messages]);
 
   const sendMessage = useCallback(async (text: string, image: string | null = null) => {
     if (!text.trim()) return;

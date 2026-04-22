@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useLocalStorage } from './useLocalStorage';
+import { StorageKeys } from '../lib/storage';
 import type { Course, ScheduleView } from '../types';
 
 export interface UseCoursesReturn {
@@ -41,7 +43,10 @@ const COURSE_COLORS = [
 
 export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
   const { initialCourses = [], defaultView = 'week' } = options;
-  const [courses, setCourses] = useState<Course[]>(initialCourses);
+  const [courses, setCourses] = useLocalStorage<Course[]>({
+    key: StorageKeys.COURSES,
+    defaultValue: initialCourses,
+  });
   const [scheduleView, setScheduleView] = useState<ScheduleView>(defaultView);
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
