@@ -1,6 +1,6 @@
 # Dobi-elf 开发计划
 
-> 🧦 多比的项目重构与开发路线图 | 版本：2.0 | 创建：2026-04-22
+> 🧦 多比的项目重构与开发路线图 | 版本：3.0 | 创建：2026-04-22 | 更新：2026-04-22
 
 ---
 
@@ -9,10 +9,9 @@
 - [项目概述](#项目概述)
 - [当前状态](#当前状态)
 - [Phase 1: 组件重构](#phase-1-组件重构)
-- [Phase 2: Harness 集成](#phase-2-harness-集成)
-- [Phase 3: Wiki 自动化](#phase-3-wiki-自动化)
-- [Phase 4: 群协作功能](#phase-4-群协作功能)
-- [Phase 5: 生产部署](#phase-5-生产部署)
+- [Phase 2: 数据持久化与 API 完善](#phase-2-数据持久化与-api-完善)
+- [Phase 3: 测试与优化](#phase-3-测试与优化)
+- [Phase 4: 生产部署](#phase-4-生产部署)
 - [开发规范](#开发规范)
 - [检查清单](#检查清单)
 
@@ -54,7 +53,7 @@
 ## 当前状态
 
 ### 最后更新
-**2026-04-22 08:47** - 项目从 GitHub 克隆
+**2026-04-22 19:35** - Phase 1 完成
 
 ### 已完成工作
 - ✅ 项目初始化（Next.js 12 + TypeScript）
@@ -66,13 +65,17 @@
   - ✅ `/api/achievements` - 成就系统
   - ✅ `/api/knowledge` - 知识图谱
   - ✅ `/api/image` - 魔法绘图
+- ✅ Phase 1: 组件重构（100% 完成）
+  - ✅ 统一类型系统
+  - ✅ 6 个核心 Hooks
+  - ✅ 5 个功能模块组件
+  - ✅ 容器和布局组件
+  - ✅ 完整文档
 
 ### 待办事项
-- [ ] Phase 1: 组件重构（拆分 MagicApp）
-- [ ] Phase 2: Harness 集成
-- [ ] Phase 3: Wiki 自动化
-- [ ] Phase 4: 群协作功能
-- [ ] Phase 5: 生产部署
+- [ ] Phase 2: 数据持久化与 API 完善
+- [ ] Phase 3: 测试与优化
+- [ ] Phase 4: 生产部署
 
 ---
 
@@ -80,7 +83,7 @@
 
 **时间估算**: 15-20 小时  
 **优先级**: 🔴 高  
-**状态**: ⚪ 未开始
+**状态**: ✅ 已完成（100%）
 
 ### 目标
 将 MagicApp 中的业务逻辑拆分为独立的、可复用的组件和 Hooks，实现关注点分离。
@@ -91,200 +94,151 @@
 
 | 组件 | 文件路径 | 依赖 | 工时 | 状态 |
 |------|----------|------|------|------|
-| `ChatModule` | `app/components/chat/ChatModule.tsx` | `useChat` | 2h | ⏳ 待开始 |
-| `CourseModule` | `app/components/course/CourseModule.tsx` | `useCourses` | 2h | ⏳ 待开始 |
-| `HomeworkModule` | `app/components/homework/HomeworkModule.tsx` | `useHomework` | 2h | ⏳ 待开始 |
-| `AchievementModule` | `app/components/achievement/AchievementModule.tsx` | `useAchievements` | 2h | ⏳ 待开始 |
-| `FocusModule` | `app/components/focus/FocusModule.tsx` | `useFocus` | 2h | ⏳ 待开始 |
+| `ChatModule` | `app/components/chat/ChatModule.tsx` | `useChat` | 2h | ✅ 完成 |
+| `CourseModule` | `app/components/course/CourseModule.tsx` | `useCourses` | 2h | ✅ 完成 |
+| `HomeworkModule` | `app/components/homework/HomeworkModule.tsx` | `useHomework` | 2h | ✅ 完成 |
+| `AchievementModule` | `app/components/achievement/AchievementModule.tsx` | `useAchievements` | 2h | ✅ 完成 |
+| `FocusModule` | `app/components/focus/FocusModule.tsx` | `useFocus` | 2h | ✅ 完成 |
 
 #### 1.2 Hooks 提取（预计 5 小时）
 
 | Hook | 文件路径 | 功能 | 工时 | 状态 |
 |------|----------|------|------|------|
-| `useChat` | `app/hooks/useChat.ts` | 聊天消息管理 | 1.5h | ⏳ 待开始 |
-| `useCourses` | `app/hooks/useCourses.ts` | 课程数据管理 | 1h | ⏳ 待开始 |
-| `useHomework` | `app/hooks/useHomework.ts` | 作业追踪 | 1h | ⏳ 待开始 |
-| `useAchievements` | `app/hooks/useAchievements.ts` | 成就系统 | 1h | ⏳ 待开始 |
-| `useFocus` | `app/hooks/useFocus.ts` | 专注模式 | 0.5h | ⏳ 待开始 |
+| `useChat` | `app/hooks/useChat.ts` | 聊天消息管理 | 1.5h | ✅ 完成 |
+| `useCourses` | `app/hooks/useCourses.ts` | 课程数据管理 | 1h | ✅ 完成 |
+| `useHomework` | `app/hooks/useHomework.ts` | 作业追踪 | 1h | ✅ 完成 |
+| `useAchievements` | `app/hooks/useAchievements.ts` | 成就系统 | 1h | ✅ 完成 |
+| `useFocus` | `app/hooks/useFocus.ts` | 专注模式 | 0.5h | ✅ 完成 |
 
 #### 1.3 类型定义（预计 2 小时）
 
-- [ ] 创建 `types/index.ts` - 统一类型导出
-- [ ] 定义 `types/chat.ts` - 聊天相关类型
-- [ ] 定义 `types/course.ts` - 课程相关类型
-- [ ] 定义 `types/homework.ts` - 作业相关类型
-- [ ] 定义 `types/achievement.ts` - 成就相关类型
-- [ ] 定义 `types/focus.ts` - 专注相关类型
+- [x] 创建 `types/index.ts` - 统一类型导出
+- [x] 定义 `types/chat.ts` - 聊天相关类型
+- [x] 定义 `types/course.ts` - 课程相关类型
+- [x] 定义 `types/homework.ts` - 作业相关类型
+- [x] 定义 `types/achievement.ts` - 成就相关类型
+- [x] 定义 `types/focus.ts` - 专注相关类型
 
-#### 1.4 测试编写（预计 3 小时）
+#### 1.4 容器和布局（预计 3 小时）
 
-- [ ] 为每个 Hook 编写单元测试
-- [ ] 为每个组件编写集成测试
-- [ ] 配置 Vitest 测试框架
-- [ ] 设置 CI 自动测试
+- [x] 创建 `app/page.tsx` - 新容器组件
+- [x] 创建 `app/components/MagicLayout.tsx` - 主布局
+- [x] 创建 `app/components/layout/Header.tsx` - 头部组件
+- [x] 创建 `app/components/layout/Sidebar.tsx` - 左侧导航
+- [x] 创建 `app/components/layout/RightSidebar.tsx` - 右侧边栏
 
 ### 交付物
-- ✅ 独立的组件库（5 个模块）
-- ✅ 独立的 Hooks 库（5 个 Hooks）
-- ✅ 完整的 TypeScript 类型定义
-- ✅ 单元测试覆盖率 > 80%
+- ✅ 统一的类型系统 (`app/types/index.ts`)
+- ✅ 6 个核心 Hooks
+- ✅ 5 个功能模块组件
+- ✅ 容器和布局组件
+- ✅ 完整文档（Hooks/组件/重构指南）
 
 ---
 
-## Phase 2: Harness 集成
+## Phase 2: 数据持久化与 API 完善
 
 **时间估算**: 10-15 小时  
 **优先级**: 🔴 高  
 **状态**: ⚪ 未开始
 
 ### 目标
-将 Dobi-harness 多 Agent 编排系统集成到 Dobi-elf，实现智能任务分解和自动化工作流。
+实现数据持久化，完善 API 层，确保刷新后数据不丢失，支持多端同步。
 
 ### 任务分解
 
-#### 2.1 核心编排器集成（预计 4 小时）
+#### 2.1 本地持久化（预计 4 小时）
 
-- [ ] 安装 `dobi-harness` 包
-- [ ] 配置 `harness/orchestrator.js`
-- [ ] 创建 `lib/harness/client.ts` - Harness 客户端封装
-- [ ] 实现任务提交接口 `POST /api/harness/execute`
+- [ ] 创建 `app/lib/storage.ts` - 统一存储封装
+- [ ] 实现 `useLocalStorage` Hook
+- [ ] 课程数据自动保存/加载
+- [ ] 作业数据自动保存/加载
+- [ ] 成就数据自动保存/加载
+- [ ] 专注会话历史自动保存
 
-#### 2.2 工作流实现（预计 6 小时）
+#### 2.2 SQLite 后端集成（预计 6 小时）
 
-| 工作流 | 描述 | 优先级 | 工时 |
-|--------|------|--------|------|
-| `CodeReview` | 自动代码审查 | 🔴 高 | 2h |
-| `TestGen` | 测试用例生成 | 🟡 中 | 2h |
-| `DocGen` | 文档自动生成 | 🟡 中 | 1h |
-| `LearningPlan` | 学习计划生成 | 🔴 高 | 1h |
+- [ ] 完善 `app/lib/db.ts` - SQLite 数据库封装
+- [ ] 实现课程 CRUD API（`/api/courses`）
+- [ ] 实现作业 CRUD API（`/api/homework`）
+- [ ] 实现成就 API（`/api/achievements`）
+- [ ] 实现用户配置 API（`/api/users`）
+- [ ] 数据库迁移脚本
 
-#### 2.3 UI 集成（预计 3 小时）
+#### 2.3 离线支持（预计 3 小时）
 
-- [ ] 创建 `app/components/harness/HarnessPanel.tsx` - 控制面板
-- [ ] 添加任务状态实时显示
-- [ ] 实现任务日志流式输出
-- [ ] 添加任务取消/重试功能
+- [ ] Service Worker 配置
+- [ ] 离线数据缓存策略
+- [ ] 网络恢复后自动同步
+- [ ] 离线状态提示 UI
 
-#### 2.4 配置与优化（预计 2 小时）
+#### 2.4 数据导出/导入（预计 2 小时）
 
-- [ ] 配置并发限制（`maxParallel: 5`）
-- [ ] 配置超时策略（`timeoutSeconds: 300`）
-- [ ] 配置重试机制（`retryAttempts: 2`）
-- [ ] 性能基准测试
+- [ ] 数据导出为 JSON
+- [ ] 数据导入恢复
+- [ ] 备份脚本
 
 ### 交付物
-- ✅ Harness 编排器集成
-- ✅ 4 个生产工作流
-- ✅ 可视化控制面板
-- ✅ 性能优化配置
+- ✅ 本地存储完整方案
+- ✅ SQLite 后端 API
+- ✅ 离线支持
+- ✅ 数据导出/导入
 
 ---
 
-## Phase 3: Wiki 自动化
+## Phase 3: 测试与优化
 
 **时间估算**: 8-12 小时  
 **优先级**: 🟡 中  
 **状态**: ⚪ 未开始
 
 ### 目标
-基于 Karpathy LLM Wiki 模式，实现任务执行自动沉淀知识到 Wiki 系统。
+编写测试用例，优化性能，确保应用稳定可靠。
 
 ### 任务分解
 
-#### 3.1 Wiki 工具链（预计 4 小时）
+#### 3.1 单元测试（预计 4 小时）
 
-- [ ] 配置 `wiki-ingest` 工具
-- [ ] 配置 `wiki-query` 工具
-- [ ] 配置 `wiki-search` 工具
-- [ ] 配置 `wiki-lint` 工具
+- [ ] 配置 Vitest 测试框架
+- [ ] 为所有 Hooks 编写测试
+  - [ ] `useChat.test.ts`
+  - [ ] `useCourses.test.ts`
+  - [ ] `useHomework.test.ts`
+  - [ ] `useAchievements.test.ts`
+  - [ ] `useFocus.test.ts`
+- [ ] 为工具函数编写测试
+- [ ] 测试覆盖率 > 80%
 
-#### 3.2 Wiki 结构设计（预计 2 小时）
+#### 3.2 组件测试（预计 3 小时）
 
-```
-memory/wiki/
-├── entities/          # 实体页（人、项目、组织）
-│   ├── DobiElf.md
-│   └── PanBo.md
-├── concepts/          # 概念页（技术、模式、方法）
-│   ├── MagicApp.md
-│   └── HarnessEngineering.md
-├── sources/           # 源文档（会议记录、文章）
-│   └── ...
-├── queries/           # 查询结果缓存
-│   └── ...
-└── index.md           # Wiki 首页
-```
+- [ ] ChatModule 集成测试
+- [ ] CourseModule 集成测试
+- [ ] HomeworkModule 集成测试
+- [ ] AchievementModule 集成测试
+- [ ] FocusModule 集成测试
 
-#### 3.3 自动化集成（预计 4 小时）
+#### 3.3 性能优化（预计 3 小时）
 
-- [ ] 实现任务完成自动触发 `wiki-ingest`
-- [ ] 实现 Query First 模式（执行前先查 Wiki）
-- [ ] 配置交叉引用自动更新
-- [ ] 实现时间线日志自动追加
+- [ ] 代码分割（路由级、组件级）
+- [ ] 图片优化（WebP、懒加载）
+- [ ] 减少不必要的重渲染
+- [ ] Lighthouse 性能评分 > 90
 
-#### 3.4 健康检查（预计 2 小时）
+#### 3.4 安全加固（预计 2 小时）
 
-- [ ] 配置每周自动 `wiki-lint`
-- [ ] 实现断链检测
-- [ ] 实现孤立页面检测
-- [ ] 生成 Wiki 健康报告
+- [ ] 输入验证（Zod）
+- [ ] XSS 防护
+- [ ] SQL 注入防护
+- [ ] 速率限制
 
 ### 交付物
-- ✅ Wiki 工具链配置完成
-- ✅ Wiki 结构完整
-- ✅ 自动化摄入流程
-- ✅ 健康检查机制
+- ✅ 完整测试套件
+- ✅ 性能优化报告
+- ✅ 安全审计报告
 
 ---
 
-## Phase 4: 群协作功能
-
-**时间估算**: 6-10 小时  
-**优先级**: 🟡 中  
-**状态**: ⚪ 未开始
-
-### 目标
-实现群聊协作记忆能力，支持话题追踪、成员识别、进度汇报。
-
-### 任务分解
-
-#### 4.1 话题追踪（预计 3 小时）
-
-- [ ] 实现 `#话题` 自动识别
-- [ ] 创建话题归档到 `memory/wiki/topics/`
-- [ ] 实现话题关联查询
-- [ ] 配置话题时间线
-
-#### 4.2 成员识别（预计 2 小时）
-
-- [ ] 实现群成员 OpenID 映射
-- [ ] 创建成员档案 `memory/wiki/groups/`
-- [ ] 记录成员偏好和习惯
-- [ ] 实现成员提及识别
-
-#### 4.3 进度汇报（预计 3 小时）
-
-- [ ] 配置定期汇报（每 4 小时）
-- [ ] 实现汇报内容自动生成
-- [ ] 支持汇报模板定制
-- [ ] 实现汇报历史查询
-
-#### 4.4 任务跟进（预计 2 小时）
-
-- [ ] 实现任务自动分配
-- [ ] 配置任务到期提醒
-- [ ] 实现任务状态同步
-- [ ] 生成任务完成报告
-
-### 交付物
-- ✅ 话题追踪系统
-- ✅ 成员档案管理
-- ✅ 自动进度汇报
-- ✅ 任务跟进机制
-
----
-
-## Phase 5: 生产部署
+## Phase 4: 生产部署
 
 **时间估算**: 4-6 小时  
 **优先级**: 🟢 低  
@@ -295,21 +249,21 @@ memory/wiki/
 
 ### 任务分解
 
-#### 5.1 环境配置（预计 2 小时）
+#### 4.1 环境配置（预计 2 小时）
 
 - [ ] 配置生产环境变量
 - [ ] 配置数据库连接
 - [ ] 配置 API 密钥管理
 - [ ] 配置日志收集
 
-#### 5.2 性能优化（预计 2 小时）
+#### 4.2 部署流程（预计 2 小时）
 
-- [ ] 启用 Next.js ISR
-- [ ] 配置 CDN 缓存
-- [ ] 优化图片加载
-- [ ] 实现懒加载
+- [ ] Docker 镜像构建优化
+- [ ] CI/CD 流水线配置
+- [ ] Zeabur 部署配置
+- [ ] Ubuntu 部署脚本完善
 
-#### 5.3 监控告警（预计 2 小时）
+#### 4.3 监控告警（预计 2 小时）
 
 - [ ] 配置错误追踪（Sentry）
 - [ ] 配置性能监控
@@ -318,7 +272,7 @@ memory/wiki/
 
 ### 交付物
 - ✅ 生产环境部署
-- ✅ 性能优化完成
+- ✅ CI/CD 流水线
 - ✅ 监控告警系统
 
 ---
@@ -418,11 +372,10 @@ refactor(hooks): 提取 useChat 逻辑
 
 | 里程碑 | 预计完成 | 状态 |
 |--------|----------|------|
-| Phase 1 完成（组件重构） | 2026-04-25 | ⚪ 未开始 |
-| Phase 2 完成（Harness 集成） | 2026-05-05 | ⚪ 未开始 |
-| Phase 3 完成（Wiki 自动化） | 2026-05-15 | ⚪ 未开始 |
-| Phase 4 完成（群协作） | 2026-05-25 | ⚪ 未开始 |
-| Phase 5 完成（生产部署） | 2026-06-01 | ⚪ 未开始 |
+| Phase 1 完成（组件重构） | 2026-04-22 | ✅ 已完成 |
+| Phase 2 完成（数据持久化） | 2026-04-30 | ⚪ 未开始 |
+| Phase 3 完成（测试与优化） | 2026-05-10 | ⚪ 未开始 |
+| Phase 4 完成（生产部署） | 2026-05-20 | ⚪ 未开始 |
 
 ---
 
@@ -443,8 +396,8 @@ refactor(hooks): 提取 useChat 逻辑
 - **开发**: 多比 🧦
 - **项目地址**: `/home/admin/.openclaw/workspace/dobby-elf`
 - **GitHub**: https://github.com/Panb-KG/dobby-elf
-- **文档**: 本文件 + `PRD.md` + `DEPLOYMENT_UBUNTU.md`
+- **文档**: 本文件 + `PRD.md` + `DEPLOYMENT_UBUNTU.md` + `ENGINEERING-PRINCIPLES.md`
 
 ---
 
-*最后更新：2026-04-22 08:50 | 版本：2.0 | 状态：活跃*
+*最后更新：2026-04-22 19:35 | 版本：3.0 | 状态：活跃*
