@@ -1,48 +1,61 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { NextResponse } from 'next/server';
+import { getSecurityHeaders, apiRateLimiter, isValidUserId } from '../../lib/security';
 
-// 不需要认证的路径
-const publicPaths = [
-  '/api/auth/login',
-  '/api/auth/register',
-  '/api/chat', // 聊天API暂时不需要认证
-];
+/**
+ * API 中间件
+ * 
+ * 功能：
+ * - 安全头注入
+ * - 速率限制
+ * - 请求验证
+ * - 错误处理
+ */
 
-export async function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
+export async function middleware(req: Request) {
+  const url = new URL(req.url);
+  const pathname = url.pathname;
   
-  // 跳过不需要认证的路径
-  if (publicPaths.some(publicPath => path.startsWith(publicPath))) {
+  // 只处理 API 请求
+  if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
   
-  // 获取Authorization头
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return NextResponse.json({ error: '缺少认证信息' }, { status: 401 });
+  // 1. 速率限制
+  const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+  if (apiRateLimiter(clientIp)) {
+    return NextResponse.json(
+      { error: '请求过于频繁，请稍后再试' },
+      { status: 429, headers: getSecurityHeaders() }
+    );
   }
   
-  // 提取token
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    return NextResponse.json({ error: '无效的认证信息' }, { status: 401 });
+  // 2. 创建响应并注入安全头
+  const response = NextResponse.next();
+  
+  Object.entries(getSecurityHeaders()).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  // 3. CORS 头（如果需要）
+  const origin = req.headers.get('origin');
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Max-Age', '86400');
   }
   
-  try {
-    // 验证token
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
-    const decoded = jwt.verify(token, secret);
-    
-    // 将用户信息添加到请求头
-    const response = NextResponse.next();
-    response.headers.set('X-User-ID', (decoded as any).userId);
-    return response;
-  } catch (error) {
-    return NextResponse.json({ error: '无效的认证令牌' }, { status: 401 });
+  // 4. OPTIONS 预检请求处理
+  if (req.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: response.headers });
   }
+  
+  return response;
 }
 
-// 配置中间件适用的路径
+/**
+ * 配置中间件匹配路径
+ */
 export const config = {
   matcher: '/api/:path*',
 };

@@ -9,5 +9,5 @@ coverage/
 .next/
 playwright-report/
 test-results/
-tests/
+!tests/
 data/*.db
