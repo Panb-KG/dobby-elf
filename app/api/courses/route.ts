@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '../../lib/db';
 
-const dbPath = path.join(process.cwd(), 'data', 'dobby.db');
-
-function getDb() {
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  return db;
-}
+/**
+ * 课程 CRUD API
+ * 
+ * GET    /api/courses?userId=xxx        - 获取课程表
+ * POST   /api/courses                   - 创建/更新课程
+ * DELETE /api/courses?id=xxx&userId=xxx - 删除课程
+ */
 
 export async function GET(req: Request) {
   try {
@@ -21,10 +20,15 @@ export async function GET(req: Request) {
     
     const db = getDb();
     const courses = db.prepare(`
-      SELECT id, day, subject, time, type, color FROM courses WHERE user_id = ?
+      SELECT id, user_id, day, subject, time, type, color FROM courses WHERE user_id = ?
+      ORDER BY 
+        CASE day
+          WHEN '周一' THEN 1 WHEN '周二' THEN 2 WHEN '周三' THEN 3
+          WHEN '周四' THEN 4 WHEN '周五' THEN 5 WHEN '周六' THEN 6 WHEN '周日' THEN 7
+          ELSE 8
+        END,
+        time ASC
     `).all(userId);
-    
-    db.close();
     
     return NextResponse.json(courses);
   } catch (error: any) {
@@ -50,8 +54,6 @@ export async function POST(req: Request) {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(courseId, userId, course.day, course.subject, course.time, course.type, course.color || '');
     
-    db.close();
-    
     return NextResponse.json({ success: true, id: courseId });
   } catch (error: any) {
     console.error('Save course error:', error);
@@ -63,15 +65,18 @@ export async function DELETE(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
-    const courseId = searchParams.get('courseId');
+    const courseId = searchParams.get('id');
     
     if (!userId || !courseId) {
       return NextResponse.json({ error: '用户ID和课程ID不能为空' }, { status: 400 });
     }
     
     const db = getDb();
-    db.prepare('DELETE FROM courses WHERE id = ? AND user_id = ?').run(courseId, userId);
-    db.close();
+    const result = db.prepare('DELETE FROM courses WHERE id = ? AND user_id = ?').run(courseId, userId);
+    
+    if (result.changes === 0) {
+      return NextResponse.json({ error: '课程不存在' }, { status: 404 });
+    }
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

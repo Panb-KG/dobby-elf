@@ -8,6 +8,9 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
+    "migrate": "npx tsx scripts/migrate.ts",
+    "migrate:status": "npx tsx scripts/migrate.ts --status",
+    "migrate:reset": "npx tsx scripts/migrate.ts --reset",
     "postinstall": "npm rebuild better-sqlite3 bcrypt",
     "healthcheck": "node -e \"require('http').get('http://localhost:'+(process.env.PORT||3000)+'/api/users', (r) => {process.exit(r.statusCode===200?0:1)}).on('error', () => process.exit(1))\""
   },
