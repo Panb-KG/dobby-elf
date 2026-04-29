@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'data', 'dobby.db');
+const dbPath = path.join(process.cwd(), 'data', 'dobi.db');
 
 function getDb() {
   const db = new Database(dbPath);

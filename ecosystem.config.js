@@ -1,9 +1,9 @@
 module.exports = {
   apps: [{
-    name: 'dobby-elf',
+    name: 'dobi-elf',
     script: 'npm',
     args: 'start',
-    cwd: '/var/www/dobby-elf',
+    cwd: '/var/www/dobi-elf',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -12,8 +12,8 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: 3000
     },
-    error_file: '/var/www/dobby-elf/logs/error.log',
-    out_file: '/var/www/dobby-elf/logs/out.log',
+    error_file: '/var/www/dobi-elf/logs/error.log',
+    out_file: '/var/www/dobi-elf/logs/out.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true
   }]

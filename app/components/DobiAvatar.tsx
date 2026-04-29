@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
 
-interface DobbyAvatarProps {
+interface DobiAvatarProps {
   size?: "sm" | "md" | "lg";
   className?: string;
 }
 
-export const DobbyAvatar = ({ size = "md", className = "" }: DobbyAvatarProps) => {
+export const DobiAvatar = ({ size = "md", className = "" }: DobiAvatarProps) => {
   const sizes = {
     sm: "w-8 h-8",
     md: "w-12 h-12",

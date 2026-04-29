@@ -60,7 +60,7 @@ export default function Page() {
   // ========== 连续打卡天数 ==========
   const [streak, setStreak] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dobby_streak');
+      const saved = localStorage.getItem('dobi_streak');
       if (saved) {
         const data = JSON.parse(saved);
         const lastDate = new Date(data.date);
@@ -79,7 +79,7 @@ export default function Page() {
     const today = new Date().toISOString().split('T')[0];
     const newStreak = streak + 1;
     setStreak(newStreak);
-    localStorage.setItem('dobby_streak', JSON.stringify({
+    localStorage.setItem('dobi_streak', JSON.stringify({
       date: today,
       count: newStreak,
     }));

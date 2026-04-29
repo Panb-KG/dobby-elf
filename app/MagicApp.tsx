@@ -52,9 +52,9 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { dobby, type Message } from './services/magicElf';
+import { dobi, type Message } from './services/magicElf';
 import { cn } from './lib/utils';
-import { DobbyAvatar } from './components/DobbyAvatar';
+import { DobiAvatar } from './components/DobiAvatar';
 import { authService } from './services/auth';
 import { dataService } from './services/data';
 import { User, Course, Achievement } from './services/types';
@@ -474,7 +474,7 @@ function MagicApp() {
       // Add a placeholder message for streaming
       setMessages(prev => [...prev, { role: 'model', text: '', timestamp: Date.now() }]);
 
-      const stream = dobby.chatStream(history);
+      const stream = dobi.chatStream(history);
       for await (const chunk of stream) {
         if (typeof chunk === 'object' && chunk.functionCalls) {
           for (const call of chunk.functionCalls) {
@@ -526,7 +526,7 @@ function MagicApp() {
             });
 
             // Trigger image generation in background
-            dobby.generateMagicImage(prompt).then(url => {
+            dobi.generateMagicImage(prompt).then(url => {
               if (url) {
                 setGeneratedImage(url);
                 setIsRightSidebarOpen(true);
@@ -829,11 +829,11 @@ function MagicApp() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 z-10">
         <div className="flex items-center gap-4">
-          <DobbyAvatar size="md" />
+          <DobiAvatar size="md" />
           <div>
             <h1 className="text-xl font-serif font-bold tracking-wide text-white">魔法小课桌</h1>
             <div className="flex items-center gap-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-magic-accent font-bold">Dobby's Magic Desk</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-magic-accent font-bold">Dobi's Magic Desk</p>
             </div>
           </div>
         </div>
@@ -973,9 +973,9 @@ function MagicApp() {
                     "flex items-center gap-2 mt-2",
                     msg.role === 'user' ? "flex-row-reverse" : "flex-row"
                   )}>
-                    {msg.role === 'model' && <DobbyAvatar size="sm" />}
+                    {msg.role === 'model' && <DobiAvatar size="sm" />}
                     <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                      {msg.role === 'user' ? 'Seeker' : 'Dobby'}
+                      {msg.role === 'user' ? 'Seeker' : 'Dobi'}
                     </span>
                   </div>
                 </motion.div>
@@ -987,7 +987,7 @@ function MagicApp() {
                 animate={{ opacity: 1 }}
                 className="flex items-center gap-3 text-magic-accent/60"
               >
-                <DobbyAvatar size="sm" />
+                <DobiAvatar size="sm" />
                 <span className="text-xs italic font-serif">正在施展魔法...</span>
               </motion.div>
             )}

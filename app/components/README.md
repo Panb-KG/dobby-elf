@@ -145,14 +145,14 @@ function CoursePage() {
 
 ---
 
-### DobbyAvatar ✅
+### DobiAvatar ✅
 多比头像组件。
 
-**路径**: `DobbyAvatar.tsx`
+**路径**: `DobiAvatar.tsx`
 
 **Props**:
 ```ts
-interface DobbyAvatarProps {
+interface DobiAvatarProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -179,7 +179,7 @@ components/
 ├── focus/
 │   ├── FocusModule.tsx
 │   └── README.md
-├── DobbyAvatar.tsx
+├── DobiAvatar.tsx
 └── README.md (本文件)
 ```
 

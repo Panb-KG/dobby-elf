@@ -12,7 +12,7 @@ import path from 'path';
 import fs from 'fs';
 
 const DB_DIR = path.join(process.cwd(), 'data');
-const DB_PATH = path.join(DB_DIR, 'dobby.db');
+const DB_PATH = path.join(DB_DIR, 'dobi.db');
 
 function getDb(): Database.Database {
   if (!fs.existsSync(DB_DIR)) {

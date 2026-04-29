@@ -15,7 +15,7 @@ export class DataService {
   // 获取认证令牌
   private getAuthToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('dobby_auth_token');
+      return localStorage.getItem('dobi_auth_token');
     }
     return null;
   }

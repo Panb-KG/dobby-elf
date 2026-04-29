@@ -20,7 +20,7 @@
 ## 项目概述
 
 ### 项目名称
-**Dobi-elf** - 魔法小课桌 (Dobby's Magic Desk)
+**Dobi-elf** - 魔法小课桌 (Dobi's Magic Desk)
 
 ### 项目定位
 - 基于 Next.js + TypeScript 的现代化 Web 应用
@@ -44,7 +44,7 @@
 | 样式 | Tailwind CSS 3.4 + CSS Modules |
 | 状态管理 | React Hooks + Context |
 | UI 组件 | Radix UI + 自研组件 |
-| 后端 API | Dobby API (dobby.chat, dobby.user, etc.) |
+| 后端 API | Dobi API (dobi.chat, dobi.user, etc.) |
 | 数据库 | SQLite (better-sqlite3) |
 | 部署 | Zeabur / Ubuntu 24.04 + PM2 |
 
@@ -336,7 +336,7 @@ calculateProgress.ts
 
 #### 目录结构
 ```
-dobby-elf/
+dobi-elf/
 ├── app/
 │   ├── components/
 │   │   ├── chat/
@@ -429,8 +429,8 @@ refactor(hooks): 提取 useChat 逻辑
 
 - **项目负责人**: 皮爷
 - **开发**: 多比 🧦
-- **项目地址**: `/home/admin/.openclaw/workspace/dobby-elf`
-- **GitHub**: https://github.com/Panb-KG/dobby-elf
+- **项目地址**: `/home/admin/.openclaw/workspace/dobi-elf`
+- **GitHub**: https://github.com/Panb-KG/dobi-elf
 - **文档**: 本文件 + `PRD.md` + `DEPLOYMENT_UBUNTU.md` + `ENGINEERING-PRINCIPLES.md`
 
 ---

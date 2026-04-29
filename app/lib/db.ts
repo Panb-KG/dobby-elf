@@ -13,7 +13,7 @@ import path from 'path';
 import fs from 'fs';
 
 const DB_DIR = path.join(process.cwd(), 'data');
-const DB_PATH = path.join(DB_DIR, 'dobby.db');
+const DB_PATH = path.join(DB_DIR, 'dobi.db');
 
 let db: Database.Database | null = null;
 
@@ -63,13 +63,13 @@ function runMigrations(database: Database.Database): void {
       username TEXT UNIQUE NOT NULL,
       display_name TEXT,
       email TEXT,
-      password_hash TEXT,
+      password TEXT NOT NULL,
       avatar_url TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
-      points INTEGER DEFAULT 0,
+      points INTEGER DEFAULT 1250,
       level TEXT DEFAULT '魔法学徒',
-      tree_growth REAL DEFAULT 0
+      tree_growth INTEGER DEFAULT 0
     )`,
     
     // 课程表
@@ -115,6 +115,17 @@ function runMigrations(database: Database.Database): void {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
     
+    // 每日任务表
+    `CREATE TABLE IF NOT EXISTS daily_tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      text TEXT NOT NULL,
+      completed INTEGER DEFAULT 0,
+      reward INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+
     // 专注会话表
     `CREATE TABLE IF NOT EXISTS focus_sessions (
       id TEXT PRIMARY KEY,

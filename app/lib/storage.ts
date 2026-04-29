@@ -9,7 +9,7 @@
  * - SSR 安全（浏览器环境检测）
  */
 
-const STORAGE_PREFIX = 'dobby_';
+const STORAGE_PREFIX = 'dobi_';
 
 /** 检测是否在浏览器环境 */
 const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';

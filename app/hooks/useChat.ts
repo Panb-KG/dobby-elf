@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { StorageKeys, setStorage } from '../lib/storage';
 import type { Message } from '../types';
-import { dobby } from '../services/magicElf';
+import { dobi } from '../services/magicElf';
 
 export interface UseChatReturn {
   messages: Message[];
@@ -70,7 +70,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // 等待 state 更新后发送请求
       await new Promise(resolve => setTimeout(resolve, 0));
       
-      const response = await dobby.chat({
+      const response = await dobi.chat({
         messages: [...currentMessages].map(m => ({ role: m.role, content: m.text })),
         signal: abortControllerRef.current.signal,
       });

@@ -61,8 +61,8 @@ sudo npm install -g pm2
 ### 1. 创建应用目录
 
 ```bash
-sudo mkdir -p /var/www/dobby-elf
-sudo chown -R $USER:$USER /var/www/dobby-elf
+sudo mkdir -p /var/www/dobi-elf
+sudo chown -R $USER:$USER /var/www/dobi-elf
 ```
 
 ### 2. 上传项目文件
@@ -70,16 +70,16 @@ sudo chown -R $USER:$USER /var/www/dobby-elf
 ```bash
 # 方式一：使用 git
 cd /var/www
-git clone <your-repo-url> dobby-elf
+git clone <your-repo-url> dobi-elf
 
 # 方式二：使用 scp
-scp -r ./dobby-elf user@server:/var/www/
+scp -r ./dobi-elf user@server:/var/www/
 ```
 
 ### 3. 安装依赖
 
 ```bash
-cd /var/www/dobby-elf
+cd /var/www/dobi-elf
 npm install
 ```
 
@@ -115,8 +115,8 @@ PORT=3000
 ### 5. 创建数据目录
 
 ```bash
-mkdir -p /var/www/dobby-elf/data
-chmod 755 /var/www/dobby-elf/data
+mkdir -p /var/www/dobi-elf/data
+chmod 755 /var/www/dobi-elf/data
 ```
 
 ### 6. 构建项目
@@ -134,10 +134,10 @@ npm run build
 cat > ecosystem.config.js << 'EOF'
 module.exports = {
   apps: [{
-    name: 'dobby-elf',
+    name: 'dobi-elf',
     script: 'npm',
     args: 'start',
-    cwd: '/var/www/dobby-elf',
+    cwd: '/var/www/dobi-elf',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -157,7 +157,7 @@ pm2 start ecosystem.config.js
 pm2 status
 
 # 查看日志
-pm2 logs dobby-elf
+pm2 logs dobi-elf
 
 # 设置开机自启
 pm2 startup
@@ -167,10 +167,10 @@ pm2 save
 ### 2. PM2 常用命令
 
 ```bash
-pm2 restart dobby-elf    # 重启
-pm2 stop dobby-elf       # 停止
-pm2 delete dobby-elf     # 删除
-pm2 logs dobby-elf       # 查看日志
+pm2 restart dobi-elf    # 重启
+pm2 stop dobi-elf       # 停止
+pm2 delete dobi-elf     # 删除
+pm2 logs dobi-elf       # 查看日志
 pm2 monit                # 监控
 ```
 
@@ -185,7 +185,7 @@ sudo apt install -y nginx
 ### 2. 配置站点
 
 ```bash
-sudo nano /etc/nginx/sites-available/dobby-elf
+sudo nano /etc/nginx/sites-available/dobi-elf
 ```
 
 **配置内容：**
@@ -219,7 +219,7 @@ server {
 ### 3. 启用站点
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/dobby-elf /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/dobi-elf /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -254,22 +254,22 @@ sudo ufw enable
 ### 1. 创建备份脚本
 
 ```bash
-cat > /var/www/dobby-elf/backup.sh << 'EOF'
+cat > /var/www/dobi-elf/backup.sh << 'EOF'
 #!/bin/bash
-BACKUP_DIR="/var/www/dobby-elf/backups"
+BACKUP_DIR="/var/www/dobi-elf/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p $BACKUP_DIR
 
 # 备份数据库
-cp /var/www/dobby-elf/data/dobby.db $BACKUP_DIR/dobby_$DATE.db
+cp /var/www/dobi-elf/data/dobi.db $BACKUP_DIR/dobi_$DATE.db
 
 # 保留最近7天的备份
-find $BACKUP_DIR -name "dobby_*.db" -mtime +7 -delete
+find $BACKUP_DIR -name "dobi_*.db" -mtime +7 -delete
 
-echo "Backup completed: dobby_$DATE.db"
+echo "Backup completed: dobi_$DATE.db"
 EOF
 
-chmod +x /var/www/dobby-elf/backup.sh
+chmod +x /var/www/dobi-elf/backup.sh
 ```
 
 ### 2. 设置定时备份
@@ -279,13 +279,13 @@ chmod +x /var/www/dobby-elf/backup.sh
 crontab -e
 
 # 每天凌晨3点备份
-0 3 * * * /var/www/dobby-elf/backup.sh >> /var/www/dobby-elf/backup.log 2>&1
+0 3 * * * /var/www/dobi-elf/backup.sh >> /var/www/dobi-elf/backup.log 2>&1
 ```
 
 ## 七、更新部署
 
 ```bash
-cd /var/www/dobby-elf
+cd /var/www/dobi-elf
 
 # 拉取最新代码
 git pull
@@ -297,7 +297,7 @@ npm install
 npm run build
 
 # 重启服务
-pm2 restart dobby-elf
+pm2 restart dobi-elf
 ```
 
 ## 八、故障排查
@@ -306,7 +306,7 @@ pm2 restart dobby-elf
 
 ```bash
 # PM2 日志
-pm2 logs dobby-elf
+pm2 logs dobi-elf
 
 # Nginx 日志
 sudo tail -f /var/log/nginx/error.log
@@ -329,8 +329,8 @@ npm install
 #### 数据库权限问题
 
 ```bash
-chmod 755 /var/www/dobby-elf/data
-chmod 644 /var/www/dobby-elf/data/dobby.db
+chmod 755 /var/www/dobi-elf/data
+chmod 644 /var/www/dobi-elf/data/dobi.db
 ```
 
 #### 端口被占用
@@ -341,7 +341,7 @@ sudo lsof -i :3000
 
 # 修改端口
 export PORT=3001
-pm2 restart dobby-elf
+pm2 restart dobi-elf
 ```
 
 ## 九、安全建议
@@ -380,7 +380,7 @@ location /_next/static/ {
 // ecosystem.config.js
 module.exports = {
   apps: [{
-    name: 'dobby-elf',
+    name: 'dobi-elf',
     script: 'npm',
     args: 'start',
     instances: 'max',  // 使用所有CPU核心

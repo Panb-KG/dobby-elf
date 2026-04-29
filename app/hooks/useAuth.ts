@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/auth';
 import { User } from '../services/types';
 
-interface UseAuthReturn {
+export interface UseAuthReturn {
   user: User | null;
   isAuthReady: boolean;
   showLoginModal: boolean;
@@ -20,14 +20,14 @@ interface UseAuthReturn {
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(true); // 默认显示登录
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [authError, setAuthError] = useState('');
 
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const currentUser = await authService.getCurrentUser();
+        const currentUser = authService.getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         console.error('Failed to get current user:', error);
@@ -37,38 +37,51 @@ export function useAuth(): UseAuthReturn {
     };
 
     initAuth();
+
+    // 监听认证状态变化
+    const unsubscribe = authService.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    try {
-      setAuthError('');
-      const user = await authService.login(username, password);
-      setUser(user);
-      setShowLoginModal(false);
-    } catch (error: any) {
-      setAuthError(error.message || 'Login failed');
-      throw error;
-    }
+    setAuthError('');
+    const user = await authService.login(username, password);
+    setUser(user);
+    setShowLoginModal(false);
+    setShowRegisterModal(false);
   }, []);
 
   const register = useCallback(async (username: string, password: string, confirmPassword: string) => {
-    try {
-      setAuthError('');
-      if (password !== confirmPassword) {
-        throw new Error('Passwords do not match');
-      }
-      const user = await authService.register(username, password);
-      setUser(user);
-      setShowRegisterModal(false);
-    } catch (error: any) {
-      setAuthError(error.message || 'Registration failed');
-      throw error;
+    setAuthError('');
+
+    if (password !== confirmPassword) {
+      throw new Error('两次输入的密码不一致');
     }
+
+    if (password.length < 4) {
+      throw new Error('密码长度至少4位');
+    }
+
+    if (username.length < 2) {
+      throw new Error('用户名长度至少2位');
+    }
+
+    const user = await authService.register(username, password);
+    setUser(user);
+    setShowLoginModal(false);
+    setShowRegisterModal(false);
   }, []);
 
   const logout = useCallback(() => {
     authService.logout();
     setUser(null);
+    setShowLoginModal(true);
+    setShowRegisterModal(false);
   }, []);
 
   return {

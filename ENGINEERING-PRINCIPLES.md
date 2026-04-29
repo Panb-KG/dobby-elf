@@ -158,7 +158,7 @@ DELETE /api/courses/:id      // 删除课程
 ### 2. 目录结构
 
 ```
-dobby-elf/
+dobi-elf/
 ├── app/
 │   ├── api/              # API 路由
 │   │   ├── chat/

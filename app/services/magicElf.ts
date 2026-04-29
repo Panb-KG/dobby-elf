@@ -1,4 +1,4 @@
-// Dobby Magic Service for DashScope
+// Dobi Magic Service for DashScope
 export interface Message {
   role: "user" | "model";
   text: string;
@@ -15,7 +15,7 @@ export interface ChatResponse {
   text: string;
 }
 
-export class DobbyService {
+export class DobiService {
   async chat(options: ChatOptions): Promise<ChatResponse> {
     const { messages, signal } = options;
     let fullText = '';
@@ -39,7 +39,7 @@ export class DobbyService {
       };
 
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('dobby_auth_token');
+        const token = localStorage.getItem('dobi_auth_token');
         if (token) {
           authHeaders['Authorization'] = `Bearer ${token}`;
         }
@@ -68,7 +68,7 @@ export class DobbyService {
       };
 
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('dobby_auth_token');
+        const token = localStorage.getItem('dobi_auth_token');
         if (token) {
           authHeaders['Authorization'] = `Bearer ${token}`;
         }
@@ -255,4 +255,4 @@ export class DobbyService {
   }
 }
 
-export const dobby = new DobbyService();
+export const dobi = new DobiService();

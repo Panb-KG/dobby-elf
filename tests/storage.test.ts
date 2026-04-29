@@ -22,19 +22,19 @@ describe('storage 工具函数', () => {
   describe('setStorage', () => {
     it('应该存储值', () => {
       setStorage('test', 'value');
-      expect(JSON.parse(localStorage.getItem('dobby_test') || '')?.value).toBe('value');
+      expect(JSON.parse(localStorage.getItem('dobi_test') || '')?.value).toBe('value');
     });
 
     it('应该存储对象', () => {
       const obj = { name: 'test', count: 42 };
       setStorage('obj', obj);
-      expect(JSON.parse(localStorage.getItem('dobby_obj') || '')?.value).toEqual(obj);
+      expect(JSON.parse(localStorage.getItem('dobi_obj') || '')?.value).toEqual(obj);
     });
 
     it('应该存储数组', () => {
       const arr = [1, 2, 3];
       setStorage('arr', arr);
-      expect(JSON.parse(localStorage.getItem('dobby_arr') || '')?.value).toEqual(arr);
+      expect(JSON.parse(localStorage.getItem('dobi_arr') || '')?.value).toEqual(arr);
     });
 
     it('应该支持自定义前缀', () => {
@@ -74,7 +74,7 @@ describe('storage 工具函数', () => {
 
   describe('getStorage', () => {
     it('应该返回存储的值', () => {
-      localStorage.setItem('dobby_test', JSON.stringify({ value: 'stored', timestamp: Date.now() }));
+      localStorage.setItem('dobi_test', JSON.stringify({ value: 'stored', timestamp: Date.now() }));
       expect(getStorage('test')).toBe('stored');
     });
 
@@ -89,7 +89,7 @@ describe('storage 工具函数', () => {
     it('应该处理过期值', () => {
       vi.useFakeTimers();
       
-      localStorage.setItem('dobby_test', JSON.stringify({
+      localStorage.setItem('dobi_test', JSON.stringify({
         value: 'expired',
         timestamp: Date.now() - 2000,
         expiry: Date.now() - 1000,
@@ -101,16 +101,16 @@ describe('storage 工具函数', () => {
     });
 
     it('应该处理解析错误', () => {
-      localStorage.setItem('dobby_test', 'invalid json');
+      localStorage.setItem('dobi_test', 'invalid json');
       expect(getStorage('test', 'default')).toBe('default');
     });
   });
 
   describe('removeStorage', () => {
     it('应该移除存储项', () => {
-      localStorage.setItem('dobby_test', 'value');
+      localStorage.setItem('dobi_test', 'value');
       removeStorage('test');
-      expect(localStorage.getItem('dobby_test')).toBeNull();
+      expect(localStorage.getItem('dobi_test')).toBeNull();
     });
 
     it('应该支持自定义前缀', () => {
@@ -122,21 +122,21 @@ describe('storage 工具函数', () => {
 
   describe('clearStorage', () => {
     it('应该清空所有带前缀的键', () => {
-      localStorage.setItem('dobby_test1', 'value1');
-      localStorage.setItem('dobby_test2', 'value2');
+      localStorage.setItem('dobi_test1', 'value1');
+      localStorage.setItem('dobi_test2', 'value2');
       localStorage.setItem('other_test', 'value3');
       
       clearStorage();
       
-      expect(localStorage.getItem('dobby_test1')).toBeNull();
-      expect(localStorage.getItem('dobby_test2')).toBeNull();
+      expect(localStorage.getItem('dobi_test1')).toBeNull();
+      expect(localStorage.getItem('dobi_test2')).toBeNull();
       expect(localStorage.getItem('other_test')).toBe('value3');
     });
   });
 
   describe('hasStorage', () => {
     it('应该检查键是否存在', () => {
-      localStorage.setItem('dobby_test', 'value');
+      localStorage.setItem('dobi_test', 'value');
       expect(hasStorage('test')).toBe(true);
       expect(hasStorage('nonexistent')).toBe(false);
     });
@@ -144,21 +144,21 @@ describe('storage 工具函数', () => {
 
   describe('getAllKeys', () => {
     it('应该返回所有带前缀的键', () => {
-      localStorage.setItem('dobby_test1', 'value1');
-      localStorage.setItem('dobby_test2', 'value2');
+      localStorage.setItem('dobi_test1', 'value1');
+      localStorage.setItem('dobi_test2', 'value2');
       localStorage.setItem('other_test', 'value3');
       
       const keys = getAllKeys();
-      expect(keys).toContain('dobby_test1');
-      expect(keys).toContain('dobby_test2');
+      expect(keys).toContain('dobi_test1');
+      expect(keys).toContain('dobi_test2');
       expect(keys).not.toContain('other_test');
     });
   });
 
   describe('exportStorage', () => {
     it('应该导出所有数据为 JSON', () => {
-      localStorage.setItem('dobby_test1', JSON.stringify({ value: 'value1', timestamp: Date.now() }));
-      localStorage.setItem('dobby_test2', JSON.stringify({ value: 'value2', timestamp: Date.now() }));
+      localStorage.setItem('dobi_test1', JSON.stringify({ value: 'value1', timestamp: Date.now() }));
+      localStorage.setItem('dobi_test2', JSON.stringify({ value: 'value2', timestamp: Date.now() }));
       
       const exported = exportStorage();
       const data = JSON.parse(exported);
@@ -188,7 +188,7 @@ describe('storage 工具函数', () => {
 
   describe('getStorageUsage', () => {
     it('应该返回存储使用情况', () => {
-      localStorage.setItem('dobby_test', 'value');
+      localStorage.setItem('dobi_test', 'value');
       
       const usage = getStorageUsage();
       

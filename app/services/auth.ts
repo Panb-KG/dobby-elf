@@ -1,12 +1,7 @@
 import { User } from './types';
 
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-}
-
-const AUTH_TOKEN_KEY = 'dobby_auth_token';
-const USER_DATA_KEY = 'dobby_user_data';
+const AUTH_TOKEN_KEY = 'dobi_auth_token';
+const USER_DATA_KEY = 'dobi_user_data';
 
 export class AuthService {
   private static instance: AuthService;
@@ -26,9 +21,9 @@ export class AuthService {
 
   private loadUserFromStorage() {
     try {
-      // Only use localStorage in browser environment
       if (typeof window !== 'undefined') {
         const userData = localStorage.getItem(USER_DATA_KEY);
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
         if (userData) {
           this.currentUser = JSON.parse(userData);
           this.notifyListeners();
@@ -41,7 +36,6 @@ export class AuthService {
 
   private saveUserToStorage(token?: string) {
     try {
-      // Only use localStorage in browser environment
       if (typeof window !== 'undefined') {
         if (this.currentUser) {
           localStorage.setItem(USER_DATA_KEY, JSON.stringify(this.currentUser));
@@ -65,7 +59,7 @@ export class AuthService {
   onAuthStateChanged(callback: (user: User | null) => void) {
     this.listeners.push(callback);
     callback(this.currentUser);
-    
+
     return () => {
       this.listeners = this.listeners.filter(l => l !== callback);
     };
@@ -75,19 +69,19 @@ export class AuthService {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: username.trim(), password }),
     });
-    
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || '登录失败');
+      const errorData = await response.json();
+      throw new Error(errorData.error || '登录失败');
     }
-    
+
     const data = await response.json();
     this.currentUser = data.user;
     this.saveUserToStorage(data.token);
     this.notifyListeners();
-    
+
     return data.user;
   }
 
@@ -95,30 +89,40 @@ export class AuthService {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: username.trim(), password }),
     });
-    
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || '注册失败');
+      const errorData = await response.json();
+      throw new Error(errorData.error || '注册失败');
     }
-    
+
     const data = await response.json();
-    this.currentUser = data.user;
-    // 注册成功后自动登录
-    const loginResponse = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    
-    if (loginResponse.ok) {
-      const loginData = await loginResponse.json();
-      this.saveUserToStorage(loginData.token);
+
+    // 注册成功后自动登录（直接调用登录接口获取 token）
+    try {
+      const loginResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+
+      if (loginResponse.ok) {
+        const loginData = await loginResponse.json();
+        this.currentUser = loginData.user;
+        this.saveUserToStorage(loginData.token);
+        this.notifyListeners();
+        return loginData.user;
+      }
+    } catch (loginError) {
+      console.warn('Auto-login after registration failed:', loginError);
+      // 即使自动登录失败，仍然返回注册用户信息
     }
-    
+
+    this.currentUser = data.user;
+    this.saveUserToStorage();
     this.notifyListeners();
-    
+
     return data.user;
   }
 
@@ -130,6 +134,13 @@ export class AuthService {
 
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    }
+    return null;
   }
 }
 

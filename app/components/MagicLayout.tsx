@@ -24,8 +24,8 @@ import {
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { cn } from '../lib/utils';
-import { dobby } from '../services/magicElf';
-import { DobbyAvatar } from './DobbyAvatar';
+import { dobi } from '../services/magicElf';
+import { DobiAvatar } from './DobiAvatar';
 import { DailyAdventure } from './DailyAdventure';
 import Header from './layout/Header';
 import Sidebar from './layout/Sidebar';

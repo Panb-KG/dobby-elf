@@ -264,7 +264,7 @@ export function usePersistence<T>(
 }
 
 // 使用示例
-const [courses, setCourses] = usePersistence<Course[]>('dobby_courses', []);
+const [courses, setCourses] = usePersistence<Course[]>('dobi_courses', []);
 ```
 
 ---

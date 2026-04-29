@@ -186,7 +186,7 @@ class OfflineSyncManager {
       const serializable = this.queue.map(item => ({
         operation: item.operation,
       }));
-      localStorage.setItem('dobby_sync_queue', JSON.stringify(serializable));
+      localStorage.setItem('dobi_sync_queue', JSON.stringify(serializable));
     } catch (error) {
       console.error('Failed to save sync queue:', error);
     }
@@ -199,7 +199,7 @@ class OfflineSyncManager {
     if (typeof window === 'undefined') return;
     
     try {
-      const saved = localStorage.getItem('dobby_sync_queue');
+      const saved = localStorage.getItem('dobi_sync_queue');
       if (saved) {
         const items = JSON.parse(saved);
         // 重新创建 Promise 包装

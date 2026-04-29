@@ -1,4 +1,4 @@
-# Dobby-elf 生产部署指南
+# Dobi-elf 生产部署指南
 
 > 🧦 多比的项目部署手册 | 版本：1.0 | 创建：2026-04-23
 
@@ -40,8 +40,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/Panb-KG/dobby-elf.git
-cd dobby-elf
+git clone https://github.com/Panb-KG/dobi-elf.git
+cd dobi-elf
 
 # 2. 配置环境变量
 cp .env.production.example .env.production
@@ -60,11 +60,11 @@ sudo ./scripts/deploy.sh production
 
 ```bash
 # 创建项目目录
-sudo mkdir -p /var/www/dobby-elf
-cd /var/www/dobby-elf
+sudo mkdir -p /var/www/dobi-elf
+cd /var/www/dobi-elf
 
 # 克隆项目
-sudo git clone https://github.com/Panb-KG/dobby-elf.git .
+sudo git clone https://github.com/Panb-KG/dobi-elf.git .
 
 # 配置环境变量
 sudo cp .env.production.example .env.production
@@ -115,11 +115,11 @@ sudo npm install -g pm2
 
 ```bash
 # 创建目录
-sudo mkdir -p /var/www/dobby-elf
-cd /var/www/dobby-elf
+sudo mkdir -p /var/www/dobi-elf
+cd /var/www/dobi-elf
 
 # 克隆项目
-sudo git clone https://github.com/Panb-KG/dobby-elf.git .
+sudo git clone https://github.com/Panb-KG/dobi-elf.git .
 
 # 安装依赖
 sudo npm ci --production
@@ -150,8 +150,8 @@ sudo pm2 startup
 sudo apt-get install -y nginx
 
 # 复制配置文件
-sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/dobby-elf
-sudo ln -s /etc/nginx/sites-available/dobby-elf /etc/nginx/sites-enabled/
+sudo cp nginx/conf.d/default.conf /etc/nginx/sites-available/dobi-elf
+sudo ln -s /etc/nginx/sites-available/dobi-elf /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -220,7 +220,7 @@ sudo systemctl restart nginx
 curl http://localhost:3000/api/users
 
 # Docker 健康检查
-docker inspect --format='{{.State.Health.Status}}' dobby-elf
+docker inspect --format='{{.State.Health.Status}}' dobi-elf
 ```
 
 ### 2. 日志管理
@@ -234,14 +234,14 @@ tail -f /var/log/nginx/access.log
 tail -f /var/log/nginx/error.log
 
 # PM2 日志
-pm2 logs dobby-elf
+pm2 logs dobi-elf
 ```
 
 ### 3. 性能监控
 
 ```bash
 # Docker 资源使用
-docker stats dobby-elf
+docker stats dobi-elf
 
 # 系统资源
 htop
@@ -278,7 +278,7 @@ docker-compose exec app env
 
 ```bash
 # 检查数据库文件
-ls -la data/dobby.db
+ls -la data/dobi.db
 
 # 重新运行迁移
 docker-compose run --rm app npm run migrate:reset
@@ -308,13 +308,13 @@ sudo certbot renew
 
 ```bash
 # 回滚到上一个版本
-cd /var/www/dobby-elf
-docker-compose pull ghcr.io/panb-kg/dobby-elf:previous
+cd /var/www/dobi-elf
+docker-compose pull ghcr.io/panb-kg/dobi-elf:previous
 docker-compose down
 docker-compose up -d
 
 # 恢复数据库
-cp /var/backups/dobby-elf/dobby_latest.db data/dobby.db
+cp /var/backups/dobi-elf/dobi_latest.db data/dobi.db
 ```
 
 ---
@@ -333,7 +333,7 @@ cp /var/backups/dobby-elf/dobby_latest.db data/dobby.db
 
 ```bash
 # 更新应用
-cd /var/www/dobby-elf
+cd /var/www/dobi-elf
 git pull
 docker-compose build
 docker-compose up -d
@@ -343,7 +343,7 @@ docker system prune -f
 docker volume prune -f
 
 # 备份数据库
-cp data/dobby.db data/dobby_$(date +%Y%m%d).db
+cp data/dobi.db data/dobi_$(date +%Y%m%d).db
 
 # 查看服务状态
 docker-compose ps

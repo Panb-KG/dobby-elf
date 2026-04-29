@@ -22,7 +22,7 @@ describe('useLocalStorage', () => {
   });
 
   it('应该从 localStorage 读取值', () => {
-    localStorage.setItem('dobby_test', JSON.stringify({ value: 'stored', timestamp: Date.now() }));
+    localStorage.setItem('dobi_test', JSON.stringify({ value: 'stored', timestamp: Date.now() }));
 
     const { result } = renderHook(() =>
       useLocalStorage({
@@ -47,7 +47,7 @@ describe('useLocalStorage', () => {
     });
 
     expect(result.current[0]).toBe('updated');
-    expect(JSON.parse(localStorage.getItem('dobby_test') || '')?.value).toBe('updated');
+    expect(JSON.parse(localStorage.getItem('dobi_test') || '')?.value).toBe('updated');
   });
 
   it('应该支持函数式更新', () => {
@@ -157,7 +157,7 @@ describe('useLocalStorage', () => {
     );
 
     expect(result.current[0]).toBe('initial');
-    expect(localStorage.getItem('dobby_test')).toBeNull();
+    expect(localStorage.getItem('dobi_test')).toBeNull();
   });
 
   it('应该调用 onChange 回调', () => {

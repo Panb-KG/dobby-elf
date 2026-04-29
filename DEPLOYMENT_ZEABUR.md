@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-Dobby Elf 是一个基于 Next.js 16 的全栈应用，使用 SQLite 数据库和阿里云 Bailian AI 服务。
+Dobi Elf 是一个基于 Next.js 16 的全栈应用，使用 SQLite 数据库和阿里云 Bailian AI 服务。
 
 ## Zeabur 部署要求
 
@@ -40,7 +40,7 @@ git push origin main
 1. 登录 [Zeabur](https://zeabur.com)
 2. 点击 "Create New Project"
 3. 选择 "Deploy from GitHub"
-4. 选择你的 `dobby-elf` 仓库
+4. 选择你的 `dobi-elf` 仓库
 5. 选择 `main` 分支
 
 ### 4. 配置环境变量
@@ -217,7 +217,7 @@ Zeabur 提供：
 
 ```bash
 # 在 Zeabur 终端中执行
-cp /app/data/dobby.db /app/data/dobby_backup_$(date +%Y%m%d).db
+cp /app/data/dobi.db /app/data/dobi_backup_$(date +%Y%m%d).db
 ```
 
 ### 2. 自动备份
@@ -305,7 +305,7 @@ Zeabur 的免费套餐包括：
 
 - Zeabur 文档: https://zeabur.com/docs
 - Next.js 文档: https://nextjs.org/docs
-- 项目 GitHub: https://github.com/Panb-KG/dobby-elf
+- 项目 GitHub: https://github.com/Panb-KG/dobi-elf
 
 ## 总结
 
@@ -318,4 +318,4 @@ Zeabur 的免费套餐包括：
 ✅ 健康检查端点
 ✅ 自动化部署流程
 
-按照本指南，您可以在几分钟内将 Dobby Elf 部署到 Zeabur 平台。
+按照本指南，您可以在几分钟内将 Dobi Elf 部署到 Zeabur 平台。

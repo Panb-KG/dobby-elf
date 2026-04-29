@@ -3,7 +3,7 @@
 import React from 'react';
 import { LogOut, Bell, PanelRightClose, PanelRightOpen, History } from 'lucide-react';
 import type { User } from '../../types';
-import { DobbyAvatar } from '../DobbyAvatar';
+import { DobiAvatar } from '../DobiAvatar';
 
 interface HeaderProps {
   user: User;
@@ -18,11 +18,11 @@ export default function Header({ user, points, level, onLogout, onRightSidebarTo
   return (
     <header className="flex items-center justify-between px-6 py-4 z-10">
       <div className="flex items-center gap-4">
-        <DobbyAvatar size="md" />
+        <DobiAvatar size="md" />
         <div>
           <h1 className="text-xl font-serif font-bold tracking-wide text-white">魔法小课桌</h1>
           <div className="flex items-center gap-2">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-magic-accent font-bold">Dobby&apos;s Magic Desk</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-magic-accent font-bold">Dobi&apos;s Magic Desk</p>
           </div>
         </div>
       </div>

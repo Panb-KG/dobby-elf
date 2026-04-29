@@ -6,7 +6,7 @@ echo "==================================="
 echo "  魔法小课桌 - 部署脚本"
 echo "==================================="
 
-PROJECT_DIR="/var/www/dobby-elf"
+PROJECT_DIR="/var/www/dobi-elf"
 
 cd $PROJECT_DIR
 
@@ -20,10 +20,10 @@ echo "[3/5] 构建项目..."
 npm run build
 
 echo "[4/5] 重启服务..."
-pm2 restart dobby-elf
+pm2 restart dobi-elf
 
 echo "[5/5] 检查服务状态..."
-pm2 status dobby-elf
+pm2 status dobi-elf
 
 echo "==================================="
 echo "  部署完成！"

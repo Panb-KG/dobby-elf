@@ -7,13 +7,13 @@
  * - 图片：Cache First，最长缓存 30 天
  */
 
-const CACHE_NAME = 'dobby-elf-v2';
+const CACHE_NAME = 'dobi-elf-v2';
 const STATIC_ASSETS = [
   '/',
   '/globals.css',
 ];
 
-const API_CACHE_NAME = 'dobby-api-v1';
+const API_CACHE_NAME = 'dobi-api-v1';
 const API_ROUTES = [
   '/api/courses',
   '/api/homework',
@@ -183,7 +183,7 @@ async function handleStaticRequest(request: Request): Promise<Response> {
  * 后台同步
  */
 self.addEventListener('sync', (event: SyncEvent) => {
-  if (event.tag === 'dobby-sync') {
+  if (event.tag === 'dobi-sync') {
     event.waitUntil(syncData());
   }
 });

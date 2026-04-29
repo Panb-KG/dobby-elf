@@ -6,7 +6,7 @@ import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { Send, Paperclip, Mic, X, ImageIcon, Video, File, Sparkles, ChevronRight, FileText, Home } from 'lucide-react';
 import type { Message } from '../../types';
-import { DobbyAvatar } from '../DobbyAvatar';
+import { DobiAvatar } from '../DobiAvatar';
 import { cn } from '@/lib/utils';
 
 interface ChatModuleProps {
@@ -134,9 +134,9 @@ export function ChatModule({
                 "flex items-center gap-2 mt-2",
                 msg.role === 'user' ? "flex-row-reverse" : "flex-row"
               )}>
-                {msg.role === 'model' && <DobbyAvatar size="sm" />}
+                {msg.role === 'model' && <DobiAvatar size="sm" />}
                 <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                  {msg.role === 'user' ? 'Seeker' : 'Dobby'}
+                  {msg.role === 'user' ? 'Seeker' : 'Dobi'}
                 </span>
               </div>
             </motion.div>
@@ -148,7 +148,7 @@ export function ChatModule({
             animate={{ opacity: 1 }}
             className="flex items-center gap-3 text-magic-accent/60"
           >
-            <DobbyAvatar size="sm" />
+            <DobiAvatar size="sm" />
             <span className="text-xs italic font-serif">正在施展魔法...</span>
           </motion.div>
         )}

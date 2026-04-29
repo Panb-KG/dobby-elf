@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Dobby-elf 生产环境部署脚本
+# Dobi-elf 生产环境部署脚本
 # 用法：./scripts/deploy.sh [environment]
 # environment: staging | production (默认 production)
 
 set -e
 
 ENVIRONMENT=${1:-production}
-PROJECT_DIR="/var/www/dobby-elf"
-BACKUP_DIR="/var/backups/dobby-elf"
+PROJECT_DIR="/var/www/dobi-elf"
+BACKUP_DIR="/var/backups/dobi-elf"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-echo "🚀 开始部署 Dobby-elf ($ENVIRONMENT)..."
+echo "🚀 开始部署 Dobi-elf ($ENVIRONMENT)..."
 
 # === 1. 环境检查 ===
 check_requirements() {
@@ -38,9 +38,9 @@ backup_database() {
     
     mkdir -p "$BACKUP_DIR"
     
-    if [ -f "$PROJECT_DIR/data/dobby.db" ]; then
-        cp "$PROJECT_DIR/data/dobby.db" "$BACKUP_DIR/dobby_$TIMESTAMP.db"
-        echo "✅ 数据库备份完成: $BACKUP_DIR/dobby_$TIMESTAMP.db"
+    if [ -f "$PROJECT_DIR/data/dobi.db" ]; then
+        cp "$PROJECT_DIR/data/dobi.db" "$BACKUP_DIR/dobi_$TIMESTAMP.db"
+        echo "✅ 数据库备份完成: $BACKUP_DIR/dobi_$TIMESTAMP.db"
     else
         echo "⚠️  数据库文件不存在，跳过备份"
     fi
@@ -94,13 +94,13 @@ rollback() {
     echo "⏪ 回滚到上一个版本..."
     
     cd "$PROJECT_DIR"
-    docker-compose pull ghcr.io/panb-kg/dobby-elf:$(git rev-parse HEAD~1)
+    docker-compose pull ghcr.io/panb-kg/dobi-elf:$(git rev-parse HEAD~1)
     docker-compose down
     docker-compose up -d
     
     # 恢复数据库
-    if [ -f "$BACKUP_DIR/dobby_latest.db" ]; then
-        cp "$BACKUP_DIR/dobby_latest.db" "$PROJECT_DIR/data/dobby.db"
+    if [ -f "$BACKUP_DIR/dobi_latest.db" ]; then
+        cp "$BACKUP_DIR/dobi_latest.db" "$PROJECT_DIR/data/dobi.db"
     fi
 }
 
@@ -112,7 +112,7 @@ cleanup() {
     docker volume prune -f
     
     # 保留最近 7 天的备份
-    find "$BACKUP_DIR" -name "dobby_*.db" -mtime +7 -delete
+    find "$BACKUP_DIR" -name "dobi_*.db" -mtime +7 -delete
     
     echo "✅ 清理完成"
 }

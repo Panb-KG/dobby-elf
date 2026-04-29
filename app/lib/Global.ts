@@ -3,7 +3,7 @@
 // 应用基本信息
 export const APP_INFO = {
   name: "魔法小课桌",
-  subtitle: "Dobby's Magic Desk",
+  subtitle: "Dobi's Magic Desk",
   description: "一个充满魔法的学习冒险！",
   version: "2.0.0",
 };
