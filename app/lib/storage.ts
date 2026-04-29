@@ -6,10 +6,15 @@
  * - 错误处理
  * - 键名管理
  * - 批量操作
+ * - SSR 安全（浏览器环境检测）
  */
 
 const STORAGE_PREFIX = 'dobby_';
 
+/** 检测是否在浏览器环境 */
+const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+
+/** 存储选项 */
 export interface StorageOptions {
   prefix?: string;
   ttl?: number; // 过期时间（毫秒）
@@ -58,6 +63,7 @@ export function setStorage<T>(
   value: T,
   options: StorageOptions = {}
 ): void {
+  if (!isBrowser) return;
   try {
     const fullKey = getFullKey(key, options.prefix);
     const data: any = {
@@ -87,6 +93,7 @@ export function getStorage<T>(
   defaultValue: T | null = null,
   options: StorageOptions = {}
 ): T | null {
+  if (!isBrowser) return defaultValue;
   try {
     const fullKey = getFullKey(key, options.prefix);
     const item = localStorage.getItem(fullKey);
@@ -117,6 +124,7 @@ export function removeStorage(
   key: string,
   options: StorageOptions = {}
 ): void {
+  if (!isBrowser) return;
   try {
     const fullKey = getFullKey(key, options.prefix);
     localStorage.removeItem(fullKey);
@@ -129,6 +137,7 @@ export function removeStorage(
  * 清空所有存储
  */
 export function clearStorage(prefix: string = STORAGE_PREFIX): void {
+  if (!isBrowser) return;
   try {
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
@@ -145,6 +154,7 @@ export function clearStorage(prefix: string = STORAGE_PREFIX): void {
  * 检查键是否存在
  */
 export function hasStorage(key: string, prefix: string = STORAGE_PREFIX): boolean {
+  if (!isBrowser) return false;
   const fullKey = getFullKey(key, prefix);
   return localStorage.getItem(fullKey) !== null;
 }
@@ -153,6 +163,7 @@ export function hasStorage(key: string, prefix: string = STORAGE_PREFIX): boolea
  * 获取所有键
  */
 export function getAllKeys(prefix: string = STORAGE_PREFIX): string[] {
+  if (!isBrowser) return [];
   return Object.keys(localStorage).filter(key => key.startsWith(prefix));
 }
 
@@ -160,6 +171,7 @@ export function getAllKeys(prefix: string = STORAGE_PREFIX): string[] {
  * 清理过期数据
  */
 function cleanupExpired(): void {
+  if (!isBrowser) return;
   try {
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
@@ -184,6 +196,7 @@ function cleanupExpired(): void {
  * 导出所有数据为 JSON
  */
 export function exportStorage(prefix: string = STORAGE_PREFIX): string {
+  if (!isBrowser) return '{}';
   const data: Record<string, any> = {};
   const keys = getAllKeys(prefix);
   
@@ -202,6 +215,7 @@ export function exportStorage(prefix: string = STORAGE_PREFIX): string {
  * 从 JSON 导入数据
  */
 export function importStorage(jsonData: string, prefix: string = STORAGE_PREFIX): void {
+  if (!isBrowser) return;
   try {
     const data = JSON.parse(jsonData);
     
@@ -219,6 +233,7 @@ export function importStorage(jsonData: string, prefix: string = STORAGE_PREFIX)
  * 获取存储使用情况
  */
 export function getStorageUsage(): { used: number; total: number; percentage: number } {
+  if (!isBrowser) return { used: 0, total: 0, percentage: 0 };
   let total = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);

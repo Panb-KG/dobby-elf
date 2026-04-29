@@ -1,13 +1,39 @@
+# Dependencies
 node_modules/
+
+# Build output
+.next/
 build/
 dist/
+
+# Testing
 coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
-.next/
 playwright-report/
 test-results/
-!tests/
+
+# OS
+.DS_Store
+*.log
+
+# Environment
+.env.local
+.env.*.local
+!.env.example
+
+# Database
 data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Standalone builds
+.next/standalone/
+
+# Temporary files
+*.tmp
+*.bak

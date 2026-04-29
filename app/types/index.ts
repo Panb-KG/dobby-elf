@@ -52,7 +52,7 @@ export interface HomeworkTask {
   id: string;
   subject: string;
   title: string;
-  status: 'pending' | 'completed' | 'overdue';
+  status: HomeworkStatus | 'overdue';
   dueDate: string;
   image: string | null;
 }
@@ -128,7 +128,7 @@ export interface Spell {
   id: string;
   name: string;
   prompt: string;
-  icon: string; // 图标名称
+  icon?: string; // 图标名称（可选）
 }
 
 // ===== API 响应类型 =====
@@ -147,25 +147,4 @@ export interface BaseComponentProps {
 }
 
 // ===== 导出所有类型 =====
-export type {
-  User,
-  DailyTask,
-  Course,
-  ScheduleView,
-  Achievement,
-  HomeworkTask,
-  HomeworkStatus,
-  HomeworkType,
-  Question,
-  Exercise,
-  Message,
-  ChatStreamOptions,
-  ChatStreamResponse,
-  FocusSession,
-  WhiteNoiseType,
-  KnowledgePoint,
-  Reminder,
-  Spell,
-  ApiResponse,
-  BaseComponentProps,
-};
+// 所有类型已在上方直接 export，无需重复导出

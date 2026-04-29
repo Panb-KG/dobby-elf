@@ -9,6 +9,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "token-plan.cn-beijing.maas.aliyuncs.com",
+      },
+      {
+        protocol: "https",
         hostname: "dashscope.aliyuncs.com",
       },
       {

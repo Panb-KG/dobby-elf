@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { getStorage, setStorage, removeStorage, StorageOptions } from '../lib/storage';
 
 export interface UseLocalStorageOptions<T> extends StorageOptions {
+  /** 存储键名（不含前缀） */
+  key: string;
   /** 默认值 */
   defaultValue: T;
   /** 是否启用（默认 true），SSR 时可禁用 */

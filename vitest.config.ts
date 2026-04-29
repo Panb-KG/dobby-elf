@@ -35,7 +35,7 @@ export default defineConfig({
         lines: 80,
       },
     },
-    include: ['app/**/*.test.{ts,tsx}', 'app/**/*.spec.{ts,tsx}'],
+    include: ['tests/**/*.test.{ts,tsx}', 'app/**/*.test.{ts,tsx}', 'app/**/*.spec.{ts,tsx}'],
   },
   resolve: {
     alias: {

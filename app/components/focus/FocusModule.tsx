@@ -3,7 +3,7 @@
 import React from 'react';
 import { Hourglass, X, Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import type { WhiteNoiseType } from '../../types';
 
 interface FocusModuleProps {

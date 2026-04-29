@@ -120,7 +120,7 @@ describe('useLocalStorage', () => {
   });
 
   it('应该支持 TTL 过期', () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     
     const { result } = renderHook(() =>
       useLocalStorage({
@@ -138,13 +138,13 @@ describe('useLocalStorage', () => {
 
     // 快进时间
     act(() => {
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
     });
 
     // 值应该过期并恢复为默认值
     expect(result.current[0]).toBe('initial');
     
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('应该禁用 SSR 模式', () => {
@@ -161,7 +161,7 @@ describe('useLocalStorage', () => {
   });
 
   it('应该调用 onChange 回调', () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     
     const { result } = renderHook(() =>
       useLocalStorage({

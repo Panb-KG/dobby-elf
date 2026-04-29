@@ -43,24 +43,24 @@ describe('storage 工具函数', () => {
     });
 
     it('应该支持 TTL', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       
       setStorage('test', 'value', { ttl: 1000 });
       
       expect(getStorage('test')).toBe('value');
       
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       
       expect(getStorage('test')).toBeNull();
       
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('应该处理存储满错误', () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       
       // 模拟 QuotaExceededError
-      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new DOMException('Quota exceeded', 'QuotaExceededError');
       });
       
@@ -87,7 +87,7 @@ describe('storage 工具函数', () => {
     });
 
     it('应该处理过期值', () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       
       localStorage.setItem('dobby_test', JSON.stringify({
         value: 'expired',
@@ -97,7 +97,7 @@ describe('storage 工具函数', () => {
       
       expect(getStorage('test')).toBeNull();
       
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('应该处理解析错误', () => {

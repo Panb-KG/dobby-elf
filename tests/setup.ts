@@ -4,7 +4,7 @@
  * 设置全局测试工具和环境变量
  */
 
-import '@testing-library/jest-dom';
+import { vi, afterEach } from 'vitest';
 
 // 模拟 localStorage
 const localStorageMock = {
@@ -51,5 +51,5 @@ Object.defineProperty(window, 'matchMedia', {
 // 清理所有模拟
 afterEach(() => {
   localStorage.clear();
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });

@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
 
-export async function POST(req: Request) {
-  // 在请求处理函数中获取环境变量，确保每次请求都能获取最新的配置
-  const dashscopeApiKey = process.env.DASHSCOPE_API_KEY || '';
-  const apiKey = dashscopeApiKey;
-  const baseUrl = process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+/**
+ * Chat API - 多比智能聊天
+ * 
+ * 功能：
+ * - 接收前端消息并转发给 DashScope API
+ * - 支持文件附件（图片、文档）
+ * - 返回 NDJSON 格式响应
+ */
 
-  console.log('=== API Environment Debug ===');
-  console.log('process.cwd():', process.cwd());
-  console.log('DASHSCOPE_API_KEY exists:', !!process.env.DASHSCOPE_API_KEY);
-  console.log('DASHSCOPE_API_KEY length:', process.env.DASHSCOPE_API_KEY?.length || 0);
-  console.log('DASHSCOPE_BASE_URL:', process.env.DASHSCOPE_BASE_URL);
-  console.log('All env vars starting with DASHSCOPE:', Object.keys(process.env).filter(k => k.startsWith('DASHSCOPE')));
-  console.log('===========================');
+export async function POST(req: Request) {
+  const apiKey = process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '';
+  const baseUrl = process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL || 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
 
   if (!apiKey || !apiKey.trim()) {
     return NextResponse.json(
-      { error: 'DASHSCOPE_API_KEY is not configured' },
+      { error: 'API 密钥未配置，请联系管理员' },
       { status: 500 }
     );
   }
@@ -24,16 +23,13 @@ export async function POST(req: Request) {
   try {
     const { messages, systemInstruction, tools } = await req.json();
 
-    console.log('Chat request received:', {
-      messages: messages,
-      systemInstruction: systemInstruction
-    });
-
+    // 处理消息格式（支持文件附件）
     const processedMessages = messages
       .map((msg: any) => {
         const role = msg.role === 'model' ? 'assistant' : msg.role;
         const text = msg.content || msg.text;
         
+        // 处理带附件的消息
         if (msg.files && msg.files.length > 0) {
           const content: any[] = [];
           
@@ -43,12 +39,6 @@ export async function POST(req: Request) {
           
           for (const file of msg.files) {
             if (file.mimeType && file.mimeType.startsWith('image/') && file.data) {
-              console.log('Image file:', {
-                mimeType: file.mimeType,
-                dataLength: file.data.length,
-                dataPrefix: file.data.substring(0, 50) + '...'
-              });
-              
               content.push({
                 type: 'image_url',
                 image_url: {
@@ -73,43 +63,27 @@ export async function POST(req: Request) {
 
     if (processedMessages.length === 0) {
       return NextResponse.json(
-        { error: 'No valid messages to send' },
+        { error: '没有有效消息' },
         { status: 400 }
       );
     }
 
-    const hasImages = processedMessages.some((msg: any) => {
-      if (Array.isArray(msg.content)) {
-        return msg.content.some((c: any) => c.type === 'image_url');
-      }
-      return false;
-    });
-    const model = hasImages ? 'qwen3-vl-plus' : 'qwen-plus';
-    
-    console.log('Using model:', model, 'Has images:', hasImages);
-
+    const model = 'qwen3.6-plus';
     const apiEndpoint = baseUrl + '/chat/completions';
-    
-    console.log('Using API endpoint:', apiEndpoint);
 
-    const requestBody = {
-      model: model,
+    const requestBody: any = {
+      model,
       messages: [
         { role: 'system', content: systemInstruction },
         ...processedMessages
       ],
       stream: false
     };
-    
-    console.log('Request to API:', {
-      url: apiEndpoint,
-      body: JSON.stringify(requestBody, (key, value) => {
-        if (key === 'image' && typeof value === 'string' && value.length > 100) {
-          return value.substring(0, 50) + '...[base64 data]';
-        }
-        return value;
-      }, 2)
-    });
+
+    // 添加工具定义（如果提供）
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools;
+    }
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
@@ -120,86 +94,58 @@ export async function POST(req: Request) {
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Response from API:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
-    });
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API error text:', errorText);
+      
       try {
         const error = JSON.parse(errorText);
-        console.error('API error details:', error);
-        
-        // 处理 API Key 错误
         if (error.error && error.error.code === 'invalid_api_key') {
           return NextResponse.json(
-            {
-              error: 'Invalid API key provided',
-              message: 'Please check your DASHSCOPE_API_KEY in .env file',
-              details: error.error.message
-            },
+            { error: 'API 密钥无效，请联系管理员' },
             { status: 401 }
           );
         }
-        
-        throw new Error(`API error: ${error.error?.message || error.message || 'Unknown error'}`);
-      } catch (e) {
-        throw new Error(`API error: ${errorText || 'Unknown error'}`);
+        throw new Error(error.error?.message || error.message || 'API 请求失败');
+      } catch (e: any) {
+        throw new Error(e.message || `API 错误: ${response.status}`);
       }
     }
 
     const data = await response.json();
-    console.log('Response data:', data);
     
-    if (data.choices && data.choices[0] && data.choices[0].message) {
+    // 统一响应格式为 NDJSON
+    let ndjsonResponse = '';
+    
+    if (data.choices && data.choices[0]?.message) {
       const message = data.choices[0].message;
-      const ndjsonResponse = JSON.stringify({
+      ndjsonResponse = JSON.stringify({
         output: {
           text: message.content || '',
           finish_reason: data.choices[0].finish_reason || 'stop'
         }
       }) + '\n';
-      
-      return new Response(ndjsonResponse, {
-        headers: { 'Content-Type': 'application/x-ndjson' },
-      });
-    } else if (data.output && data.output.text) {
-      const ndjsonResponse = JSON.stringify({
+    } else if (data.output?.text) {
+      ndjsonResponse = JSON.stringify({
         output: {
           text: data.output.text,
           finish_reason: data.output.finish_reason || 'stop'
         }
       }) + '\n';
-      
-      return new Response(ndjsonResponse, {
-        headers: { 'Content-Type': 'application/x-ndjson' },
-      });
-    } else if (data.output && data.output.tool_calls) {
-      const ndjsonResponse = JSON.stringify({
+    } else if (data.output?.tool_calls) {
+      ndjsonResponse = JSON.stringify({
         toolCalls: data.output.tool_calls
       }) + '\n';
-      
-      return new Response(ndjsonResponse, {
-        headers: { 'Content-Type': 'application/x-ndjson' },
-      });
     } else {
-      const ndjsonResponse = JSON.stringify(data) + '\n';
-      
-      return new Response(ndjsonResponse, {
-        headers: { 'Content-Type': 'application/x-ndjson' },
-      });
+      ndjsonResponse = JSON.stringify(data) + '\n';
     }
+    
+    return new Response(ndjsonResponse, {
+      headers: { 'Content-Type': 'application/x-ndjson' },
+    });
   } catch (error: any) {
-    console.error('Chat API error:', error);
-    const errorMessage = error.message || 'Unknown error';
+    console.error('Chat API error:', error.message);
     return NextResponse.json(
-      {
-        error: errorMessage,
-        details: error.stack || ''
-      },
+      { error: error.message || '魔法出错了，请稍后再试' },
       { status: 500 }
     );
   }

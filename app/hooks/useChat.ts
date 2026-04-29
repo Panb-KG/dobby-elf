@@ -55,20 +55,23 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       timestamp: new Date().toISOString() 
     };
     
-    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
       abortControllerRef.current = new AbortController();
       
-      // 使用函数式更新，避免依赖 messages 状态
+      // 使用函数式更新获取最新的 messages
+      let currentMessages: Message[] = [];
       setMessages(prev => {
-        const updatedMessages = [...prev, userMessage];
-        return updatedMessages;
+        currentMessages = [...prev, userMessage];
+        return currentMessages;
       });
       
+      // 等待 state 更新后发送请求
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
       const response = await dobby.chat({
-        messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.text })),
+        messages: [...currentMessages].map(m => ({ role: m.role, content: m.text })),
         signal: abortControllerRef.current.signal,
       });
 
@@ -92,7 +95,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, []); // 移除 messages 依赖，使用函数式更新
+  }, []);
 
   const handleInputChange = useCallback((value: string) => {
     setInput(value);
