@@ -48,7 +48,9 @@ import {
   VolumeX,
   Library,
   CloudRain,
-  Flame
+  Flame,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -105,6 +107,7 @@ const SPELLS = [
   { id: 'schedule', name: '课程表', icon: Calendar, prompt: '多比，帮我看看我的课程安排，或者帮我制定一个学习计划吧！' },
   { id: 'homework', name: '作业', icon: Pencil, prompt: '多比，这是我的作业照片，请帮我批改一下：' },
   { id: 'words', name: '学单词', icon: Languages, prompt: '多比，我想学习一些新单词，或者帮我翻译一下：' },
+  { id: 'poetry', name: '诗词', icon: BookOpen, prompt: '多比，我想练习古诗词，帮我出一道诗词题吧！' },
   { id: 'math', name: '互动练习', icon: BrainCircuit, prompt: '多比，我想练习一下最近学的知识点，帮我出几道题吧！' },
   { id: 'focus', name: '魔法专注', icon: Hourglass, prompt: '多比，我想开始一段专注学习，帮我开启魔法沙漏吧！' },
   { id: 'achievements', name: '成就墙', icon: Trophy, prompt: '多比，快来看看我的成就墙，帮我记录一下新的荣誉，或者看看我攒了多少积分啦！' },
@@ -133,11 +136,13 @@ function MagicApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'image' | 'achievements' | 'focus' | 'content'>('schedule');
+  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'homework' | 'poetry' | 'image' | 'achievements' | 'focus' | 'content'>('schedule');
   const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
   const [newCourse, setNewCourse] = useState({ day: '周一', subject: '', time: '', type: '校内' as '校内' | '课外' });
+  const [isParsingSchedule, setIsParsingSchedule] = useState(false);
+  const [parseScheduleError, setParseScheduleError] = useState<string | null>(null);
   const [courses, setCourses] = useState<Course[]>([
     { day: '周一', subject: '魔法数学', time: '09:00 - 10:30', type: '校内', color: 'bg-blue-500/20 border-blue-500/30' },
     { day: '周一', subject: '飞行课', time: '11:00 - 12:00', type: '校内', color: 'bg-sky-500/20 border-sky-500/30' },
@@ -170,6 +175,9 @@ function MagicApp() {
   const [isAddingHomework, setIsAddingHomework] = useState(false);
   const [newHomework, setNewHomework] = useState({ subject: '', title: '', dueDate: '' });
   const [homeworkImage, setHomeworkImage] = useState<string | null>(null);
+  const [isParsingHomework, setIsParsingHomework] = useState(false);
+  const [parseHomeworkError, setParseHomeworkError] = useState<string | null>(null);
+  const [homeworkInputText, setHomeworkInputText] = useState('');
   const [achievements, setAchievements] = useState<Achievement[]>([
     { id: '1', title: '三好学生', date: '2025-12', type: 'school', iconName: 'Award', color: 'text-amber-400' },
     { id: '2', title: '奥数竞赛一等奖', date: '2026-01', type: 'competition', iconName: 'Trophy', color: 'text-yellow-500' },
@@ -191,6 +199,20 @@ function MagicApp() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
   const [showExerciseResult, setShowExerciseResult] = useState(false);
+
+  // 诗词练习状态
+  const [poetryExercise, setPoetryExercise] = useState<{
+    title: string;
+    author: string;
+    dynasty: string;
+    fullText: string;
+    questions: Array<{ id: string; type: 'fill' | 'match' | 'comprehension'; question: string; answer: string; options?: string[]; hint: string }>;
+    currentIndex: number;
+  } | null>(null);
+  const [poetryAnswer, setPoetryAnswer] = useState('');
+  const [poetryResult, setPoetryResult] = useState<'correct' | 'incorrect' | null>(null);
+  const [poetryScore, setPoetryScore] = useState({ correct: 0, total: 0 });
+  const [isGeneratingPoetry, setIsGeneratingPoetry] = useState(false);
 
   // Focus Tool States
   const [focusTime, setFocusTime] = useState(25 * 60);
@@ -633,11 +655,184 @@ function MagicApp() {
     setHomeworkTasks(prev => prev.filter(hw => hw.id !== id));
   };
 
+  const handleParseHomework = async () => {
+    if (!homeworkInputText && !homeworkImage) return;
+
+    setIsParsingHomework(true);
+    setParseHomeworkError(null);
+
+    try {
+      const body: any = {};
+      
+      if (homeworkImage) {
+        body.image = homeworkImage;
+      }
+      
+      if (homeworkInputText) {
+        body.text = homeworkInputText;
+      }
+
+      const res = await fetch('/api/homework/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '识别失败');
+      }
+
+      if (!data.tasks || data.tasks.length === 0) {
+        setParseHomeworkError('未识别到作业信息，请确认内容清晰');
+        setIsParsingHomework(false);
+        return;
+      }
+
+      // 批量添加识别到的作业
+      const today = new Date().toISOString().split('T')[0];
+      const newTasks = data.tasks.map((task: any, idx: number) => ({
+        id: `hw${Date.now()}_${idx}`,
+        subject: task.subject,
+        title: task.title,
+        description: task.description || '',
+        status: 'pending',
+        dueDate: task.dueDate || today,
+        image: homeworkImage,
+      }));
+
+      setHomeworkTasks(prev => [...prev, ...newTasks]);
+      
+      // 清空输入
+      setHomeworkInputText('');
+      setHomeworkImage(null);
+    } catch (error: any) {
+      console.error('Parse homework error:', error);
+      setParseHomeworkError(error.message || '识别失败');
+    } finally {
+      setIsParsingHomework(false);
+    }
+  };
+
+  const handleGenerateExercise = async (subject: string, topic: string) => {
+    try {
+      const res = await fetch('/api/exercises/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          grade: '小学',
+          topic,
+          count: 5,
+          difficulty: 'medium',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '生成失败');
+      }
+
+      if (!data.questions || data.questions.length === 0) {
+        setMessages(prev => [...prev, { role: 'model', text: '哎呀，多比没能生成练习题，请稍后再试。', timestamp: Date.now() }]);
+        return;
+      }
+
+      // 更新练习状态
+      setDynamicExercises({
+        subject,
+        grade: '小学',
+        questions: data.questions,
+      });
+      setCurrentExerciseIndex(0);
+      setExerciseAnswers({});
+      setShowExerciseResult(false);
+      setSidebarContentType('exercise');
+      setIsRightSidebarOpen(true);
+
+    } catch (error: any) {
+      console.error('Generate exercise error:', error);
+      setMessages(prev => [...prev, { role: 'model', text: `生成练习题失败：${error.message}`, timestamp: Date.now() }]);
+    }
+  };
+
   const handleAddCourse = async () => {
     if (!newCourse.subject || !newCourse.time) return;
     await performAddCourse(newCourse);
     setIsAddingCourse(false);
     setNewCourse({ day: '周一', subject: '', time: '', type: '校内' });
+  };
+
+  const handleScheduleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingSchedule(true);
+    setParseScheduleError(null);
+
+    try {
+      const base64 = await fileToBase64(file);
+
+      const res = await fetch('/api/courses/parse-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '识别失败');
+      }
+
+      if (!data.courses || data.courses.length === 0) {
+        setParseScheduleError('未识别到课程信息，请确认图片清晰且包含课表');
+        setIsParsingSchedule(false);
+        return;
+      }
+
+      // 批量保存识别到的课程
+      const colors = [
+        'bg-blue-500/20 border-blue-500/30',
+        'bg-purple-500/20 border-purple-500/30',
+        'bg-amber-500/20 border-amber-500/30',
+        'bg-emerald-500/20 border-emerald-500/30',
+        'bg-rose-500/20 border-rose-500/30',
+        'bg-sky-500/20 border-sky-500/30',
+        'bg-indigo-500/20 border-indigo-500/30',
+      ];
+
+      for (const course of data.courses) {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const finalCourse = {
+          day: course.day,
+          subject: course.subject,
+          time: course.time,
+          type: course.type || '校内',
+          color: randomColor,
+        };
+
+        if (user) {
+          try {
+            await dataService.saveCourse(user.id, finalCourse);
+          } catch (err) {
+            console.error('Failed to save course:', err);
+          }
+        } else {
+          setCourses(prev => [...prev, finalCourse]);
+        }
+      }
+
+      // 完成"查看课程表"任务
+      completeTask('task3');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setParseScheduleError(error.message || '上传失败');
+    } finally {
+      setIsParsingSchedule(false);
+    }
   };
 
   const performAddCourse = async (courseData: any) => {
@@ -721,7 +916,14 @@ function MagicApp() {
     if (spell.id === 'schedule') {
       setIsRightSidebarOpen(true);
       setSidebarContentType('schedule');
-    } else if (spell.id === 'homework' || spell.id === 'math') {
+    } else if (spell.id === 'homework') {
+      setIsRightSidebarOpen(true);
+      setSidebarContentType('homework');
+    } else if (spell.id === 'poetry') {
+      setIsRightSidebarOpen(true);
+      setSidebarContentType('poetry');
+      handleGeneratePoetry();
+    } else if (spell.id === 'math') {
       setIsRightSidebarOpen(true);
       setSidebarContentType('exercise');
     } else if (spell.id === 'achievements') {
@@ -730,6 +932,66 @@ function MagicApp() {
     } else if (spell.id === 'focus') {
       setIsRightSidebarOpen(true);
       setSidebarContentType('focus');
+    }
+  };
+
+  const handleGeneratePoetry = async () => {
+    setIsGeneratingPoetry(true);
+    setPoetryResult(null);
+    setPoetryAnswer('');
+    setPoetryScore({ correct: 0, total: 0 });
+
+    try {
+      const res = await fetch('/api/exercises/poetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          count: 5,
+          grade: '小学',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '生成失败');
+      }
+
+      if (!data.poetry) {
+        setMessages(prev => [...prev, { role: 'model', text: '多比的诗词魔法暂时失灵了，请稍后再试。', timestamp: Date.now() }]);
+        return;
+      }
+
+      setPoetryExercise({
+        title: data.poetry.title,
+        author: data.poetry.author,
+        dynasty: data.poetry.dynasty,
+        fullText: data.poetry.fullText,
+        questions: data.poetry.questions,
+        currentIndex: 0,
+      });
+    } catch (error: any) {
+      console.error('Generate poetry error:', error);
+      setMessages(prev => [...prev, { role: 'model', text: `生成诗词练习失败：${error.message}`, timestamp: Date.now() }]);
+    } finally {
+      setIsGeneratingPoetry(false);
+    }
+  };
+
+  const handlePoetryAnswer = () => {
+    if (!poetryExercise || !poetryAnswer.trim()) return;
+
+    const currentQ = poetryExercise.questions[poetryExercise.currentIndex];
+    const isCorrect = poetryAnswer.trim().toLowerCase() === currentQ.answer.toLowerCase();
+
+    setPoetryResult(isCorrect ? 'correct' : 'incorrect');
+    setPoetryScore(prev => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }));
+
+    if (isCorrect) {
+      setMessages(prev => [...prev, { role: 'model', text: '✨ 回答正确！太棒了！', timestamp: Date.now() }]);
     }
   };
 
@@ -879,7 +1141,7 @@ function MagicApp() {
 
       {/* Main Content */}
       <main 
-        className="flex-1 flex flex-col md:flex-row gap-6 p-4 md:p-6 overflow-hidden z-10 transition-all duration-300 ease-in-out"
+        className="flex-1 flex flex-col md:flex-row gap-6 p-4 pb-20 md:pb-6 md:p-6 overflow-hidden z-10 transition-all duration-300 ease-in-out"
         style={{ marginRight: isRightSidebarOpen ? '24rem' : '0' }}
       >
         {/* Left Sidebar - Spells (Desktop) */}
@@ -1262,34 +1524,125 @@ function MagicApp() {
                             ))}
                           </div>
                         )}
+
+                        {/* 图片识别上传 */}
+                        <div className="space-y-2">
+                          <label className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors cursor-pointer">
+                            <Camera className="w-4 h-4 text-white/60" />
+                            <span className="text-xs text-white/60">上传课表图片识别</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleScheduleImageUpload}
+                              className="hidden"
+                              disabled={isParsingSchedule}
+                            />
+                          </label>
+                          {isParsingSchedule && (
+                            <div className="flex items-center justify-center gap-2 text-white/60 text-xs">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>正在识别课表...</span>
+                            </div>
+                          )}
+                          {parseScheduleError && (
+                            <div className="text-red-400 text-xs text-center">{parseScheduleError}</div>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 gap-3 mt-4">
-                        {courses
-                        .filter(item => scheduleView === 'week' || item.day === selectedDay)
-                        .map((item, idx) => (
-                          <motion.div 
-                            layout
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            key={`${item.day}-${item.subject}-${idx}`} 
-                            className={cn("p-4 rounded-2xl border flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-default", item.color)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">{item.day}</span>
-                                <h4 className="font-medium text-white">{item.subject}</h4>
-                              </div>
-                              <span className={cn(
-                                "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase",
-                                item.type === '校内' ? "bg-white/10 text-white/60" : "bg-magic-accent/20 text-magic-accent"
-                              )}>
-                                {item.type}
-                              </span>
+                      <div className="mt-4">
+                        {scheduleView === 'week' ? (
+                          /* 周视图 - 课表网格 */
+                          <div className="space-y-3">
+                            {/* 星期标题行 */}
+                            <div className="grid grid-cols-8 gap-1">
+                              <div className="text-[9px] font-bold text-white/30 uppercase tracking-wider text-center py-2">时间</div>
+                              {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(day => (
+                                <div key={day} className="text-[9px] font-bold text-white/40 uppercase tracking-wider text-center py-2">
+                                  {day.replace('周', '')}
+                                </div>
+                              ))}
                             </div>
-                            <span className="text-xs text-white/40 font-mono">{item.time}</span>
-                          </motion.div>
-                        ))}
+                            {/* 时间段行 */}
+                            {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => {
+                              const coursesAtTime = courses.filter(c => {
+                                const startTime = c.time.split(' - ')[0] || c.time.split('-')[0];
+                                return startTime === time;
+                              });
+                              
+                              return (
+                                <div key={time} className="grid grid-cols-8 gap-1 min-h-[48px]">
+                                  <div className="text-[9px] text-white/30 font-mono flex items-center justify-center">
+                                    {time}
+                                  </div>
+                                  {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(day => {
+                                    const course = coursesAtTime.find(c => c.day === day);
+                                    return (
+                                      <div key={`${day}-${time}`} className="relative">
+                                        {course && (
+                                          <motion.div
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className={cn(
+                                              "absolute inset-0 rounded-lg p-1.5 flex flex-col items-center justify-center cursor-default border transition-all hover:scale-105",
+                                              course.color || 'bg-magic-accent/20 border-magic-accent/30'
+                                            )}
+                                          >
+                                            <span className="text-[9px] font-bold text-white truncate w-full text-center leading-tight">
+                                              {course.subject}
+                                            </span>
+                                            {course.type === '课外' && (
+                                              <span className="text-[7px] text-magic-accent font-bold">课外</span>
+                                            )}
+                                          </motion.div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* 日视图 - 卡片列表 */
+                          <div className="space-y-2">
+                            {courses
+                              .filter(c => c.day === selectedDay)
+                              .map((course, idx) => (
+                                <motion.div
+                                  key={`${course.day}-${course.subject}-${idx}`}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  className={cn(
+                                    "p-4 rounded-2xl border flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-default",
+                                    course.color || 'bg-white/5 border-white/10'
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                      <Calendar className="w-5 h-5 text-magic-accent" />
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-white">{course.subject}</h4>
+                                      <p className="text-xs text-white/40">{course.time}</p>
+                                    </div>
+                                  </div>
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                    course.type === '校内' ? "bg-white/10 text-white/60" : "bg-magic-accent/20 text-magic-accent"
+                                  )}>
+                                    {course.type}
+                                  </span>
+                                </motion.div>
+                              ))}
+                            {courses.filter(c => c.day === selectedDay).length === 0 && (
+                              <div className="text-center py-8">
+                                <Calendar className="w-8 h-8 text-white/20 mx-auto mb-2" />
+                                <p className="text-xs text-white/30">今天没有课程</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1424,6 +1777,322 @@ function MagicApp() {
                               你可以对多比说“我想练习一下分数乘法”，多比会立刻为你生成专属题目！
                             </p>
                           </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {sidebarContentType === 'homework' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                      {/* 作业识别区 */}
+                      <div className="p-4 rounded-2xl bg-magic-accent/10 border border-magic-accent/20">
+                        <h3 className="text-sm font-serif font-bold text-white mb-3">📝 作业识别</h3>
+                        
+                        {/* 文字输入 */}
+                        <textarea
+                          value={homeworkInputText}
+                          onChange={(e) => setHomeworkInputText(e.target.value)}
+                          placeholder="输入作业内容，如：今天数学作业：完成练习册P45第1-3题，背诵课文《春晓》"
+                          className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-magic-accent/50 resize-none h-24"
+                        />
+                        
+                        {/* 图片上传 */}
+                        <div className="mt-2 space-y-2">
+                          <label className="w-full py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 hover:bg-white/10 transition-colors cursor-pointer">
+                            <Camera className="w-4 h-4 text-white/60" />
+                            <span className="text-xs text-white/60">上传作业图片</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const base64 = await fileToBase64(file);
+                                  setHomeworkImage(base64);
+                                }
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+                          {homeworkImage && (
+                            <div className="relative">
+                              <img src={homeworkImage} alt="作业图片" className="w-full h-32 object-cover rounded-xl border border-white/10" />
+                              <button
+                                onClick={() => setHomeworkImage(null)}
+                                className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white/60 hover:text-white"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 识别按钮 */}
+                        <button
+                          onClick={handleParseHomework}
+                          disabled={isParsingHomework || (!homeworkInputText && !homeworkImage)}
+                          className="w-full mt-3 py-2.5 bg-magic-accent text-white rounded-xl text-xs font-bold shadow-lg shadow-magic-accent/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+                        >
+                          {isParsingHomework ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              识别中...
+                            </span>
+                          ) : '✨ 识别作业'}
+                        </button>
+                        
+                        {parseHomeworkError && (
+                          <div className="mt-2 text-red-400 text-xs text-center">{parseHomeworkError}</div>
+                        )}
+                      </div>
+
+                      {/* 作业列表 */}
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-2 flex items-center gap-2">
+                          <Pencil className="w-3 h-3" />
+                          我的作业 ({homeworkTasks.length})
+                        </h3>
+                        
+                        {homeworkTasks.length === 0 ? (
+                          <div className="p-8 rounded-3xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center text-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-magic-accent/10 flex items-center justify-center">
+                              <Pencil className="w-6 h-6 text-magic-accent" />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="text-sm font-medium text-white">暂无作业</h4>
+                              <p className="text-[10px] text-white/40 leading-relaxed">
+                                上传作业图片或输入作业内容，多比会自动帮你分解任务！
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          homeworkTasks.map((hw, idx) => (
+                            <motion.div
+                              key={hw.id}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className={cn(
+                                "p-4 rounded-2xl border flex items-center justify-between group hover:scale-[1.02] transition-transform cursor-default",
+                                hw.status === 'completed' 
+                                  ? "bg-emerald-500/10 border-emerald-500/30" 
+                                  : "bg-white/5 border-white/10"
+                              )}
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <button
+                                  onClick={() => toggleHomeworkStatus(hw.id)}
+                                  className={cn(
+                                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+                                    hw.status === 'completed' 
+                                      ? "bg-emerald-500 border-emerald-500" 
+                                      : "border-white/30 hover:border-magic-accent"
+                                  )}
+                                >
+                                  {hw.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                </button>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className={cn(
+                                      "font-medium",
+                                      hw.status === 'completed' ? "text-white/60 line-through" : "text-white"
+                                    )}>
+                                      {hw.title}
+                                    </h4>
+                                    <span className={cn(
+                                      "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase",
+                                      hw.subject === '数学' ? "bg-blue-500/20 text-blue-400" :
+                                      hw.subject === '语文' ? "bg-purple-500/20 text-purple-400" :
+                                      hw.subject === '英语' ? "bg-emerald-500/20 text-emerald-400" :
+                                      "bg-white/10 text-white/60"
+                                    )}>
+                                      {hw.subject}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-white/40 mt-0.5">截止日期：{hw.dueDate}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    // 点击作业任务，进入练习界面
+                                    setDynamicExercises({
+                                      subject: hw.subject,
+                                      grade: '小学',
+                                      questions: [],
+                                    });
+                                    setCurrentExerciseIndex(0);
+                                    setExerciseAnswers({});
+                                    setShowExerciseResult(false);
+                                    setSidebarContentType('exercise');
+                                    // 调用 AI 生成练习题
+                                    handleGenerateExercise(hw.subject, hw.title);
+                                  }}
+                                  className="p-2 rounded-lg bg-magic-accent/20 text-magic-accent hover:bg-magic-accent/30 transition-all"
+                                  title="开始练习"
+                                >
+                                  <Wand2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => deleteHomework(hw.id)}
+                                  className="p-1 rounded-lg hover:bg-red-500/20 text-white/30 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {sidebarContentType === 'poetry' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                      {/* 诗词练习头部 */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500/10 to-amber-500/10 border border-purple-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-sm font-serif font-bold text-white">📜 诗词练习</h3>
+                          {poetryExercise && (
+                            <span className="text-xs text-white/40">{poetryScore.correct}/{poetryScore.total}</span>
+                          )}
+                        </div>
+                        {!poetryExercise && (
+                          <button
+                            onClick={handleGeneratePoetry}
+                            disabled={isGeneratingPoetry}
+                            className="w-full py-2.5 bg-purple-500/30 border border-purple-500/40 text-white rounded-xl text-xs font-bold hover:bg-purple-500/40 transition-all disabled:opacity-50"
+                          >
+                            {isGeneratingPoetry ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                生成中...
+                              </span>
+                            ) : '✨ 开始诗词练习'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 诗词练习内容 */}
+                      {poetryExercise && (
+                        <div className="space-y-4">
+                          {/* 诗词信息 */}
+                          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
+                            <h4 className="text-lg font-serif font-bold text-white mb-1">{poetryExercise.title}</h4>
+                            <p className="text-xs text-white/40">{poetryExercise.dynasty} · {poetryExercise.author}</p>
+                          </div>
+
+                          {/* 当前题目 */}
+                          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-[10px] font-bold text-purple-400 uppercase">
+                                第 {poetryExercise.currentIndex + 1} 题
+                              </span>
+                              <span className="text-[10px] font-bold text-white/30">
+                                {poetryExercise.currentIndex + 1} / {poetryExercise.questions.length}
+                              </span>
+                            </div>
+
+                            <p className="text-sm text-white leading-relaxed mb-4 font-serif">
+                              {poetryExercise.questions[poetryExercise.currentIndex].question}
+                            </p>
+
+                            {/* 填空题 */}
+                            {poetryExercise.questions[poetryExercise.currentIndex].type === 'fill' && (
+                              <div className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={poetryAnswer}
+                                  onChange={(e) => {
+                                    setPoetryAnswer(e.target.value);
+                                    setPoetryResult(null);
+                                  }}
+                                  placeholder="填入缺失的字词"
+                                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white text-center outline-none focus:border-purple-500/50"
+                                  disabled={poetryResult !== null}
+                                />
+                              </div>
+                            )}
+
+                            {/* 选择题 */}
+                            {poetryExercise.questions[poetryExercise.currentIndex].options && (
+                              <div className="space-y-2">
+                                {poetryExercise.questions[poetryExercise.currentIndex].options!.map((opt: string, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      setPoetryAnswer(opt);
+                                      setPoetryResult(null);
+                                    }}
+                                    className={cn(
+                                      "w-full p-3 rounded-xl border text-left text-sm transition-all",
+                                      poetryAnswer === opt
+                                        ? "bg-purple-500/20 border-purple-500 text-purple-300"
+                                        : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                                    )}
+                                    disabled={poetryResult !== null}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* 答案反馈 */}
+                            {poetryResult && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className={cn(
+                                  "mt-3 p-3 rounded-xl text-sm",
+                                  poetryResult === 'correct' ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border border-red-500/20 text-red-400"
+                                )}
+                              >
+                                {poetryResult === 'correct' ? '✨ 回答正确！' : `正确答案：${poetryExercise.questions[poetryExercise.currentIndex].answer}`}
+                                <p className="text-xs text-white/50 mt-1">{poetryExercise.questions[poetryExercise.currentIndex].hint}</p>
+                              </motion.div>
+                            )}
+
+                            {/* 操作按钮 */}
+                            <div className="mt-3 flex gap-2">
+                              {poetryResult === null ? (
+                                <button
+                                  onClick={handlePoetryAnswer}
+                                  disabled={!poetryAnswer.trim()}
+                                  className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl text-xs font-bold hover:bg-purple-500/90 transition-all disabled:opacity-50"
+                                >
+                                  提交答案
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    if (poetryExercise.currentIndex < poetryExercise.questions.length - 1) {
+                                      setPoetryExercise(prev => prev ? {
+                                        ...prev,
+                                        currentIndex: prev.currentIndex + 1,
+                                      } : null);
+                                      setPoetryAnswer('');
+                                      setPoetryResult(null);
+                                    } else {
+                                      // 练习结束
+                                      setMessages(prev => [...prev, { role: 'model', text: `📜 诗词练习完成！你答对了 ${poetryScore.correct}/${poetryScore.total} 题，太棒了！`, timestamp: Date.now() }]);
+                                      setPoetryExercise(null);
+                                    }
+                                  }}
+                                  className="flex-1 py-2.5 bg-purple-500 text-white rounded-xl text-xs font-bold hover:bg-purple-500/90 transition-all"
+                                >
+                                  {poetryExercise.currentIndex < poetryExercise.questions.length - 1 ? '下一题' : '完成练习'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 完整诗词 */}
+                          <details className="rounded-2xl bg-white/5 border border-white/10">
+                            <summary className="p-3 text-xs text-white/40 cursor-pointer hover:text-white/60 transition-colors">查看完整诗词</summary>
+                            <div className="p-4 pt-0 text-sm text-white/60 font-serif whitespace-pre-line leading-loose">
+                              {poetryExercise.fullText}
+                            </div>
+                          </details>
                         </div>
                       )}
                     </div>
@@ -1736,19 +2405,31 @@ function MagicApp() {
                     onClick={() => setSidebarContentType('schedule')}
                     className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'schedule' ? "bg-magic-accent text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
                   >
-                    课程表
+                    课表
+                  </button>
+                  <button 
+                    onClick={() => setSidebarContentType('homework')}
+                    className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'homework' ? "bg-magic-accent text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
+                  >
+                    作业
+                  </button>
+                  <button 
+                    onClick={() => setSidebarContentType('poetry')}
+                    className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'poetry' ? "bg-purple-500 text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
+                  >
+                    诗词
                   </button>
                   <button 
                     onClick={() => setSidebarContentType('exercise')}
                     className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'exercise' ? "bg-magic-accent text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
                   >
-                    练习题
+                    练习
                   </button>
                   <button 
                     onClick={() => setSidebarContentType('achievements')}
                     className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'achievements' ? "bg-magic-accent text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
                   >
-                    成就墙
+                    成就
                   </button>
                   <button 
                     onClick={() => setSidebarContentType('focus')}
@@ -1764,7 +2445,7 @@ function MagicApp() {
       </main>
 
       {/* Footer Navigation (Mobile) */}
-      <nav className="md:hidden flex items-center justify-around py-4 border-t border-white/5 bg-black/40 backdrop-blur-xl z-10">
+      <nav className="md:hidden flex items-center justify-around py-3 border-t border-white/5 bg-black/60 backdrop-blur-xl z-50 safe-bottom">
         <button 
           onClick={() => setActiveTab('chat')}
           className={cn("flex flex-col items-center gap-1", activeTab === 'chat' ? "text-magic-accent" : "text-white/40")}

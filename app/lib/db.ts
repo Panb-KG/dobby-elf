@@ -158,6 +158,49 @@ function runMigrations(database: Database.Database): void {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
     
+    // 题库表
+    `CREATE TABLE IF NOT EXISTS questions (
+      id TEXT PRIMARY KEY,
+      subject TEXT NOT NULL,
+      grade TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      difficulty TEXT DEFAULT 'medium',
+      question TEXT NOT NULL,
+      options TEXT,
+      answer TEXT NOT NULL,
+      explanation TEXT,
+      type TEXT DEFAULT 'multiple_choice',
+      created_at TEXT DEFAULT (datetime('now')),
+      source TEXT DEFAULT 'ai'
+    )`,
+    
+    // 练习记录表
+    `CREATE TABLE IF NOT EXISTS exercise_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      total_questions INTEGER NOT NULL,
+      correct_answers INTEGER DEFAULT 0,
+      score INTEGER DEFAULT 0,
+      completed INTEGER DEFAULT 0,
+      started_at TEXT DEFAULT (datetime('now')),
+      completed_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    
+    // 练习题目记录表
+    `CREATE TABLE IF NOT EXISTS exercise_answers (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      user_answer TEXT,
+      is_correct INTEGER DEFAULT 0,
+      answered_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (session_id) REFERENCES exercise_sessions(id) ON DELETE CASCADE,
+      FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    )`,
+    
     // 索引
     `CREATE INDEX IF NOT EXISTS idx_courses_user ON courses(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_homework_user ON homework(user_id)`,
@@ -165,6 +208,9 @@ function runMigrations(database: Database.Database): void {
     `CREATE INDEX IF NOT EXISTS idx_achievements_user ON achievements(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_focus_user ON focus_sessions(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_chat_user ON chat_messages(user_id, timestamp)`,
+    `CREATE INDEX IF NOT EXISTS idx_questions_subject ON questions(subject, grade, topic)`,
+    `CREATE INDEX IF NOT EXISTS idx_exercise_sessions_user ON exercise_sessions(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_exercise_answers_session ON exercise_answers(session_id)`,
   ];
   
   const migrationStmt = database.prepare(`

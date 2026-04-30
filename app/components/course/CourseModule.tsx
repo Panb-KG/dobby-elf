@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Calendar, Plus, X } from 'lucide-react';
+import { Calendar, Plus, X, Camera, Loader2 } from 'lucide-react';
 import type { Course, ScheduleView } from '../../types';
 
 export interface CourseModuleProps {
@@ -11,12 +11,14 @@ export interface CourseModuleProps {
   selectedDay: string;
   isAddingCourse: boolean;
   newCourse: Omit<Course, 'id' | 'color'>;
+  userId: string;
   onScheduleViewChange: (view: ScheduleView) => void;
   onSelectedDayChange: (day: string) => void;
   onIsAddingCourseChange: (adding: boolean) => void;
   onNewCourseChange: (course: Omit<Course, 'id' | 'color'>) => void;
   onAddCourse: () => void;
   onRemoveCourse: (index: number) => void;
+  onCoursesChange?: (courses: Course[]) => void;
 }
 
 const DAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -27,13 +29,99 @@ export function CourseModule({
   selectedDay,
   isAddingCourse,
   newCourse,
+  userId,
   onScheduleViewChange,
   onSelectedDayChange,
   onIsAddingCourseChange,
   onNewCourseChange,
   onAddCourse,
   onRemoveCourse,
+  onCoursesChange,
 }: CourseModuleProps) {
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    setParseError(null);
+
+    try {
+      // 读取图片为 base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        // 移除 data:image/...;base64, 前缀
+        const imageData = base64.split(',')[1];
+
+        // 调用识别 API
+        const res = await fetch('/api/courses/parse-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imageData }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || '识别失败');
+        }
+
+        if (!data.courses || data.courses.length === 0) {
+          setParseError('未识别到课程信息，请确认图片清晰且包含课表');
+          setIsParsing(false);
+          return;
+        }
+
+        // 批量保存识别到的课程（通过 API）
+        const savedCourses: Course[] = [];
+
+        for (const course of data.courses) {
+          const res = await fetch('/api/courses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              course: {
+                day: course.day,
+                subject: course.subject,
+                time: course.time,
+                type: course.type,
+                color: '',
+              },
+            }),
+          });
+
+          if (res.ok) {
+            const result = await res.json();
+            savedCourses.push({
+              id: result.id,
+              day: course.day,
+              subject: course.subject,
+              time: course.time,
+              type: course.type,
+              color: '',
+            });
+          }
+        }
+
+        // 通知父组件更新
+        if (onCoursesChange && savedCourses.length > 0) {
+          onCoursesChange([...courses, ...savedCourses]);
+        }
+
+        setIsParsing(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setParseError(error.message || '上传失败');
+      setIsParsing(false);
+    }
+  };
+
   const filteredCourses = scheduleView === 'day'
     ? courses.filter(c => c.day === selectedDay)
     : courses;
@@ -101,6 +189,30 @@ export function CourseModule({
             </div>
           </motion.div>
         ))}
+      </div>
+
+      {/* 图片识别上传 */}
+      <div className="space-y-2">
+        <label className="w-full py-3 glass-panel rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 transition-colors cursor-pointer">
+          <Camera className="w-5 h-5 text-white/60" />
+          <span className="text-white/60">上传课表图片识别</span>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+            disabled={isParsing}
+          />
+        </label>
+        {isParsing && (
+          <div className="flex items-center justify-center gap-2 text-white/60 text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>正在识别课表...</span>
+          </div>
+        )}
+        {parseError && (
+          <div className="text-red-400 text-sm text-center">{parseError}</div>
+        )}
       </div>
 
       {/* 添加课程表单 */}
