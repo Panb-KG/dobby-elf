@@ -136,7 +136,7 @@ function MagicApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'homework' | 'poetry' | 'image' | 'achievements' | 'focus' | 'content'>('schedule');
+  const [sidebarContentType, setSidebarContentType] = useState<'none' | 'schedule' | 'exercise' | 'homework' | 'poetry' | 'image' | 'achievements' | 'focus' | 'content' | 'monitor'>('schedule');
   const [scheduleView, setScheduleView] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState('周一');
   const [isAddingCourse, setIsAddingCourse] = useState(false);
@@ -213,6 +213,13 @@ function MagicApp() {
   const [poetryResult, setPoetryResult] = useState<'correct' | 'incorrect' | null>(null);
   const [poetryScore, setPoetryScore] = useState({ correct: 0, total: 0 });
   const [isGeneratingPoetry, setIsGeneratingPoetry] = useState(false);
+
+  // 监控状态
+  const [monitorStats, setMonitorStats] = useState<any>(null);
+  const [monitorLogs, setMonitorLogs] = useState<any[]>([]);
+  const [monitorLoading, setMonitorLoading] = useState(false);
+  const [monitorLogFilter, setMonitorLogFilter] = useState<'all' | 'error' | 'warn' | 'info'>('all');
+  const [monitorTab, setMonitorTab] = useState<'stats' | 'logs'>('stats');
 
   // Focus Tool States
   const [focusTime, setFocusTime] = useState(25 * 60);
@@ -992,6 +999,29 @@ function MagicApp() {
 
     if (isCorrect) {
       setMessages(prev => [...prev, { role: 'model', text: '✨ 回答正确！太棒了！', timestamp: Date.now() }]);
+    }
+  };
+
+  const loadMonitorData = async () => {
+    setMonitorLoading(true);
+    try {
+      // 加载统计数据
+      const statsRes = await fetch('/api/system/stats');
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setMonitorStats(statsData);
+      }
+      
+      // 加载日志
+      const logsRes = await fetch('/api/system/logs?limit=30');
+      if (logsRes.ok) {
+        const logsData = await logsRes.json();
+        setMonitorLogs(logsData);
+      }
+    } catch (error) {
+      console.error('Failed to load monitor data:', error);
+    } finally {
+      setMonitorLoading(false);
     }
   };
 
@@ -2286,6 +2316,193 @@ function MagicApp() {
                     </div>
                   )}
 
+                  {sidebarContentType === 'monitor' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-serif font-bold text-white">🔍 系统监控</h3>
+                        <button
+                          onClick={loadMonitorData}
+                          className="p-1.5 rounded-lg bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      {/* Tab 切换 */}
+                      <div className="flex bg-white/5 p-1 rounded-xl">
+                        <button
+                          onClick={() => setMonitorTab('stats')}
+                          className={cn(
+                            "flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                            monitorTab === 'stats' ? "bg-magic-accent text-white" : "text-white/40"
+                          )}
+                        >
+                          概览
+                        </button>
+                        <button
+                          onClick={() => setMonitorTab('logs')}
+                          className={cn(
+                            "flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                            monitorTab === 'logs' ? "bg-magic-accent text-white" : "text-white/40"
+                          )}
+                        >
+                          日志
+                        </button>
+                      </div>
+
+                      {monitorLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-5 h-5 text-magic-accent animate-spin" />
+                        </div>
+                      ) : monitorTab === 'stats' ? (
+                        <div className="space-y-3">
+                          {/* 健康状态 */}
+                          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-xs text-emerald-400 font-bold">系统运行正常</span>
+                          </div>
+
+                          {/* 用户统计 */}
+                          {monitorStats && (
+                            <>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+                                  <p className="text-lg font-bold text-white">{monitorStats.users.total}</p>
+                                  <p className="text-[9px] text-white/40 uppercase">总用户</p>
+                                </div>
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-center">
+                                  <p className="text-lg font-bold text-magic-accent">{monitorStats.users.activeThisWeek}</p>
+                                  <p className="text-[9px] text-white/40 uppercase">本周活跃</p>
+                                </div>
+                              </div>
+
+                              {/* API 使用 */}
+                              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                                <h4 className="text-[10px] font-bold text-white/40 uppercase mb-2">API 调用</h4>
+                                <div className="space-y-1.5">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">本周总调用</span>
+                                    <span className="text-white font-mono">{monitorStats.api.weekTotal}</span>
+                                  </div>
+                                  {monitorStats.api.today.map((ep: any, idx: number) => (
+                                    <div key={idx} className="flex justify-between text-[10px]">
+                                      <span className="text-white/40 font-mono truncate mr-2">{ep.endpoint}</span>
+                                      <span className="text-white/60 font-mono">{ep.count}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 内容统计 */}
+                              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                                <h4 className="text-[10px] font-bold text-white/40 uppercase mb-2">内容数据</h4>
+                                <div className="space-y-1.5">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">课程</span>
+                                    <span className="text-white font-mono">{monitorStats.content.courses}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">作业 (待完成)</span>
+                                    <span className="text-magic-accent font-mono">{monitorStats.content.homeworkPending}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">练习次数</span>
+                                    <span className="text-white font-mono">{monitorStats.content.exerciseSessions}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">平均分</span>
+                                    <span className="text-emerald-400 font-mono">{monitorStats.content.avgScore}%</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 错误统计 */}
+                              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                                <h4 className="text-[10px] font-bold text-white/40 uppercase mb-2">错误</h4>
+                                <div className="space-y-1.5">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">今天</span>
+                                    <span className={cn("font-mono", monitorStats.errors.today > 0 ? "text-red-400" : "text-emerald-400")}>
+                                      {monitorStats.errors.today}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-white/60">本周</span>
+                                    <span className={cn("font-mono", monitorStats.errors.week > 0 ? "text-red-400" : "text-emerald-400")}>
+                                      {monitorStats.errors.week}
+                                    </span>
+                                  </div>
+                                </div>
+                                {monitorStats.errors.recent.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
+                                    {monitorStats.errors.recent.slice(0, 3).map((err: any, idx: number) => (
+                                      <p key={idx} className="text-[9px] text-red-400/70 truncate">{err.message}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : (
+                        /* 日志列表 */
+                        <div className="space-y-2">
+                          {/* 过滤 */}
+                          <div className="flex gap-1">
+                            {(['all', 'info', 'warn', 'error'] as const).map(level => (
+                              <button
+                                key={level}
+                                onClick={() => setMonitorLogFilter(level)}
+                                className={cn(
+                                  "flex-1 py-1 rounded-lg text-[9px] font-bold transition-all",
+                                  monitorLogFilter === level
+                                    ? level === 'error' ? "bg-red-500/30 text-red-400" : level === 'warn' ? "bg-amber-500/30 text-amber-400" : "bg-white/10 text-white"
+                                    : "text-white/30"
+                                )}
+                              >
+                                {level === 'all' ? '全部' : level.toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="space-y-1.5 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                            {monitorLogs
+                              .filter(log => monitorLogFilter === 'all' || log.level === monitorLogFilter)
+                              .map((log) => (
+                                <div
+                                  key={log.id}
+                                  className={cn(
+                                    "p-2.5 rounded-xl border text-[10px]",
+                                    log.level === 'error' ? "bg-red-500/5 border-red-500/10" :
+                                    log.level === 'warn' ? "bg-amber-500/5 border-amber-500/10" :
+                                    "bg-white/5 border-white/5"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className={cn(
+                                      "font-bold uppercase",
+                                      log.level === 'error' ? "text-red-400" :
+                                      log.level === 'warn' ? "text-amber-400" : "text-white/40"
+                                    )}>
+                                      {log.level}
+                                    </span>
+                                    <span className="text-white/30 font-mono">{log.created_at}</span>
+                                  </div>
+                                  <p className="text-white/60">{log.message}</p>
+                                  {log.category && (
+                                    <span className="text-[8px] text-white/30 mt-1 block">[{log.category}]</span>
+                                  )}
+                                </div>
+                              ))}
+                            {monitorLogs.length === 0 && (
+                              <div className="text-center py-8 text-white/30 text-xs">暂无日志</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {sidebarContentType === 'focus' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       {/* Magic Hourglass */}
@@ -2436,6 +2653,15 @@ function MagicApp() {
                     className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'focus' ? "bg-magic-accent text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
                   >
                     专注
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSidebarContentType('monitor');
+                      loadMonitorData();
+                    }}
+                    className={cn("flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all", sidebarContentType === 'monitor' ? "bg-cyan-500 text-white" : "bg-white/5 text-white/40 hover:bg-white/10")}
+                  >
+                    监控
                   </button>
                 </div>
               </div>

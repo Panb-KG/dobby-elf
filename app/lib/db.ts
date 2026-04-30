@@ -211,6 +211,43 @@ function runMigrations(database: Database.Database): void {
     `CREATE INDEX IF NOT EXISTS idx_questions_subject ON questions(subject, grade, topic)`,
     `CREATE INDEX IF NOT EXISTS idx_exercise_sessions_user ON exercise_sessions(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_exercise_answers_session ON exercise_answers(session_id)`,
+    
+    // 系统日志表
+    `CREATE TABLE IF NOT EXISTS system_logs (
+      id TEXT PRIMARY KEY,
+      level TEXT NOT NULL DEFAULT 'info',
+      category TEXT NOT NULL DEFAULT 'system',
+      message TEXT NOT NULL,
+      details TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // API 使用记录表
+    `CREATE TABLE IF NOT EXISTS api_usage (
+      id TEXT PRIMARY KEY,
+      endpoint TEXT NOT NULL,
+      method TEXT NOT NULL,
+      user_id TEXT,
+      status_code INTEGER,
+      duration_ms INTEGER,
+      tokens_used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // 系统设置表
+    `CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // 索引
+    `CREATE INDEX IF NOT EXISTS idx_system_logs_level ON system_logs(level)`,
+    `CREATE INDEX IF NOT EXISTS idx_system_logs_category ON system_logs(category)`,
+    `CREATE INDEX IF NOT EXISTS idx_system_logs_time ON system_logs(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage(endpoint)`,
+    `CREATE INDEX IF NOT EXISTS idx_api_usage_time ON api_usage(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_api_usage_user ON api_usage(user_id)`
   ];
   
   const migrationStmt = database.prepare(`
