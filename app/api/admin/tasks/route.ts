@@ -28,14 +28,14 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const taskId = searchParams.get('id');
+    const runTaskId = searchParams.get('id');
     const action = searchParams.get('action');
     
     const db = getDb();
 
     // 手动执行任务
-    if (action === 'run' && taskId) {
-      const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(taskId) as any;
+    if (action === 'run' && runTaskId) {
+      const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(runTaskId) as any;
       if (!task) {
         return NextResponse.json({ error: '任务不存在' }, { status: 404 });
       }
@@ -47,13 +47,13 @@ export async function POST(req: Request) {
       db.prepare(`
         INSERT INTO task_executions (id, task_id, started_at, status)
         VALUES (?, ?, ?, 'running')
-      `).run(executionId, taskId, startTime);
+      `).run(executionId, runTaskId, startTime);
 
       // 更新任务
       db.prepare(`
         UPDATE scheduled_tasks SET last_run = ?, run_count = run_count + 1
         WHERE id = ?
-      `).run(startTime, taskId);
+      `).run(startTime, runTaskId);
 
       return NextResponse.json({ success: true, executionId });
     }
@@ -65,14 +65,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '名称、cron 表达式和处理器不能为空' }, { status: 400 });
     }
 
-    const taskId = `task_${Date.now()}`;
+    const newTaskId = `task_${Date.now()}`;
     
     db.prepare(`
       INSERT INTO scheduled_tasks (id, name, description, cron, handler)
       VALUES (?, ?, ?, ?, ?)
-    `).run(taskId, name, description || '', cron, handler);
+    `).run(newTaskId, name, description || '', cron, handler);
 
-    return NextResponse.json({ success: true, id: taskId });
+    return NextResponse.json({ success: true, id: newTaskId });
   } catch (error: any) {
     console.error('Task error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
