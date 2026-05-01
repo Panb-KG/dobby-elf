@@ -1,0 +1,141 @@
+import { NextResponse } from 'next/server';
+import { getDb } from '../../../lib/db';
+
+/**
+ * 定时任务管理 API
+ * 
+ * GET    /api/admin/tasks              - 获取任务列表
+ * POST   /api/admin/tasks              - 创建任务
+ * PUT    /api/admin/tasks              - 更新任务
+ * DELETE /api/admin/tasks?id=xxx       - 删除任务
+ * POST   /api/admin/tasks?id=xxx/run   - 手动执行任务
+ */
+
+export async function GET(req: Request) {
+  try {
+    const db = getDb();
+    const tasks = db.prepare(`
+      SELECT * FROM scheduled_tasks ORDER BY created_at DESC
+    `).all();
+
+    return NextResponse.json({ tasks });
+  } catch (error: any) {
+    console.error('Get tasks error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const taskId = searchParams.get('id');
+    const action = searchParams.get('action');
+    
+    const db = getDb();
+
+    // 手动执行任务
+    if (action === 'run' && taskId) {
+      const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(taskId) as any;
+      if (!task) {
+        return NextResponse.json({ error: '任务不存在' }, { status: 404 });
+      }
+
+      const executionId = `exec_${Date.now()}`;
+      const startTime = new Date().toISOString().replace('T', ' ').split('.')[0];
+
+      // 记录执行
+      db.prepare(`
+        INSERT INTO task_executions (id, task_id, started_at, status)
+        VALUES (?, ?, ?, 'running')
+      `).run(executionId, taskId, startTime);
+
+      // 更新任务
+      db.prepare(`
+        UPDATE scheduled_tasks SET last_run = ?, run_count = run_count + 1
+        WHERE id = ?
+      `).run(startTime, taskId);
+
+      return NextResponse.json({ success: true, executionId });
+    }
+
+    // 创建任务
+    const { name, description, cron, handler } = await req.json();
+    
+    if (!name || !cron || !handler) {
+      return NextResponse.json({ error: '名称、cron 表达式和处理器不能为空' }, { status: 400 });
+    }
+
+    const taskId = `task_${Date.now()}`;
+    
+    db.prepare(`
+      INSERT INTO scheduled_tasks (id, name, description, cron, handler)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(taskId, name, description || '', cron, handler);
+
+    return NextResponse.json({ success: true, id: taskId });
+  } catch (error: any) {
+    console.error('Task error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const { id, updates } = await req.json();
+    
+    if (!id || !updates) {
+      return NextResponse.json({ error: '任务ID和更新数据不能为空' }, { status: 400 });
+    }
+
+    const db = getDb();
+    const allowedFields = ['name', 'description', 'cron', 'handler', 'status'];
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) {
+        fields.push(`${field} = ?`);
+        values.push(updates[field]);
+      }
+    }
+
+    fields.push("updated_at = datetime('now')");
+    values.push(id);
+
+    const result = db.prepare(`
+      UPDATE scheduled_tasks SET ${fields.join(', ')} WHERE id = ?
+    `).run(...values);
+
+    if (result.changes === 0) {
+      return NextResponse.json({ error: '任务不存在' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Update task error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: '任务ID不能为空' }, { status: 400 });
+    }
+
+    const db = getDb();
+    const result = db.prepare('DELETE FROM scheduled_tasks WHERE id = ?').run(id);
+
+    if (result.changes === 0) {
+      return NextResponse.json({ error: '任务不存在' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete task error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
