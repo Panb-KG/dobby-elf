@@ -77,7 +77,9 @@ export async function POST(req: Request) {
         { role: 'system', content: systemInstruction },
         ...processedMessages
       ],
-      stream: false
+      stream: true,  // 启用流式响应，降低首字延迟
+      max_tokens: 2048,  // 限制最大输出 token 数
+      temperature: 0.7,  // 平衡创造性和稳定性
     };
 
     // 添加工具定义（如果提供）
@@ -92,6 +94,8 @@ export async function POST(req: Request) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(requestBody),
+      // @ts-ignore - signal 是 fetch 标准参数
+      signal: AbortSignal.timeout(60000), // 60秒超时
     });
 
     if (!response.ok) {
@@ -111,36 +115,18 @@ export async function POST(req: Request) {
       }
     }
 
-    const data = await response.json();
-    
-    // 统一响应格式为 NDJSON
-    let ndjsonResponse = '';
-    
-    if (data.choices && data.choices[0]?.message) {
-      const message = data.choices[0].message;
-      ndjsonResponse = JSON.stringify({
-        output: {
-          text: message.content || '',
-          finish_reason: data.choices[0].finish_reason || 'stop'
-        }
-      }) + '\n';
-    } else if (data.output?.text) {
-      ndjsonResponse = JSON.stringify({
-        output: {
-          text: data.output.text,
-          finish_reason: data.output.finish_reason || 'stop'
-        }
-      }) + '\n';
-    } else if (data.output?.tool_calls) {
-      ndjsonResponse = JSON.stringify({
-        toolCalls: data.output.tool_calls
-      }) + '\n';
-    } else {
-      ndjsonResponse = JSON.stringify(data) + '\n';
+    // 流式响应：逐 chunk 转发给前端
+    const stream = response.body;
+    if (!stream) {
+      throw new Error('API 响应没有 body');
     }
-    
-    return new Response(ndjsonResponse, {
-      headers: { 'Content-Type': 'application/x-ndjson' },
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
   } catch (error: any) {
     console.error('Chat API error:', error.message);

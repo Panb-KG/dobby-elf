@@ -241,13 +241,78 @@ function runMigrations(database: Database.Database): void {
       updated_at TEXT DEFAULT (datetime('now'))
     )`,
     
+    // 管理员表
+    `CREATE TABLE IF NOT EXISTS admins (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      display_name TEXT,
+      role TEXT DEFAULT 'super_admin',
+      is_active INTEGER DEFAULT 1,
+      last_login TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // 审计日志表
+    `CREATE TABLE IF NOT EXISTS audit_logs (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id TEXT,
+      details TEXT,
+      ip_address TEXT,
+      user_agent TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // 定时任务表
+    `CREATE TABLE IF NOT EXISTS scheduled_tasks (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      cron TEXT NOT NULL,
+      handler TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      last_run TEXT,
+      last_status TEXT,
+      next_run TEXT,
+      run_count INTEGER DEFAULT 0,
+      error_count INTEGER DEFAULT 0,
+      last_error TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`,
+    
+    // 任务执行记录表
+    `CREATE TABLE IF NOT EXISTS task_executions (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      completed_at TEXT,
+      status TEXT NOT NULL DEFAULT 'running',
+      result TEXT,
+      error TEXT,
+      duration_ms INTEGER,
+      FOREIGN KEY (task_id) REFERENCES scheduled_tasks(id) ON DELETE CASCADE
+    )`,
+    
     // 索引
     `CREATE INDEX IF NOT EXISTS idx_system_logs_level ON system_logs(level)`,
     `CREATE INDEX IF NOT EXISTS idx_system_logs_category ON system_logs(category)`,
     `CREATE INDEX IF NOT EXISTS idx_system_logs_time ON system_logs(created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage(endpoint)`,
     `CREATE INDEX IF NOT EXISTS idx_api_usage_time ON api_usage(created_at)`,
-    `CREATE INDEX IF NOT EXISTS idx_api_usage_user ON api_usage(user_id)`
+    `CREATE INDEX IF NOT EXISTS idx_api_usage_user ON api_usage(user_id)`,
+    
+    // 新表索引
+    `CREATE INDEX IF NOT EXISTS idx_audit_logs_admin ON audit_logs(admin_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)`,
+    `CREATE INDEX IF NOT EXISTS idx_audit_logs_time ON audit_logs(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_status ON scheduled_tasks(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_task_executions_task ON task_executions(task_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_task_executions_time ON task_executions(started_at)`
   ];
   
   const migrationStmt = database.prepare(`

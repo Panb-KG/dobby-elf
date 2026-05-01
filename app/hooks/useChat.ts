@@ -69,19 +69,45 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       
       // 等待 state 更新后发送请求
       await new Promise(resolve => setTimeout(resolve, 0));
-      
-      const response = await dobi.chat({
-        messages: [...currentMessages].map(m => ({ role: m.role, content: m.text })),
-        signal: abortControllerRef.current.signal,
-      });
 
-      const modelMessage: Message = {
+      // 创建流式消息占位
+      const streamingId = `stream_${Date.now()}`;
+      const streamingMessage: Message = {
         role: 'model',
-        text: response.text,
+        text: '',
         timestamp: new Date().toISOString(),
       };
 
-      setMessages(prev => [...prev, modelMessage]);
+      setMessages(prev => [...prev, streamingMessage]);
+
+      // 流式接收并逐字追加
+      let fullText = '';
+      for await (const chunk of dobi.chatStream(
+        [...currentMessages].map(m => ({ role: m.role, text: m.text }))
+      )) {
+        if (typeof chunk === 'string') {
+          fullText += chunk;
+          // 逐字更新 UI
+          setMessages(prev => {
+            const newMessages = [...prev];
+            const lastMsg = newMessages[newMessages.length - 1];
+            if (lastMsg && lastMsg.role === 'model' && lastMsg.text !== fullText) {
+              lastMsg.text = fullText;
+            }
+            return newMessages;
+          });
+        }
+      }
+
+      // 最终完成
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg && lastMsg.role === 'model') {
+          lastMsg.text = fullText;
+        }
+        return newMessages;
+      });
     } catch (error: any) {
       if (error.name !== 'AbortError') {
         console.error('Chat error:', error);

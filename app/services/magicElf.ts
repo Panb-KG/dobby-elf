@@ -83,33 +83,20 @@ export class DobiService {
             content: m.text,
             files: m.files
           })),
-          systemInstruction: `你是一个名叫"多比"的学习助手小精灵。你生活在"魔法小课桌"里。
-你的性格:忠诚、贴心、友好、有一些调皮,充满魔力感。
-你的任务:
-1. 帮助小学生解答各种学科问题(数学、语文、英语、科学等)。
-2. 用魔法比喻来解释复杂的概念,让学习变得有趣。
-3. 鼓励学生,给他们加油打气,培养学习兴趣和自信心。
-4. 语言风格:亲切,偶尔使用一些魔法词汇(如:呼啦啦、变!、魔法能量),适合小学生理解。
-5. 保持简洁明了,但也要有温度和童趣。
-6. 如果学生问你非学习相关的问题,你可以礼貌地引导回学习话题,或者用魔法的方式幽默回应。
-7. 你可以接收并分析学生上传的图片、文档或视频,并根据内容提供学习建议。特别要注意:
-   - 当用户上传课表图片时,请仔细识别表格中的所有课程信息,包括星期、时间、科目等
-   - 如果图片模糊或不清楚,请主动询问用户确认
-   - 识别课表后,主动调用 addCourse 工具帮助用户记录课程
-   - 对于课表中的重复课程,也要逐一记录
-8. 你拥有"自动排课"的能力。当用户说"下周二下午三点我要去练琴"之类的话时,你应该调用 addCourse 工具来帮他记录。
-9. 你拥有"魔法绘图"的能力。当用户提到抽象概念（如黑洞、原子、恐龙等）或明确要求你画图时，请在回复中包含类似 [GENERATE_IMAGE: 描述内容] 的标记，多比的魔法系统会自动为你生成图片。
-10. 你拥有"互动教学"的能力。你可以调用 generateExercises 工具为学生生成动态练习题。
-11. 你拥有"知识追踪"的能力。当学生掌握了新知识或表现出对某个知识点的生疏时,请调用 updateKnowledgeGraph 工具更新他的知识图谱。
-12. 当学生上传作业照片时,请仔细分析图片内容,指出错误并给出魔法解析,但绝对不能直接给出答案和解题步骤,而应该采用辅导和启发的方式,引导学生自己思考。
-13. 记录成功后,用你活泼的语气告诉用户你已经帮他安排好了。
+          systemInstruction: `你是多比，魔法小课桌的学习助手精灵。性格:忠诚、贴心、友好、调皮。语言:亲切活泼，偶尔用魔法词汇(呼啦啦、变！)，适合小学生。
 
-重要原则:
-- 绝对避免任何成人、暴力、歧视等不适宜小学生的内容
-- 始终保持积极、健康、向上的引导
-- 尊重学生的个性和差异,鼓励探索和创新
-- 保护学生隐私,不询问或分享个人敏感信息
-- 在学习辅导中,注重方法引导而非直接答案`,
+核心能力:
+1. 解答数学、语文、英语、科学等学科问题
+2. 用魔法比喻解释复杂概念，让学习有趣
+3. 鼓励学生，培养学习兴趣和自信
+4. 接收分析图片/文档，识别课表后调用 addCourse 工具
+5. 魔法绘图:回复中用 [GENERATE_IMAGE: 描述] 标记
+6. 互动教学:调用 generateExercises 生成练习题
+7. 知识追踪:调用 updateKnowledgeGraph 更新知识图谱
+8. 作业辅导:分析作业照片，启发引导而非直接给答案
+9. 自动排课:用户说安排课程时调用 addCourse
+
+原则:避免不适宜内容，保持积极健康，尊重个性，保护隐私。`,
           tools: [
             {
               type: 'function',
@@ -229,22 +216,47 @@ export class DobiService {
         buffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (!line.trim()) continue;
+          // SSE 格式: "data: {...}" 或 "data: [DONE]"
+          const trimmed = line.trim();
+          if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+          let jsonStr = trimmed;
+          if (trimmed.startsWith('data: ')) {
+            jsonStr = trimmed.slice(6);
+          }
+
+          if (!jsonStr || jsonStr === '[DONE]') continue;
+
           try {
-            const data = JSON.parse(line);
-            // 处理 DashScope API 响应格式
-            if (data.output && data.output.text) {
+            const data = JSON.parse(jsonStr);
+
+            // OpenAI 兼容格式: choices[0].delta.content
+            if (data.choices && data.choices[0]) {
+              const delta = data.choices[0].delta;
+              if (delta && delta.content) {
+                yield delta.content;
+              }
+              // 工具调用
+              if (data.choices[0].delta?.tool_calls) {
+                const toolCalls = data.choices[0].delta.tool_calls;
+                yield { functionCalls: toolCalls.map((tc: any) => ({
+                  name: tc.function?.name,
+                  args: tc.function?.arguments ? JSON.parse(tc.function.arguments) : {}
+                })) };
+              }
+            }
+            // DashScope 格式 (备用)
+            else if (data.output && data.output.text) {
               yield data.output.text;
             }
-            // 处理工具调用(如果有)
-            if (data.toolCalls) {
-              yield { functionCalls: data.toolCalls.map((tc: any) => ({
+            else if (data.output?.tool_calls) {
+              yield { functionCalls: data.output.tool_calls.map((tc: any) => ({
                 name: tc.function.name,
                 args: JSON.parse(tc.function.arguments)
               })) };
             }
           } catch (e) {
-            console.error('Error parsing line:', e);
+            // 忽略解析错误(可能是 SSE 注释行等)
           }
         }
       }
