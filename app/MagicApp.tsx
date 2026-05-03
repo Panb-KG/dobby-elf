@@ -57,6 +57,7 @@ import rehypeRaw from 'rehype-raw';
 import { dobi, type Message } from './services/magicElf';
 import { cn } from './lib/utils';
 import { DobiAvatar } from './components/DobiAvatar';
+import { DobiMascot } from './components/DobiMascot';
 import { authService } from './services/auth';
 import { dataService } from './services/data';
 import { User, Course, Achievement } from './services/types';
@@ -1119,39 +1120,42 @@ function MagicApp() {
       </AnimatePresence>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 z-10">
-        <div className="flex items-center gap-4">
-          <DobiAvatar size="md" />
-          <div>
-            <h1 className="text-xl font-serif font-bold tracking-wide text-white">魔法小课桌</h1>
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-magic-accent font-bold">Dobi's Magic Desk</p>
+      <header className="flex justify-between items-end border-b border-[#2A2A2E] pb-8 px-6 pt-6 z-10">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-[#D97706]/20 blur-xl rounded-full group-hover:bg-[#D97706]/40 transition-all" />
+              <div className="relative w-16 h-16 origin-center transform scale-[0.4]">
+                <DobiMascot className="w-64 h-80 -mt-16 -ml-24" />
+              </div>
             </div>
+            <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">魔法小课桌 / Magic Desk</h1>
           </div>
+          <p className="text-[#71717A] font-mono text-xs uppercase tracking-widest opacity-60">
+            Enhanced by Dobi AI • Creator Edition
+          </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4 items-center">
           <button 
             onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
             className={cn(
-              "p-2 rounded-full transition-all",
-              isRightSidebarOpen ? "bg-magic-accent/20 text-magic-accent" : "hover:bg-white/5 text-white/60"
+              "p-3 rounded-xl transition-all border",
+              isRightSidebarOpen ? "bg-[#D97706] text-[#0F0F11] border-[#D97706]" : "bg-[#1A1A1E] border-[#2A2A2E] text-white/60 hover:text-white"
             )}
             title={isRightSidebarOpen ? "关闭展示栏" : "打开展示栏"}
           >
             {isRightSidebarOpen ? <PanelRightClose className="w-5 h-5" /> : <PanelRightOpen className="w-5 h-5" />}
           </button>
-          <button className="p-2 rounded-full hover:bg-white/5 transition-colors">
-            <History className="w-5 h-5 text-white/60" />
-          </button>
+          <div className="px-4 py-2 bg-[#1A1A1E] border border-[#2A2A2E] rounded-xl flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-mono text-white/50 uppercase">Dobi Online</span>
+          </div>
           {user ? (
             <div className="flex items-center gap-2">
-              <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-xs font-medium text-white">{user.displayName}</span>
-                <span className="text-[8px] text-white/40 uppercase tracking-widest">魔法师</span>
-              </div>
+              <span className="text-xs font-medium text-white">{user.displayName}</span>
               <button 
                 onClick={() => authService.logout()}
-                className="p-2 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all"
+                className="p-2 rounded-lg hover:bg-red-500/10 text-white/60 hover:text-red-400 transition-all"
                 title="登出魔法世界"
               >
                 <LogOut className="w-5 h-5" />
@@ -1160,7 +1164,7 @@ function MagicApp() {
           ) : (
             <button 
               onClick={() => setShowLoginModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-magic-accent text-white text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-magic-accent/20"
+              className="px-4 py-2 bg-[#D97706] text-[#0F0F11] font-bold rounded-xl flex items-center gap-2 hover:scale-105 transition-transform"
             >
               <LogIn className="w-4 h-4" />
               <span>魔法登录</span>
@@ -1171,45 +1175,39 @@ function MagicApp() {
 
       {/* Main Content */}
       <main 
-        className="flex-1 flex flex-col md:flex-row gap-6 p-4 pb-20 md:pb-6 md:p-6 overflow-hidden z-10 transition-all duration-300 ease-in-out"
+        className="flex-1 grid grid-cols-12 gap-6 p-4 pb-20 md:pb-6 md:p-6 overflow-hidden z-10 transition-all duration-300 ease-in-out"
         style={{ marginRight: isRightSidebarOpen ? '24rem' : '0' }}
       >
         {/* Left Sidebar - Spells (Desktop) */}
-        <aside className="hidden md:flex flex-col gap-4 w-64">
-          <div className="glass-panel p-6 flex-1 flex flex-col gap-6">
-            <h2 className="text-sm font-serif italic text-white/60 border-b border-white/10 pb-2">魔法咒语库</h2>
-            <div className="space-y-3">
+        <aside className="hidden md:flex col-span-3">
+          <div className="bg-[#1A1A1E] border border-[#2A2A2E] rounded-3xl p-6 w-full h-full flex flex-col">
+            <h3 className="text-[#71717A] text-[10px] font-mono uppercase tracking-[0.3em] mb-6 px-2">魔法咒语库 / spells</h3>
+            <nav className="space-y-1 flex-1">
               {SPELLS.map((spell) => (
                 <button
                   key={spell.id}
                   onClick={() => useSpell(spell)}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all group text-left"
+                  className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all group text-left"
                 >
-                  <div className="p-2 rounded-xl bg-white/5 group-hover:bg-magic-accent/20 transition-colors">
-                    <spell.icon className="w-4 h-4 text-white/70 group-hover:text-magic-accent" />
-                  </div>
-                  <span className="text-sm font-medium text-white/80">{spell.name}</span>
-                  <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <spell.icon className="w-5 h-5 text-[#71717A] group-hover:text-[#D97706] transition-colors" />
+                  <span className="font-bold text-sm tracking-tight text-[#71717A] group-hover:text-white transition-colors">{spell.name}</span>
                 </button>
               ))}
-            </div>
-            
-            <div className="mt-auto p-4 rounded-2xl bg-gradient-to-br from-magic-accent/10 to-transparent border border-magic-accent/20">
-              <p className="text-xs text-white/60 leading-relaxed italic">
+            </nav>
+            <div className="mt-4 p-4 rounded-2xl bg-[#0F0F11] border border-[#2A2A2E]">
+              <p className="text-xs text-[#71717A]/60 leading-relaxed italic">
                 "知识是唯一的魔法，而你是那个伟大的魔法师。"
               </p>
             </div>
           </div>
         </aside>
 
-        {/* Chat Area */}
-        <section className="flex-1 flex flex-col glass-panel overflow-hidden relative">
-          {/* Messages Viewport */}
-          <div 
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth"
-            style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)' }}
-          >
+        {/* Chat Area - col-span-6 */}
+        <section className="col-span-6 flex flex-col gap-4">
+          <div className="flex-1 bg-[#1A1A1E] border border-[#2A2A2E] rounded-[40px] p-8 overflow-y-auto relative custom-scrollbar">
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none">
+              <span className="text-[200px] font-black underline underline-offset-8">DOBI</span>
+            </div>
             <AnimatePresence initial={false}>
               {messages.map((msg, i) => (
                 <motion.div
@@ -1222,10 +1220,10 @@ function MagicApp() {
                   )}
                 >
                   <div className={cn(
-                    "px-5 py-3 rounded-3xl text-sm md:text-base leading-relaxed",
+                    "px-6 py-4 rounded-[30px] text-sm leading-relaxed whitespace-pre-wrap",
                     msg.role === 'user' 
-                      ? "bg-magic-accent/20 border border-magic-accent/30 text-white rounded-tr-none" 
-                      : "bg-white/5 border border-white/10 text-stone-200 rounded-tl-none"
+                      ? "bg-[#D97706] text-[#0F0F11] font-bold" 
+                      : "bg-[#0F0F11] border border-[#2A2A2E] text-white"
                   )}>
                     {msg.files && msg.files.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -1286,7 +1284,7 @@ function MagicApp() {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 md:p-6 border-t border-white/5 bg-black/20">
+          <div className="bg-[#1A1A1E] border border-[#2A2A2E] rounded-full p-2 flex items-center gap-2 group focus-within:border-[#D97706] transition-all shadow-2xl">
             {/* File Previews */}
             <AnimatePresence>
               {attachments.length > 0 && (
@@ -1294,10 +1292,10 @@ function MagicApp() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="flex flex-wrap gap-2 mb-4"
+                  className="flex flex-wrap gap-2 px-2 pt-2"
                 >
                   {attachments.map((file, idx) => (
-                    <div key={idx} className="relative group p-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+                    <div key={idx} className="relative group p-2 rounded-xl bg-[#0F0F11] border border-[#2A2A2E] flex items-center gap-2">
                       {file.type.startsWith('image/') ? (
                         <ImageIcon className="w-4 h-4 text-emerald-400" />
                       ) : file.type.startsWith('video/') ? (
@@ -1319,12 +1317,12 @@ function MagicApp() {
             </AnimatePresence>
 
             {/* Mobile Spells Quick Access */}
-            <div className="flex md:hidden gap-2 overflow-x-auto pb-4 no-scrollbar">
+            <div className="flex md:hidden gap-2 overflow-x-auto pb-2 no-scrollbar">
               {SPELLS.map((spell) => (
                 <button
                   key={spell.id}
                   onClick={() => useSpell(spell)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/70"
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-[#0F0F11] border border-[#2A2A2E] text-xs text-[#71717A]"
                 >
                   <spell.icon className="w-3 h-3" />
                   {spell.name}
@@ -1332,61 +1330,49 @@ function MagicApp() {
               ))}
             </div>
 
-            <div className="relative group flex items-end gap-2">
-              <div className="flex-1 relative">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  placeholder={isRecording ? "正在倾听魔法的声音..." : "输入你的问题，让魔法发生..."}
-                  className={cn(
-                    "w-full bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl px-6 py-4 pr-24 text-sm md:text-base focus:outline-none focus:border-magic-accent/50 focus:bg-white/10 transition-all resize-none h-14 md:h-16 flex items-center",
-                    isRecording && "border-magic-accent/50 bg-magic-accent/5 ring-2 ring-magic-accent/20"
-                  )}
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                    multiple 
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                    title="上传附件"
-                  >
-                    <Paperclip className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={toggleRecording}
-                    disabled={!speechRecognitionSupported}
-                    className={cn(
-                      "p-2 rounded-lg transition-all",
-                      isRecording ? "bg-red-500/20 text-red-500 animate-pulse" : 
-                      !speechRecognitionSupported ? "opacity-30 cursor-not-allowed text-white/20" : 
-                      "hover:bg-white/10 text-white/40 hover:text-white"
-                    )}
-                    title={!speechRecognitionSupported ? "语音识别不可用（需HTTPS或现代浏览器）" : isRecording ? "停止录音" : "语音输入"}
-                  >
-                    <Mic className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => handleSend()}
-                disabled={(!input.trim() && attachments.length === 0) || isLoading}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-magic-accent flex items-center justify-center text-white shadow-lg shadow-magic-accent/20 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </div>
+            <button className="p-3 text-[#71717A] hover:text-[#D97706] transition-colors" onClick={() => fileInputRef.current?.click()}>
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              multiple 
+            />
+            <input 
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="输入你的问题，让魔法发生..." 
+              className="flex-1 bg-transparent border-none outline-none text-white font-medium px-4 text-sm placeholder:text-[#71717A]/50"
+            />
+            <button
+              onClick={toggleRecording}
+              disabled={!speechRecognitionSupported}
+              className={cn(
+                "p-3 transition-colors",
+                isRecording ? "text-red-500 animate-pulse" : 
+                !speechRecognitionSupported ? "opacity-30 cursor-not-allowed text-[#71717A]/30" : 
+                "text-[#71717A] hover:text-[#D97706]"
+              )}
+              title={!speechRecognitionSupported ? "语音识别不可用（需HTTPS或现代浏览器）" : isRecording ? "停止录音" : "语音输入"}
+            >
+              <Mic className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => handleSend()}
+              disabled={(!input.trim() && attachments.length === 0) || isLoading}
+              className="w-14 h-14 bg-[#D97706] rounded-full flex items-center justify-center text-[#0F0F11] hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
+            >
+              <ChevronRight className="w-6 h-6 stroke-[3px]" />
+            </button>
           </div>
         </section>
 

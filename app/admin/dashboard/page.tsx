@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import AdminLayout from './AdminLayout';
+import AdminLayout from '../AdminLayout';
 
 interface Stats {
   api: {

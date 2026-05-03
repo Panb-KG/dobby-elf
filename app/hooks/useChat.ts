@@ -83,7 +83,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // 流式接收并逐字追加
       let fullText = '';
       for await (const chunk of dobi.chatStream(
-        [...currentMessages].map(m => ({ role: m.role, text: m.text }))
+        [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ role: m.role as 'user' | 'model', text: m.text }))
       )) {
         if (typeof chunk === 'string') {
           fullText += chunk;
