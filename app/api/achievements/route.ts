@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
 
 /**
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(achievements);
   } catch (error: any) {
-    console.error('Get achievements error:', error);
+    error('Get achievements error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, id: achievementId });
   } catch (error: any) {
-    console.error('Save achievement error:', error);
+    error('Save achievement error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -93,7 +94,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Delete achievement error:', error);
+    error('Delete achievement error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

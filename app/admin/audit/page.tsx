@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
 
 interface AuditLog {
@@ -43,7 +44,7 @@ export default function AdminAuditPage() {
         setTotal(data.pagination.total);
       }
     } catch (error) {
-      console.error('Failed to fetch audit logs:', error);
+      error('Failed to fetch audit logs:', error);
     } finally {
       setLoading(false);
     }

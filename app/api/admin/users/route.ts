@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
   } catch (error: any) {
-    console.error('Admin users error:', error);
+    error('Admin users error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, id: adminId });
   } catch (error: any) {
-    console.error('Create admin error:', error);
+    error('Create admin error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -149,7 +149,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Update user error:', error);
+    error('Update user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -174,9 +174,10 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true, deleted: result.changes });
   } catch (error: any) {
-    console.error('Delete user error:', error);
+    error('Delete user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
+import { error } from '../../../lib/console';
 import bcrypt from 'bcrypt';

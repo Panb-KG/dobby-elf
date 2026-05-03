@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
 /**
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(logs);
   } catch (error: any) {
-    console.error('Get system logs error:', error);
+    error('Get system logs error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, id: logId });
   } catch (error: any) {
-    console.error('Create log error:', error);
+    error('Create log error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -86,7 +87,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true, deleted: result.changes });
   } catch (error: any) {
-    console.error('Delete logs error:', error);
+    error('Delete logs error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

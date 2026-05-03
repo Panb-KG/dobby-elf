@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
 
 export default function AdminSettingsPage() {
@@ -22,7 +23,7 @@ export default function AdminSettingsPage() {
         setSettings(data);
       }
     } catch (error) {
-      console.error('Failed to fetch settings:', error);
+      error('Failed to fetch settings:', error);
     } finally {
       setLoading(false);
     }

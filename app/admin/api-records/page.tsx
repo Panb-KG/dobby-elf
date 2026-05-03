@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
 
 interface ApiRecord {
@@ -42,7 +43,7 @@ export default function AdminApiRecordsPage() {
         setTotal(data.pagination.total);
       }
     } catch (error) {
-      console.error('Failed to fetch API records:', error);
+      error('Failed to fetch API records:', error);
     } finally {
       setLoading(false);
     }

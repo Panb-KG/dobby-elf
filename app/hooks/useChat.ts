@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { StorageKeys, setStorage } from '../lib/storage';
 import type { Message } from '../types';
+import { error as logError } from '../lib/console';
 import { dobi } from '../services/magicElf';
 
 export interface UseChatReturn {
@@ -133,7 +134,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     } catch (error: unknown) {
       const err = error as Error;
       if (err.name !== 'AbortError') {
-        console.error('Chat error:', err);
+        logError('Chat error:', err);
         const errorMessage: Message = {
           role: 'system',
           text: '多比的魔法出错了，请稍后再试。',

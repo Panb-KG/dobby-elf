@@ -1,3 +1,4 @@
+import { error, log } from '../../lib/console';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -28,21 +29,21 @@ export async function POST(req: Request) {
     });
 
     const data = await response.json();
-    console.log('Image API response status:', response.status);
+    log('Image API response status:', response.status);
 
     // 处理 qwen-image-2.0 响应格式
     if (data.output?.choices?.[0]?.message?.content?.[0]?.image) {
       const imageUrl = data.output.choices[0].message.content[0].image;
-      console.log('Image generated:', imageUrl.substring(0, 100) + '...');
+      log('Image generated:', imageUrl.substring(0, 100) + '...');
       return NextResponse.json({ url: imageUrl });
     } else if (data.code) {
       throw new Error(`${data.code}: ${data.message}`);
     } else {
-      console.error('Unexpected response:', JSON.stringify(data).substring(0, 500));
+      error('Unexpected response:', JSON.stringify(data).substring(0, 500));
       throw new Error('Invalid API response format');
     }
   } catch (error: any) {
-    console.error('Image API error:', error);
+    error('Image API error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

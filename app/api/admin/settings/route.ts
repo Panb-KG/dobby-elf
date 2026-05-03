@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
 /**
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Get settings error:', error);
+    error('Get settings error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Update settings error:', error);
+    error('Update settings error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

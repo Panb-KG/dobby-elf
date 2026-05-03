@@ -1,3 +1,4 @@
+import { error } from '../../../lib/console';
 import { NextResponse } from 'next/server';
 
 /**
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI API error:', errorText);
+      error('AI API error:', errorText);
       return NextResponse.json({ error: 'AI 生成失败' }, { status: 500 });
     }
 
@@ -78,13 +79,13 @@ export async function POST(req: Request) {
         questions = JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
-      console.error('Parse AI response error:', e);
+      error('Parse AI response error:', e);
       return NextResponse.json({ error: '解析题目数据失败', raw: content }, { status: 500 });
     }
 
     return NextResponse.json({ questions });
   } catch (error: any) {
-    console.error('Generate exercises error:', error);
+    error('Generate exercises error:', error);
     return NextResponse.json({ error: error.message || '生成失败' }, { status: 500 });
   }
 }

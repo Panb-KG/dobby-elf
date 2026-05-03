@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
 /**
@@ -62,7 +63,7 @@ export async function GET(req: Request) {
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
   } catch (error: any) {
-    console.error('Audit logs error:', error);
+    error('Audit logs error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

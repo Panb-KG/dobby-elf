@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import bcrypt from 'bcrypt';
+import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     }
     return handleLogin(req);
   } catch (error: any) {
-    console.error('Admin auth error:', error);
+    error('Admin auth error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

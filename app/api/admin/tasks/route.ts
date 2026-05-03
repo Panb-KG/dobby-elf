@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
 /**
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ tasks });
   } catch (error: any) {
-    console.error('Get tasks error:', error);
+    error('Get tasks error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, id: newTaskId });
   } catch (error: any) {
-    console.error('Task error:', error);
+    error('Task error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -112,7 +113,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Update task error:', error);
+    error('Update task error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -135,7 +136,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Delete task error:', error);
+    error('Delete task error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

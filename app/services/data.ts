@@ -1,3 +1,4 @@
+import { error } from '../lib/console';
 import { User, Course, Achievement, KnowledgePoint, DailyTask } from './types';
 
 export class DataService {
@@ -40,7 +41,7 @@ export class DataService {
       if (!response.ok) return null;
       return await response.json();
     } catch (error) {
-      console.error('Failed to get user:', error);
+      error('Failed to get user:', error);
       return null;
     }
   }
@@ -53,7 +54,7 @@ export class DataService {
         body: JSON.stringify({ userId: user.id, updates: user }),
       });
     } catch (error) {
-      console.error('Failed to save user:', error);
+      error('Failed to save user:', error);
     }
   }
 
@@ -65,7 +66,7 @@ export class DataService {
         body: JSON.stringify({ userId, updates }),
       });
     } catch (error) {
-      console.error('Failed to update user:', error);
+      error('Failed to update user:', error);
     }
   }
 
@@ -77,7 +78,7 @@ export class DataService {
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
-      console.error('Failed to get courses:', error);
+      error('Failed to get courses:', error);
       return [];
     }
   }
@@ -90,7 +91,7 @@ export class DataService {
         body: JSON.stringify({ userId, course }),
       });
     } catch (error) {
-      console.error('Failed to save course:', error);
+      error('Failed to save course:', error);
     }
   }
 
@@ -101,7 +102,7 @@ export class DataService {
         headers: this.createAuthHeaders(),
       });
     } catch (error) {
-      console.error('Failed to delete course:', error);
+      error('Failed to delete course:', error);
     }
   }
 
@@ -113,7 +114,7 @@ export class DataService {
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
-      console.error('Failed to get achievements:', error);
+      error('Failed to get achievements:', error);
       return [];
     }
   }
@@ -126,7 +127,7 @@ export class DataService {
         body: JSON.stringify({ userId, achievement }),
       });
     } catch (error) {
-      console.error('Failed to save achievement:', error);
+      error('Failed to save achievement:', error);
     }
   }
 
@@ -138,7 +139,7 @@ export class DataService {
       if (!response.ok) return [];
       return await response.json();
     } catch (error) {
-      console.error('Failed to get knowledge graph:', error);
+      error('Failed to get knowledge graph:', error);
       return [];
     }
   }
@@ -151,7 +152,7 @@ export class DataService {
         body: JSON.stringify({ userId, points }),
       });
     } catch (error) {
-      console.error('Failed to save knowledge graph:', error);
+      error('Failed to save knowledge graph:', error);
     }
   }
 }

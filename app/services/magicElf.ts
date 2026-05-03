@@ -1,3 +1,4 @@
+import { error } from '../lib/console';
 // Dobi Magic Service for DashScope
 export interface Message {
   role: "user" | "model";
@@ -55,7 +56,7 @@ export class DobiService {
       const data = await response.json();
       return data.url;
     } catch (error) {
-      console.error("Image generation failed:", error);
+      error("Image generation failed:", error);
       return null;
     }
   }
@@ -176,15 +177,15 @@ export class DobiService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Chat API error - Status:', response.status, response.statusText);
-        console.error('Chat API error - Text:', errorText || '(empty response)');
+        error('Chat API error - Status:', response.status, response.statusText);
+        error('Chat API error - Text:', errorText || '(empty response)');
 
         // 尝试解析错误信息
         let errorMessage = `Chat failed: ${response.status} ${response.statusText}`;
         if (errorText) {
           try {
             const errorJson = JSON.parse(errorText);
-            console.error('Chat API error - JSON:', errorJson);
+            error('Chat API error - JSON:', errorJson);
             if (errorJson.error) {
               errorMessage = `API Error: ${errorJson.error}`;
             } else if (errorJson.message) {
@@ -261,7 +262,7 @@ export class DobiService {
         }
       }
     } catch (error) {
-      console.error('Chat stream error:', error);
+      error('Chat stream error:', error);
       yield '哎呀,多比的魔法出了一点小状况... 请稍后再试。🪄';
     }
   }

@@ -1,3 +1,4 @@
+import { error } from '../../lib/console';
 import { NextResponse } from 'next/server';
 
 /**
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: any) {
-    console.error('Chat API error:', error.message);
+    error('Chat API error:', error.message);
     return NextResponse.json(
       { error: error.message || '魔法出错了，请稍后再试' },
       { status: 500 }

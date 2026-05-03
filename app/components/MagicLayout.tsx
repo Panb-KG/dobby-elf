@@ -821,7 +821,7 @@ function ExerciseSidebarContent({
                 <h4 className="text-lg font-serif italic text-white">练习完成！</h4>
                 <p className="text-xs text-white/60">你真棒！多比为你准备了详细的魔法解析。</p>
                 <div className="space-y-4 text-left mt-6">
-                  {dynamicExercises.questions.map((q: any, idx: number) => (
+                  {dynamicExercises.questions.map((q, idx: number) => (
                     <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-white/40">第 {idx + 1} 题</span>

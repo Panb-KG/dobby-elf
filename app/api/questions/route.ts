@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
 
 /**
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(questions);
   } catch (error: any) {
-    console.error('Get questions error:', error);
+    error('Get questions error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, id: questionId });
   } catch (error: any) {
-    console.error('Save question error:', error);
+    error('Save question error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -107,7 +108,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Delete question error:', error);
+    error('Delete question error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

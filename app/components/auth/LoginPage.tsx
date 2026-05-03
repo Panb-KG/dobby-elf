@@ -135,8 +135,8 @@ export default function LoginPage({
         await onRegister(username.trim(), password, confirmPassword);
         setSuccessMessage('太棒了！注册成功！欢迎来到魔法小课桌！🎉');
       }
-    } catch (err: any) {
-      const msg = err.message || '魔法出错了，请稍后再试~';
+    } catch (err: unknown) {
+      const msg = (err instanceof Error && err.message) || '魔法出错了，请稍后再试~';
       setLocalError(msg);
     } finally {
       setIsLoading(false);

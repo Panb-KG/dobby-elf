@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/auth';
+import { error } from '../lib/console';
 import { User } from '../services/types';
 
 export interface UseAuthReturn {
@@ -30,7 +31,7 @@ export function useAuth(): UseAuthReturn {
         const currentUser = authService.getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.error('Failed to get current user:', error);
+        error('Failed to get current user:', error);
       } finally {
         setIsAuthReady(true);
       }

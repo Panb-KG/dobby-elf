@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from 'react';
+import { error } from '../lib/console';
 import { offlineSync } from '../lib/offline-sync';
 
 export interface UseSyncOptions {
@@ -68,7 +69,7 @@ export function useSync(options: UseSyncOptions) {
       });
       onSuccess?.(table);
     } catch (error) {
-      console.error(`Sync failed for ${table}:`, error);
+      error(`Sync failed for ${table}:`, error);
       onError?.(table, error as Error);
     }
   }, [userId, enabled, onSuccess, onError]);

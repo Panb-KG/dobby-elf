@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import bcrypt from 'bcrypt';
+import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
 
 export async function POST(req: Request) {
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       token
     });
   } catch (error: any) {
-    console.error('Login error:', error);
+    error('Login error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

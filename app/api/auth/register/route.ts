@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { error } from '../../../lib/console';
 import bcrypt from 'bcrypt';
 
 export async function POST(req: Request) {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
       }
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
+    error('Registration error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

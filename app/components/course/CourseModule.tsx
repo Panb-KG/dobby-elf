@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Calendar, Plus, X, Camera, Loader2 } from 'lucide-react';
+import { error as logError } from '../../lib/console';
 import type { Course, ScheduleView } from '../../types';
 
 export interface CourseModuleProps {
@@ -115,9 +116,9 @@ export function CourseModule({
         setIsParsing(false);
       };
       reader.readAsDataURL(file);
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      setParseError(error.message || '上传失败');
+    } catch (error: unknown) {
+      logError('Upload error:', error);
+      setParseError((error instanceof Error && error.message) || '上传失败');
       setIsParsing(false);
     }
   };

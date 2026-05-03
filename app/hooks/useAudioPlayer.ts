@@ -18,9 +18,10 @@ export interface UseAudioPlayerReturn {
 }
 
 const AUDIO_URLS: Record<Exclude<WhiteNoiseId, 'none'>, string> = {
-  library: '/audio/library.mp3',
-  rain: '/audio/rain.mp3',
-  fire: '/audio/fireplace.mp3',
+  // 使用可靠的免费音频CDN（Pixabay）
+  library: 'https://cdn.pixabay.com/audio/2022/05/17/audio_1590407870.mp3',
+  rain: 'https://cdn.pixabay.com/audio/2022/03/10/audio_a2c0c7c7e4.mp3',
+  fire: 'https://cdn.pixabay.com/audio/2022/01/18/audio_d0a1f6a3c0.mp3',
 };
 
 export function useAudioPlayer(): UseAudioPlayerReturn {

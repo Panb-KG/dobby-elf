@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
 
 interface User {
@@ -42,7 +43,7 @@ export default function AdminUsersPage() {
         setTotal(data.pagination.total);
       }
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
     }
@@ -67,7 +68,7 @@ export default function AdminUsersPage() {
         alert(data.error || '删除失败');
       }
     } catch (error) {
-      console.error('Failed to delete user:', error);
+      error('Failed to delete user:', error);
       alert('删除失败');
     }
   };

@@ -1,3 +1,4 @@
+import { error, warn } from '../lib/console';
 import { User } from './types';
 
 const AUTH_TOKEN_KEY = 'dobi_auth_token';
@@ -30,7 +31,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error('Failed to load user from storage:', error);
+      error('Failed to load user from storage:', error);
     }
   }
 
@@ -48,7 +49,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error('Failed to save user to storage:', error);
+      error('Failed to save user to storage:', error);
     }
   }
 
@@ -115,7 +116,7 @@ export class AuthService {
         return loginData.user;
       }
     } catch (loginError) {
-      console.warn('Auto-login after registration failed:', loginError);
+      warn('Auto-login after registration failed:', loginError);
       // 即使自动登录失败，仍然返回注册用户信息
     }
 

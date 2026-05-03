@@ -1,3 +1,4 @@
+import { log } from './console';
 /**
  * 性能优化工具
  * 
@@ -71,7 +72,7 @@ export function measurePerformance<T>(label: string, fn: () => T): T {
   const result = fn();
   const end = performance.now();
   
-  console.log(`[Performance] ${label}: ${(end - start).toFixed(2)}ms`);
+  log(`[Performance] ${label}: ${(end - start).toFixed(2)}ms`);
   
   return result;
 }
@@ -92,7 +93,7 @@ export async function measureAsyncPerformance<T>(label: string, fn: () => Promis
   const result = await fn();
   const end = performance.now();
   
-  console.log(`[Performance] ${label}: ${(end - start).toFixed(2)}ms`);
+  log(`[Performance] ${label}: ${(end - start).toFixed(2)}ms`);
   
   return result;
 }

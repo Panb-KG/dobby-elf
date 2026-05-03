@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
+import { error } from '../../lib/console';
 import path from 'path';
 
 const dbPath = path.join(process.cwd(), 'data', 'dobi.db');
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(points);
   } catch (error: any) {
-    console.error('Get knowledge points error:', error);
+    error('Get knowledge points error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Save knowledge points error:', error);
+    error('Save knowledge points error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

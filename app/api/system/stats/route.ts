@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
 /**
@@ -92,7 +93,7 @@ export async function GET(req: Request) {
       timestamp: now.toISOString(),
     });
   } catch (error: any) {
-    console.error('Get system stats error:', error);
+    error('Get system stats error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

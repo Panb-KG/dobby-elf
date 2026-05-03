@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
 
 interface Task {
@@ -35,7 +36,7 @@ export default function AdminTasksPage() {
         setTasks(data.tasks);
       }
     } catch (error) {
-      console.error('Failed to fetch tasks:', error);
+      error('Failed to fetch tasks:', error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export default function AdminTasksPage() {
         fetchTasks();
       }
     } catch (error) {
-      console.error('Failed to toggle task:', error);
+      error('Failed to toggle task:', error);
     }
   };
 
@@ -70,7 +71,7 @@ export default function AdminTasksPage() {
         fetchTasks();
       }
     } catch (error) {
-      console.error('Failed to delete task:', error);
+      error('Failed to delete task:', error);
     }
   };
 
@@ -84,7 +85,7 @@ export default function AdminTasksPage() {
         fetchTasks();
       }
     } catch (error) {
-      console.error('Failed to run task:', error);
+      error('Failed to run task:', error);
     }
   };
 

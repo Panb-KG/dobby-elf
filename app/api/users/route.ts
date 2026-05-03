@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
 
 /**
@@ -41,7 +42,7 @@ export async function GET(req: Request) {
       treeGrowth: user.tree_growth
     });
   } catch (error: any) {
-    console.error('Get user error:', error);
+    error('Get user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, id: user.id });
   } catch (error: any) {
-    console.error('Create user error:', error);
+    error('Create user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -109,7 +110,7 @@ export async function PUT(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Update user error:', error);
+    error('Update user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -132,7 +133,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Delete user error:', error);
+    error('Delete user error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

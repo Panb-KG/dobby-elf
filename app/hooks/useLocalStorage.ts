@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { error, log } from '../lib/console';
 import { getStorage, setStorage, removeStorage, StorageOptions } from '../lib/storage';
 
 export interface UseLocalStorageOptions<T> extends StorageOptions {
@@ -39,7 +40,7 @@ export interface UseLocalStorageOptions<T> extends StorageOptions {
  * const [settings, setSettings] = useLocalStorage({
  *   key: StorageKeys.SETTINGS,
  *   defaultValue: { darkMode: false },
- *   onChange: (val) => console.log('设置已更新', val),
+ *   onChange: (val) => log('设置已更新', val),
  * });
  * ```
  */
@@ -76,7 +77,7 @@ export function useLocalStorage<T>(options: UseLocalStorageOptions<T>) {
     try {
       setStorage(key, value, storageOptions);
     } catch (error) {
-      console.error(`[useLocalStorage] Failed to save "${key}":`, error);
+      error(`[useLocalStorage] Failed to save "${key}":`, error);
     }
     
     onChangeRef.current?.(value);
@@ -99,7 +100,7 @@ export function useLocalStorage<T>(options: UseLocalStorageOptions<T>) {
       removeStorage(key, { prefix, ttl });
       setValue(defaultValue);
     } catch (error) {
-      console.error(`[useLocalStorage] Failed to remove "${key}":`, error);
+      error(`[useLocalStorage] Failed to remove "${key}":`, error);
     }
   }, [key, defaultValue, prefix, ttl]);
 

@@ -188,7 +188,7 @@ class OfflineSyncManager {
       }));
       localStorage.setItem('dobi_sync_queue', JSON.stringify(serializable));
     } catch (error) {
-      console.error('Failed to save sync queue:', error);
+      error('Failed to save sync queue:', error);
     }
   }
 
@@ -215,7 +215,7 @@ class OfflineSyncManager {
         }
       }
     } catch (error) {
-      console.error('Failed to restore sync queue:', error);
+      error('Failed to restore sync queue:', error);
     }
   }
 

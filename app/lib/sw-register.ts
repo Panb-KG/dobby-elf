@@ -1,3 +1,4 @@
+import { log } from './console';
 /**
  * Service Worker 注册工具
  */
@@ -12,7 +13,7 @@ export async function registerSW(): Promise<ServiceWorkerRegistration | null> {
       scope: '/',
     });
 
-    console.log('[SW] Registered:', registration.scope);
+    log('[SW] Registered:', registration.scope);
 
     // 更新检测
     registration.addEventListener('updatefound', () => {
@@ -21,7 +22,7 @@ export async function registerSW(): Promise<ServiceWorkerRegistration | null> {
 
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          console.log('[SW] New version available');
+          log('[SW] New version available');
           // 通知应用有新版本
           window.dispatchEvent(new CustomEvent('sw-update-available'));
         }
@@ -37,7 +38,7 @@ export async function registerSW(): Promise<ServiceWorkerRegistration | null> {
 
     return registration;
   } catch (error) {
-    console.error('[SW] Registration failed:', error);
+    error('[SW] Registration failed:', error);
     return null;
   }
 }
@@ -51,7 +52,7 @@ export async function unregisterSW(): Promise<boolean> {
     const registration = await navigator.serviceWorker.ready;
     return await registration.unregister();
   } catch (error) {
-    console.error('[SW] Unregistration failed:', error);
+    error('[SW] Unregistration failed:', error);
     return false;
   }
 }

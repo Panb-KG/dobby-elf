@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { error } from '../../lib/console';
 import { getDb, transaction } from '../../lib/db';
 
 /**
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(tasks);
   } catch (error: any) {
-    console.error('Get homework error:', error);
+    error('Get homework error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, id: taskId });
   } catch (error: any) {
-    console.error('Save homework error:', error);
+    error('Save homework error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -96,7 +97,7 @@ export async function PATCH(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Update homework error:', error);
+    error('Update homework error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -120,7 +121,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Delete homework error:', error);
+    error('Delete homework error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

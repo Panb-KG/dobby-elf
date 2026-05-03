@@ -77,7 +77,7 @@ export function setStorage<T>(
     
     localStorage.setItem(fullKey, JSON.stringify(data));
   } catch (error) {
-    console.error(`Failed to set storage key "${key}":`, error);
+    error(`Failed to set storage key "${key}":`, error);
     // 存储满时清理过期数据
     if (error instanceof DOMException && error.name === 'QuotaExceededError') {
       cleanupExpired();
@@ -112,7 +112,7 @@ export function getStorage<T>(
     
     return data.value as T;
   } catch (error) {
-    console.error(`Failed to get storage key "${key}":`, error);
+    error(`Failed to get storage key "${key}":`, error);
     return defaultValue;
   }
 }
@@ -129,7 +129,7 @@ export function removeStorage(
     const fullKey = getFullKey(key, options.prefix);
     localStorage.removeItem(fullKey);
   } catch (error) {
-    console.error(`Failed to remove storage key "${key}":`, error);
+    error(`Failed to remove storage key "${key}":`, error);
   }
 }
 
@@ -146,7 +146,7 @@ export function clearStorage(prefix: string = STORAGE_PREFIX): void {
       }
     });
   } catch (error) {
-    console.error('Failed to clear storage:', error);
+    error('Failed to clear storage:', error);
   }
 }
 
@@ -188,7 +188,7 @@ function cleanupExpired(): void {
       }
     });
   } catch (error) {
-    console.error('Failed to cleanup expired storage:', error);
+    error('Failed to cleanup expired storage:', error);
   }
 }
 
@@ -224,7 +224,7 @@ export function importStorage(jsonData: string, prefix: string = STORAGE_PREFIX)
       localStorage.setItem(fullKey, JSON.stringify(value));
     });
   } catch (error) {
-    console.error('Failed to import storage:', error);
+    error('Failed to import storage:', error);
     throw new Error('导入数据失败，请检查文件格式');
   }
 }
