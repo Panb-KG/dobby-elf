@@ -19,7 +19,7 @@ import {
   ChevronRight, Send, Paperclip, Mic,
   Bell, Droplets, Leaf, Flame, CloudRain, Library, VolumeX,
   CheckCircle2, Circle, RotateCcw, TrendingUp, Medal, Award, Star,
-  Plus, LogOut, Home,
+  Plus, LogOut, Home, User as UserIcon,
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -546,7 +546,7 @@ export default function MagicLayout(props: MagicLayoutProps) {
         {([
           { id: 'chat', label: '对话', icon: MessageSquare },
           { id: 'course', label: '书库', icon: BookOpen },
-          { id: 'achievements', label: '我的', icon: MessageSquare },
+          { id: 'achievements', label: '我的', icon: UserIcon },
         ] as const).map(item => (
           <button
             key={item.id}

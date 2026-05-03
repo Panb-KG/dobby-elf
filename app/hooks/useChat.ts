@@ -13,6 +13,7 @@ export interface UseChatReturn {
   sendMessage: (text: string, image?: string | null) => Promise<void>;
   handleInputChange: (value: string) => void;
   handleShortcut: (prompt: string) => Promise<void>;
+  abortChat: () => void;
 }
 
 export interface UseChatOptions {
@@ -21,6 +22,7 @@ export interface UseChatOptions {
 
 const DEFAULT_INITIAL_MESSAGE = '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨';
 const MAX_CHAT_HISTORY = 50; // 最多保留 50 条消息
+const STREAM_BATCH_MS = 80; // 流式更新批处理间隔（ms）
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const { initialMessage = DEFAULT_INITIAL_MESSAGE } = options;
@@ -39,11 +41,43 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 流式优化：用 ref 累积文本，批量更新 UI
+  const streamingTextRef = useRef<string>('');
+  const batchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesRef = useRef<Message[]>(messages);
+  messagesRef.current = messages;
+
   // 自动保存聊天记录
   useEffect(() => {
     const toSave = messages.slice(-MAX_CHAT_HISTORY);
     setStorage(StorageKeys.CHAT_HISTORY, toSave);
   }, [messages]);
+
+  // 批量更新 UI（每 STREAM_BATCH_MS ms 一次）
+  const flushStreamingText = useCallback(() => {
+    const text = streamingTextRef.current;
+    if (!text) return;
+    setMessages(prev => {
+      const newMessages = [...prev];
+      const lastMsg = newMessages[newMessages.length - 1];
+      if (lastMsg && lastMsg.role === 'model' && lastMsg.text !== text) {
+        lastMsg.text = text;
+      }
+      return newMessages;
+    });
+  }, []);
+
+  const scheduleBatchUpdate = useCallback(() => {
+    if (batchTimerRef.current) return;
+    batchTimerRef.current = setTimeout(() => {
+      batchTimerRef.current = null;
+      flushStreamingText();
+    }, STREAM_BATCH_MS);
+  }, [flushStreamingText]);
+
+  const abortChat = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
 
   const sendMessage = useCallback(async (text: string, image: string | null = null) => {
     if (!text.trim()) return;
@@ -71,7 +105,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       await new Promise(resolve => setTimeout(resolve, 0));
 
       // 创建流式消息占位
-      const streamingId = `stream_${Date.now()}`;
       const streamingMessage: Message = {
         role: 'model',
         text: '',
@@ -80,37 +113,27 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
       setMessages(prev => [...prev, streamingMessage]);
 
-      // 流式接收并逐字追加
-      let fullText = '';
+      // 流式接收，用 ref 累积文本，批量更新 UI
+      streamingTextRef.current = '';
       for await (const chunk of dobi.chatStream(
         [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ role: m.role as 'user' | 'model', text: m.text }))
       )) {
         if (typeof chunk === 'string') {
-          fullText += chunk;
-          // 逐字更新 UI
-          setMessages(prev => {
-            const newMessages = [...prev];
-            const lastMsg = newMessages[newMessages.length - 1];
-            if (lastMsg && lastMsg.role === 'model' && lastMsg.text !== fullText) {
-              lastMsg.text = fullText;
-            }
-            return newMessages;
-          });
+          streamingTextRef.current += chunk;
+          scheduleBatchUpdate();
         }
       }
 
-      // 最终完成
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastMsg = newMessages[newMessages.length - 1];
-        if (lastMsg && lastMsg.role === 'model') {
-          lastMsg.text = fullText;
-        }
-        return newMessages;
-      });
-    } catch (error: any) {
-      if (error.name !== 'AbortError') {
-        console.error('Chat error:', error);
+      // 最终完成：确保最后一次更新
+      if (batchTimerRef.current) {
+        clearTimeout(batchTimerRef.current);
+        batchTimerRef.current = null;
+      }
+      flushStreamingText();
+    } catch (error: unknown) {
+      const err = error as Error;
+      if (err.name !== 'AbortError') {
+        console.error('Chat error:', err);
         const errorMessage: Message = {
           role: 'system',
           text: '多比的魔法出错了，请稍后再试。',
@@ -120,8 +143,9 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
+      streamingTextRef.current = '';
     }
-  }, []);
+  }, [scheduleBatchUpdate, flushStreamingText]);
 
   const handleInputChange = useCallback((value: string) => {
     setInput(value);
@@ -139,5 +163,6 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     sendMessage,
     handleInputChange,
     handleShortcut,
+    abortChat,
   };
 }
