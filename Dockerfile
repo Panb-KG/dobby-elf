@@ -35,8 +35,9 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files
+# Note: Next.js standalone output structure can vary
 RUN mkdir -p /app/public /app/data
-COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/standalone/ ./
 COPY --from=builder /app/.next/static ./.next/static
 
 # Set correct permissions (data directory will be mounted as volume)
