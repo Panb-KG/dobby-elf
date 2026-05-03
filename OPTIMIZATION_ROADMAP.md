@@ -1,6 +1,18 @@
 # Dobby-elf 优化路线图
 
-> 更新时间：2026-05-03 16:35 GMT+8
+> 更新时间：2026-05-03 19:05 GMT+8
+
+---
+
+## ✅ 已完成
+
+- ✅ #1 MagicLayout 瘦身（抽离 useAudioPlayer, useSmartReminder, useUserData, useExercise）
+- ✅ #2 流式聊天性能优化（ref 累积 + 80ms 批量更新）
+- ✅ #3 MagicApp.tsx 归档到 app/archive/
+- ✅ #4 统一控制台日志（创建 app/lib/console.ts，替换 132 处 console 调用）
+- ✅ #5 消除 any 类型（useChat.ts, LoginPage.tsx, CourseModule.tsx, MagicLayout.tsx）
+- ✅ #6 移动端底部导航图标修正（「我的」tab 改为 User 图标）
+- ✅ #7 白噪音音频源替换（使用 Pixabay CDN）
 
 ---
 
@@ -98,8 +110,8 @@
 
 ## 执行顺序
 
-| 批次 | 项目 | 预计耗时 |
-|------|------|----------|
-| 第一批 | #1 #2 #3 | 本次 |
-| 第二批 | #4 #5 #6 | 下次 |
-| 第三批 | #7 #8 #9 #10 | 后续 |
+| 批次 | 项目 | 状态 |
+|------|------|------|
+| 第一批 | #1 #2 #3 | ✅ 完成 |
+| 第二批 | #4 #5 #6 #7 | ✅ 完成 |
+| 第三批 | #8 #9 #10 | ⏳ 待执行 |
