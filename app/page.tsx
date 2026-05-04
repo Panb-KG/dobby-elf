@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth } from './hooks/useAuth';
 import { useChat } from './hooks/useChat';
 import { useCourses } from './hooks/useCourses';
@@ -18,9 +19,14 @@ import { useHomework } from './hooks/useHomework';
 import { useAchievements } from './hooks/useAchievements';
 import { useFocus } from './hooks/useFocus';
 import { SPELLS } from './lib/Global';
-import MagicLayout from './components/MagicLayout';
 import LoginPage from './components/auth/LoginPage';
 import LoadingScreen from './components/ui/LoadingScreen';
+
+// 动态导入 MagicLayout，实现代码分割
+const MagicLayout = dynamic(() => import('./components/MagicLayout'), {
+  loading: () => <LoadingScreen />,
+  ssr: false,
+});
 
 export default function Page() {
   // ========== 认证状态 ==========
