@@ -1,31 +1,25 @@
 import { NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
-import path from 'path';
+import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
-const dbPath = path.join(process.cwd(), 'data', 'dobi.db');
+/**
+ * 知识图谱 API
+ * 
+ * GET    /api/knowledge          - 获取知识图谱（需要登录）
+ * POST   /api/knowledge          - 更新知识图谱（需要登录）
+ */
 
-function getDb() {
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  return db;
-}
-
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return NextResponse.json({ error: '用户ID不能为空' }, { status: 400 });
-    }
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
     const db = getDb();
     const points = db.prepare(`
       SELECT id, name, status, subject FROM knowledge_points WHERE user_id = ?
-    `).all(userId);
-    
-    db.close();
+    `).all(user.userId);
     
     return NextResponse.json(points);
   } catch (error: any) {
@@ -34,18 +28,21 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, points } = await req.json();
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
-    if (!userId || !points) {
-      return NextResponse.json({ error: '用户ID和知识点数据不能为空' }, { status: 400 });
+    const { points } = await req.json();
+    
+    if (!points) {
+      return NextResponse.json({ error: '知识点数据不能为空' }, { status: 400 });
     }
     
     const db = getDb();
     
     // Delete existing points for user
-    db.prepare('DELETE FROM knowledge_points WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM knowledge_points WHERE user_id = ?').run(user.userId);
     
     // Insert new points
     const insertPoint = db.prepare(`
@@ -55,10 +52,8 @@ export async function POST(req: Request) {
     
     points.forEach((point: any) => {
       const pointId = point.id || `point_${Date.now()}_${Math.random()}`;
-      insertPoint.run(pointId, userId, point.name, point.status, point.subject);
+      insertPoint.run(pointId, user.userId, point.name, point.status, point.subject);
     });
-    
-    db.close();
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

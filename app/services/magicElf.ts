@@ -35,20 +35,18 @@ export class DobiService {
   async generateMagicImage(prompt: string): Promise<string | null> {
     try {
       // 获取认证令牌
-      let authHeaders: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
+      let token: string | null = null;
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('dobi_auth_token');
-        if (token) {
-          authHeaders['Authorization'] = `Bearer ${token}`;
-        }
+        token = localStorage.getItem('dobi_auth_token');
       }
 
       const response = await fetch('/api/image', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
         body: JSON.stringify({ prompt }),
       });
 
@@ -64,20 +62,18 @@ export class DobiService {
   async *chatStream(messages: Message[]) {
     try {
       // 获取认证令牌
-      let authHeaders: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
+      let token: string | null = null;
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('dobi_auth_token');
-        if (token) {
-          authHeaders['Authorization'] = `Bearer ${token}`;
-        }
+        token = localStorage.getItem('dobi_auth_token');
       }
 
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
         body: JSON.stringify({
           messages: messages.map(m => ({
             role: m.role,

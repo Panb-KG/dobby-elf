@@ -1,7 +1,15 @@
 import { error, log } from '../../lib/console';
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // 鉴权
+  const user = requireAuth(req);
+  if (!user) {
+    return unauthorizedResponse();
+  }
+
   const apiKey = process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '';
   const baseUrl = process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL || 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
 

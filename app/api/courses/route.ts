@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
 /**
  * 课程 CRUD API
  * 
- * GET    /api/courses?userId=xxx        - 获取课程表
- * POST   /api/courses                   - 创建/更新课程
- * DELETE /api/courses?id=xxx&userId=xxx - 删除课程
+ * GET    /api/courses        - 获取课程表（需要登录）
+ * POST   /api/courses        - 创建/更新课程（需要登录）
+ * DELETE /api/courses        - 删除课程（需要登录）
  */
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return NextResponse.json({ error: '用户ID不能为空' }, { status: 400 });
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
     }
     
     const db = getDb();
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
           ELSE 8
         END,
         time ASC
-    `).all(userId);
+    `).all(user.userId);
     
     return NextResponse.json(courses);
   } catch (error: any) {
@@ -38,12 +39,18 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, course } = await req.json();
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
+    }
     
-    if (!userId || !course) {
-      return NextResponse.json({ error: '用户ID和课程数据不能为空' }, { status: 400 });
+    const { course } = await req.json();
+    
+    if (!course) {
+      return NextResponse.json({ error: '课程数据不能为空' }, { status: 400 });
     }
     
     const db = getDb();
@@ -53,7 +60,7 @@ export async function POST(req: Request) {
     db.prepare(`
       INSERT OR REPLACE INTO courses (id, user_id, day, subject, time, type, color)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(courseId, userId, course.day, course.subject, course.time, course.type, course.color || '');
+    `).run(courseId, user.userId, course.day, course.subject, course.time, course.type, course.color || '');
     
     return NextResponse.json({ success: true, id: courseId });
   } catch (error: any) {
@@ -62,18 +69,23 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
+    }
+    
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
     const courseId = searchParams.get('id');
     
-    if (!userId || !courseId) {
-      return NextResponse.json({ error: '用户ID和课程ID不能为空' }, { status: 400 });
+    if (!courseId) {
+      return NextResponse.json({ error: '课程ID不能为空' }, { status: 400 });
     }
     
     const db = getDb();
-    const result = db.prepare('DELETE FROM courses WHERE id = ? AND user_id = ?').run(courseId, userId);
+    const result = db.prepare('DELETE FROM courses WHERE id = ? AND user_id = ?').run(courseId, user.userId);
     
     if (result.changes === 0) {
       return NextResponse.json({ error: '课程不存在' }, { status: 404 });

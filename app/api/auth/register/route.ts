@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
-import bcrypt from 'bcrypt';
+import { hashPassword, validateUsername, validatePassword } from '../../../lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -11,12 +11,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名和密码不能为空' }, { status: 400 });
     }
 
-    if (username.length < 2) {
-      return NextResponse.json({ error: '用户名至少2个字符' }, { status: 400 });
+    // 验证用户名
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.valid) {
+      return NextResponse.json({ error: usernameValidation.error }, { status: 400 });
     }
 
-    if (password.length < 4) {
-      return NextResponse.json({ error: '密码至少4个字符' }, { status: 400 });
+    // 验证密码强度
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.error }, { status: 400 });
     }
 
     const db = getDb();
@@ -29,8 +33,7 @@ export async function POST(req: Request) {
 
     // 创建新用户
     const userId = `user_${Date.now()}`;
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await hashPassword(password);
 
     db.prepare(`
       INSERT INTO users (id, username, password, display_name, email, created_at)
