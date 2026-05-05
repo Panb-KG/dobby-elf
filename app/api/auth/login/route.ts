@@ -3,6 +3,7 @@ import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
 import { apiRateLimiter } from '../../../lib/security';
+import { verifyPassword } from '../../../lib/auth';
 
 // 登录速率限制：每分钟 10 次
 const loginLimiter = new Map<string, { count: number; resetAt: number }>();
@@ -32,9 +33,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名和密码不能为空' }, { status: 400 });
     }
 
-    const usernameValidation = validateUsername(username);
-    if (!usernameValidation.valid) {
-      return NextResponse.json({ error: usernameValidation.error }, { status: 400 });
+    // 用户名校验
+    if (username.length < 2) {
+      return NextResponse.json({ error: '用户名至少2个字符' }, { status: 400 });
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return NextResponse.json({ error: '用户名只能包含字母、数字和下划线' }, { status: 400 });
     }
 
     const db = getDb();
