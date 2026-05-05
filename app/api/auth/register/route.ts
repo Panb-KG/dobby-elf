@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
-import bcrypt from 'bcrypt';
+import { hashPassword, validateUsername, validatePassword } from '../../../lib/auth';
 
 // 注册速率限制：每分钟 5 次
 const registerLimiter = new Map<string, { count: number; resetAt: number }>();
@@ -30,8 +30,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名和密码不能为空' }, { status: 400 });
     }
 
-    if (username.length < 2) {
-      return NextResponse.json({ error: '用户名至少2个字符' }, { status: 400 });
+    // 验证用户名
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.valid) {
+      return NextResponse.json({ error: usernameValidation.error }, { status: 400 });
     }
 
     if (password.length < 6) {
@@ -48,8 +50,7 @@ export async function POST(req: Request) {
 
     // 创建新用户
     const userId = `user_${Date.now()}`;
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await hashPassword(password);
 
     db.prepare(`
       INSERT INTO users (id, username, password, display_name, email, created_at)

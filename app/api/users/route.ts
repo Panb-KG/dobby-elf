@@ -1,45 +1,45 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
 /**
  * 用户配置 API
  * 
- * GET    /api/users?userId=xxx      - 获取用户信息
- * POST   /api/users                 - 创建用户
- * PUT    /api/users                 - 更新用户信息
- * DELETE /api/users?userId=xxx      - 删除用户
+ * GET    /api/users           - 获取当前用户信息（需要登录）
+ * PUT    /api/users           - 更新当前用户信息（需要登录）
+ * DELETE /api/users           - 删除当前用户（需要登录）
  */
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return NextResponse.json({ error: '用户ID不能为空' }, { status: 400 });
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
     }
     
     const db = getDb();
-    const user = db.prepare(`
+    const userData = db.prepare(`
       SELECT id, username, display_name, email, avatar_url, created_at, points, level, tree_growth
       FROM users WHERE id = ?
-    `).get(userId) as any;
+    `).get(user.userId) as any;
     
-    if (!user) {
-      return NextResponse.json({ error: '用户不存在' }, { status: 404 });
+    if (!userData) {
+      return unauthorizedResponse();
     }
     
     return NextResponse.json({ 
-      id: user.id, 
-      username: user.username, 
-      displayName: user.display_name,
-      email: user.email,
-      avatarUrl: user.avatar_url,
-      createdAt: user.created_at,
-      points: user.points,
-      level: user.level,
-      treeGrowth: user.tree_growth
+      id: userData.id, 
+      username: userData.username, 
+      displayName: userData.display_name,
+      email: userData.email,
+      avatarUrl: userData.avatar_url,
+      createdAt: userData.created_at,
+      points: userData.points,
+      level: userData.level,
+      treeGrowth: userData.tree_growth
     });
   } catch (error: any) {
     error('Get user error:', error);
@@ -47,34 +47,18 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
-    const { user } = await req.json();
-    
-    if (!user || !user.id || !user.username) {
-      return NextResponse.json({ error: '用户ID和用户名不能为空' }, { status: 400 });
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
     }
     
-    const db = getDb();
+    const { updates } = await req.json();
     
-    db.prepare(`
-      INSERT OR IGNORE INTO users (id, username, display_name, email)
-      VALUES (?, ?, ?, ?)
-    `).run(user.id, user.username, user.displayName || user.username, user.email || null);
-    
-    return NextResponse.json({ success: true, id: user.id });
-  } catch (error: any) {
-    error('Create user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function PUT(req: Request) {
-  try {
-    const { userId, updates } = await req.json();
-    
-    if (!userId || !updates) {
-      return NextResponse.json({ error: '用户ID和更新数据不能为空' }, { status: 400 });
+    if (!updates) {
+      return NextResponse.json({ error: '更新数据不能为空' }, { status: 400 });
     }
     
     const db = getDb();
@@ -98,7 +82,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: '没有要更新的字段' }, { status: 400 });
     }
     
-    values.push(userId);
+    values.push(user.userId);
     
     const result = db.prepare(`
       UPDATE users SET ${fields.join(', ')} WHERE id = ?
@@ -115,17 +99,16 @@ export async function PUT(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return NextResponse.json({ error: '用户ID不能为空' }, { status: 400 });
+    // 鉴权
+    const user = requireAuth(req);
+    if (!user) {
+      return unauthorizedResponse();
     }
     
     const db = getDb();
-    const result = db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    const result = db.prepare('DELETE FROM users WHERE id = ?').run(user.userId);
     
     if (result.changes === 0) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 });

@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
 /**
  * 题库管理 API
  * 
- * GET    /api/questions?subject=xxx&grade=xxx&topic=xxx  - 获取题库列表
- * POST   /api/questions                                  - 添加题目
- * DELETE /api/questions?id=xxx                           - 删除题目
+ * GET    /api/questions?subject=xxx&grade=xxx&topic=xxx  - 获取题库列表（公开）
+ * POST   /api/questions                                  - 添加题目（需要登录）
+ * DELETE /api/questions                                  - 删除题目（需要登录）
  */
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const subject = searchParams.get('subject');
@@ -54,8 +56,11 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
+    
     const body = await req.json();
     const { subject, grade, topic, difficulty, question, options, answer, explanation, type, source } = body;
     
@@ -90,8 +95,11 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
+    
     const { searchParams } = new URL(req.url);
     const questionId = searchParams.get('id');
     

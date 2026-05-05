@@ -1,23 +1,21 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
 /**
  * 练习记录 API
  * 
- * GET    /api/exercises?userId=xxx          - 获取练习记录列表
- * POST   /api/exercises                     - 创建练习记录
- * PATCH  /api/exercises                     - 更新练习记录
+ * GET    /api/exercises          - 获取练习记录列表（需要登录）
+ * POST   /api/exercises          - 创建练习记录（需要登录）
+ * PATCH  /api/exercises          - 更新练习记录（需要登录）
  */
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    
-    if (!userId) {
-      return NextResponse.json({ error: '用户 ID 不能为空' }, { status: 400 });
-    }
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
     const db = getDb();
     
@@ -25,7 +23,7 @@ export async function GET(req: Request) {
       SELECT * FROM exercise_sessions 
       WHERE user_id = ? 
       ORDER BY started_at DESC
-    `).all(userId);
+    `).all(user.userId);
     
     return NextResponse.json(sessions);
   } catch (error: any) {
@@ -34,12 +32,15 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { userId, subject, topic, totalQuestions } = body;
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
-    if (!userId || !subject || !topic || !totalQuestions) {
+    const body = await req.json();
+    const { subject, topic, totalQuestions } = body;
+    
+    if (!subject || !topic || !totalQuestions) {
       return NextResponse.json({ error: '必填字段不能为空' }, { status: 400 });
     }
     
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     db.prepare(`
       INSERT INTO exercise_sessions (id, user_id, subject, topic, total_questions)
       VALUES (?, ?, ?, ?, ?)
-    `).run(sessionId, userId, subject, topic, totalQuestions);
+    `).run(sessionId, user.userId, subject, topic, totalQuestions);
     
     return NextResponse.json({ success: true, id: sessionId });
   } catch (error: any) {
@@ -58,8 +59,11 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
   try {
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
+    
     const body = await req.json();
     const { sessionId, correctAnswers, score, completed, answers } = body;
     
@@ -68,6 +72,12 @@ export async function PATCH(req: Request) {
     }
     
     const db = getDb();
+    
+    // 验证会话属于当前用户
+    const session = db.prepare('SELECT * FROM exercise_sessions WHERE id = ? AND user_id = ?').get(sessionId, user.userId);
+    if (!session) {
+      return NextResponse.json({ error: '练习记录不存在' }, { status: 404 });
+    }
     
     // 更新练习记录
     if (correctAnswers !== undefined || score !== undefined || completed !== undefined) {

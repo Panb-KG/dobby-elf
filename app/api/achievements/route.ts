@@ -1,29 +1,29 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
+import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
 
 /**
  * 成就 API
  * 
- * GET    /api/achievements?userId=xxx          - 获取成就列表
- * POST   /api/achievements                     - 创建/更新成就
- * DELETE /api/achievements?id=xxx&userId=xxx   - 删除成就
+ * GET    /api/achievements          - 获取成就列表（需要登录）
+ * POST   /api/achievements          - 创建/更新成就（需要登录）
+ * DELETE /api/achievements          - 删除成就（需要登录）
  */
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-    const type = searchParams.get('type'); // 可选过滤
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
-    if (!userId) {
-      return NextResponse.json({ error: '用户ID不能为空' }, { status: 400 });
-    }
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type');
     
     const db = getDb();
     
     let query = `SELECT id, user_id, title, description, date, type, icon_name, color, points FROM achievements WHERE user_id = ?`;
-    const params: any[] = [userId];
+    const params: any[] = [user.userId];
     
     if (type) {
       query += ' AND type = ?';
@@ -41,12 +41,15 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, achievement } = await req.json();
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
     
-    if (!userId || !achievement) {
-      return NextResponse.json({ error: '用户ID和成就数据不能为空' }, { status: 400 });
+    const { achievement } = await req.json();
+    
+    if (!achievement) {
+      return NextResponse.json({ error: '成就数据不能为空' }, { status: 400 });
     }
     
     const db = getDb();
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       achievementId,
-      userId,
+      user.userId,
       achievement.title,
       achievement.description || null,
       achievement.date,
@@ -75,18 +78,20 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
+    const user = requireAuth(req);
+    if (!user) return unauthorizedResponse();
+    
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
     const achievementId = searchParams.get('id');
     
-    if (!userId || !achievementId) {
-      return NextResponse.json({ error: '用户ID和成就ID不能为空' }, { status: 400 });
+    if (!achievementId) {
+      return NextResponse.json({ error: '成就ID不能为空' }, { status: 400 });
     }
     
     const db = getDb();
-    const result = db.prepare('DELETE FROM achievements WHERE id = ? AND user_id = ?').run(achievementId, userId);
+    const result = db.prepare('DELETE FROM achievements WHERE id = ? AND user_id = ?').run(achievementId, user.userId);
     
     if (result.changes === 0) {
       return NextResponse.json({ error: '成就不存在' }, { status: 404 });

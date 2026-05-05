@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
-import bcrypt from 'bcrypt';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
 import { apiRateLimiter } from '../../../lib/security';
@@ -33,6 +32,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名和密码不能为空' }, { status: 400 });
     }
 
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.valid) {
+      return NextResponse.json({ error: usernameValidation.error }, { status: 400 });
+    }
+
     const db = getDb();
 
     const user = db.prepare(`
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
@@ -64,7 +68,7 @@ export async function POST(req: Request) {
       { expiresIn: '7d' }
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -79,6 +83,17 @@ export async function POST(req: Request) {
       },
       token
     });
+
+    // 设置 HTTP-only cookie
+    response.cookies.set('dobi_auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     error('Login error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
