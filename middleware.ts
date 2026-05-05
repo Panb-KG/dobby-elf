@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSecurityHeaders, apiRateLimiter, isValidUserId } from '../lib/security';
+import { getSecurityHeaders, apiRateLimiter, isValidUserId } from './app/lib/security';
 
 /**
  * API 中间件

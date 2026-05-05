@@ -1,6 +1,20 @@
 import { error } from '../../lib/console';
 import { NextResponse } from 'next/server';
 
+// ===== 类型定义 =====
+
+interface ChatMessage {
+  role: string;
+  content?: string;
+  text?: string;
+  files?: Array<{ mimeType: string; data: string }>;
+}
+
+interface ChatApiError {
+  error?: { code?: string; message?: string };
+  message?: string;
+}
+
 /**
  * Chat API - 多比智能聊天
  * 
@@ -22,17 +36,18 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { messages, systemInstruction, tools } = await req.json();
+    const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[] };
+    const { messages, systemInstruction, tools } = body;
 
     // 处理消息格式（支持文件附件）
-    const processedMessages = messages
-      .map((msg: any) => {
+    const processedMessages = (messages || [])
+      .map((msg: ChatMessage) => {
         const role = msg.role === 'model' ? 'assistant' : msg.role;
         const text = msg.content || msg.text;
         
         // 处理带附件的消息
         if (msg.files && msg.files.length > 0) {
-          const content: any[] = [];
+          const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
           
           if (text && text.trim()) {
             content.push({ type: 'text', text });
@@ -60,7 +75,7 @@ export async function POST(req: Request) {
         }
         return null;
       })
-      .filter((msg: any) => msg !== null);
+      .filter((msg): msg is NonNullable<typeof msg> => msg !== null);
 
     if (processedMessages.length === 0) {
       return NextResponse.json(
@@ -69,13 +84,41 @@ export async function POST(req: Request) {
       );
     }
 
+    // 输入校验：消息数量限制
+    if (processedMessages.length > 50) {
+      return NextResponse.json(
+        { error: '消息数量过多，请精简对话历史' },
+        { status: 400 }
+      );
+    }
+
+    // 输入校验：单条消息长度限制
+    for (const msg of processedMessages) {
+      if (!msg) continue;
+      const msgContent = 'content' in msg ? msg.content : '';
+      const textContent = typeof msgContent === 'string' ? msgContent : '';
+      if (textContent.length > 8000) {
+        return NextResponse.json(
+          { error: '单条消息过长' },
+          { status: 400 }
+        );
+      }
+    }
+
     const model = 'qwen3.6-plus';
     const apiEndpoint = baseUrl + '/chat/completions';
 
-    const requestBody: any = {
+    const requestBody: {
+      model: string;
+      messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>;
+      stream: boolean;
+      max_tokens: number;
+      temperature: number;
+      tools?: unknown[];
+    } = {
       model,
       messages: [
-        { role: 'system', content: systemInstruction },
+        { role: 'system', content: systemInstruction || '你是多比，一个友好、有耐心的小学学习助手。用简单易懂的语言回答，适当使用emoji。' },
         ...processedMessages
       ],
       stream: true,  // 启用流式响应，降低首字延迟
@@ -103,16 +146,17 @@ export async function POST(req: Request) {
       const errorText = await response.text();
       
       try {
-        const error = JSON.parse(errorText);
-        if (error.error && error.error.code === 'invalid_api_key') {
+        const apiError = JSON.parse(errorText) as ChatApiError;
+        if (apiError.error && apiError.error.code === 'invalid_api_key') {
           return NextResponse.json(
             { error: 'API 密钥无效，请联系管理员' },
             { status: 401 }
           );
         }
-        throw new Error(error.error?.message || error.message || 'API 请求失败');
-      } catch (e: any) {
-        throw new Error(e.message || `API 错误: ${response.status}`);
+        throw new Error(apiError.error?.message || apiError.message || 'API 请求失败');
+      } catch (e: unknown) {
+        const err = e as Error;
+        throw new Error(err.message || `API 错误: ${response.status}`);
       }
     }
 

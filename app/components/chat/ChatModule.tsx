@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { Send, Paperclip, Mic, X, ImageIcon, Video, File, Sparkles, ChevronRight, FileText, Home } from 'lucide-react';
+import { Send, Paperclip, X, ImageIcon, Video, File, Sparkles, FileText, Home } from 'lucide-react';
 import type { Message } from '../../types';
 import { DobiAvatar } from '../DobiAvatar';
 import { cn } from '@/lib/utils';
@@ -236,12 +236,6 @@ export function ChatModule({
                 title="上传附件"
               >
                 <Paperclip className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                title="语音输入"
-              >
-                <Mic className="w-5 h-5" />
               </button>
             </div>
           </div>

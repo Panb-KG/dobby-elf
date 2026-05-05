@@ -3,8 +3,27 @@ import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
 import bcrypt from 'bcrypt';
 
+// 注册速率限制：每分钟 5 次
+const registerLimiter = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = registerLimiter.get(ip);
+  if (!record || now > record.resetAt) {
+    registerLimiter.set(ip, { count: 1, resetAt: now + 60000 });
+    return false;
+  }
+  if (record.count >= 5) return true;
+  record.count++;
+  return false;
+}
+
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 });
+    }
+
     const { username, password } = await req.json();
 
     if (!username || !password) {
@@ -15,8 +34,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名至少2个字符' }, { status: 400 });
     }
 
-    if (password.length < 4) {
-      return NextResponse.json({ error: '密码至少4个字符' }, { status: 400 });
+    if (password.length < 6) {
+      return NextResponse.json({ error: '密码至少6个字符' }, { status: 400 });
     }
 
     const db = getDb();

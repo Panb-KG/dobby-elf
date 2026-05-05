@@ -15,12 +15,24 @@ import fs from 'fs';
 const DB_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DB_DIR, 'dobi.db');
 
-let db: Database.Database | null = null;
+// 使用 globalThis 确保 HMR 和热更新时单例不丢失
+interface GlobalWithDb {
+  __DOBI_DB_INSTANCE__: Database.Database | undefined;
+}
+
+function getGlobalDb(): Database.Database | undefined {
+  return (globalThis as unknown as GlobalWithDb).__DOBI_DB_INSTANCE__;
+}
+
+function setGlobalDb(db: Database.Database): void {
+  (globalThis as unknown as GlobalWithDb).__DOBI_DB_INSTANCE__ = db;
+}
 
 /**
- * 获取数据库实例（单例）
+ * 获取数据库实例（单例，globalThis 缓存）
  */
 export function getDb(): Database.Database {
+  let db = getGlobalDb();
   if (db) return db;
   
   // 确保 data 目录存在
@@ -29,6 +41,7 @@ export function getDb(): Database.Database {
   }
   
   db = new Database(DB_PATH);
+  setGlobalDb(db);
   
   // WAL 模式：允许并发读 + 单次写
   db.pragma('journal_mode = WAL');
@@ -46,9 +59,10 @@ export function getDb(): Database.Database {
  * 关闭数据库连接（优雅关闭时使用）
  */
 export function closeDb(): void {
+  const db = getGlobalDb();
   if (db) {
     db.close();
-    db = null;
+    setGlobalDb(undefined as unknown as Database.Database);
   }
 }
 

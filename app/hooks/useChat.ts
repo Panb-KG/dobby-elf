@@ -48,10 +48,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const messagesRef = useRef<Message[]>(messages);
   messagesRef.current = messages;
 
-  // 自动保存聊天记录
+  // 自动保存聊天记录（防抖，避免流式更新时频繁写入）
   useEffect(() => {
-    const toSave = messages.slice(-MAX_CHAT_HISTORY);
-    setStorage(StorageKeys.CHAT_HISTORY, toSave);
+    const timer = setTimeout(() => {
+      const toSave = messages.slice(-MAX_CHAT_HISTORY);
+      setStorage(StorageKeys.CHAT_HISTORY, toSave);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // 批量更新 UI（每 STREAM_BATCH_MS ms 一次）

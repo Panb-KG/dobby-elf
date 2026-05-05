@@ -3,9 +3,30 @@ import { getDb } from '../../../lib/db';
 import bcrypt from 'bcrypt';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
+import { apiRateLimiter } from '../../../lib/security';
+
+// 登录速率限制：每分钟 10 次
+const loginLimiter = new Map<string, { count: number; resetAt: number }>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = loginLimiter.get(ip);
+  if (!record || now > record.resetAt) {
+    loginLimiter.set(ip, { count: 1, resetAt: now + 60000 });
+    return false;
+  }
+  if (record.count >= 10) return true;
+  record.count++;
+  return false;
+}
 
 export async function POST(req: Request) {
   try {
+    // 速率限制
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 });
+    }
+
     const { username, password } = await req.json();
 
     if (!username || !password) {
@@ -32,7 +53,11 @@ export async function POST(req: Request) {
       SELECT id, text, completed, reward FROM daily_tasks WHERE user_id = ?
     `).all(user.id);
 
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      error('JWT_SECRET 未配置，请设置环境变量');
+      return NextResponse.json({ error: '服务器配置错误' }, { status: 500 });
+    }
     const token = jwt.sign(
       { userId: user.id, username: user.username },
       secret,
