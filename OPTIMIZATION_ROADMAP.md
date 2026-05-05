@@ -1,117 +1,79 @@
 # Dobby-elf 优化路线图
 
-> 更新时间：2026-05-03 19:05 GMT+8
+> 更新时间：2026-05-05 21:30 GMT+8
 
 ---
 
-## ✅ 已完成
+## ✅ 第一轮优化（2026-05-03）— 全部完成
 
-- ✅ #1 MagicLayout 瘦身（抽离 useAudioPlayer, useSmartReminder, useUserData, useExercise）
+- ✅ #1 MagicLayout 瘦身（抽离 hooks）
 - ✅ #2 流式聊天性能优化（ref 累积 + 80ms 批量更新）
-- ✅ #3 MagicApp.tsx 归档到 app/archive/
-- ✅ #4 统一控制台日志（创建 app/lib/console.ts，替换 132 处 console 调用）
-- ✅ #5 消除 any 类型（useChat.ts, LoginPage.tsx, CourseModule.tsx, MagicLayout.tsx）
-- ✅ #6 移动端底部导航图标修正（「我的」tab 改为 User 图标）
-- ✅ #7 白噪音音频源替换（使用 Pixabay CDN）
+- ✅ #3 MagicApp.tsx 归档
+- ✅ #4 统一控制台日志
+- ✅ #5 消除 any 类型
+- ✅ #6 移动端底部导航图标修正
+- ✅ #7 白噪音音频源替换
+- ✅ #8 Error Boundary
+- ✅ #9 代码分割（Dynamic Import）
+- ✅ #10 补充测试（22 个测试用例）
 
 ---
 
-## 🔴 P0 — 性能与架构
+## ✅ 第二轮优化（2026-05-05）— 全部完成
 
-### 1. MagicLayout.tsx 瘦身（1068 行 → 目标 <400 行）
-**问题**：主组件包含白噪音音频、智能提醒、用户数据管理、成就/练习等内联逻辑。
-**方案**：
-- 抽 `useAudioPlayer` hook（白噪音音频管理）
-- 抽 `useSmartReminder` hook（课程提醒逻辑）
-- 抽 `useUserData` hook（积分/等级/每日任务/知识之树）
-- 抽 `useExercise` hook（知识图谱/动态练习/答题流程）
-- MagicLayout 只负责布局组装和 props 传递
+### N1 — MagicLayout 瘦身到 426 行 🔴
+- 抽离 `RightSidebarContent.tsx`（右侧边栏全部内容）
+- MagicLayout 只负责布局框架 + props 传递
+- 从 1078 行 → 426 行
 
-**验收**：MagicLayout.tsx ≤ 400 行，功能完全不变。
+### N2 — 认证安全加固 🔴
+- 登录接口速率限制：10 次/分钟
+- 注册接口速率限制：5 次/分钟
+- JWT Secret 强制环境变量，移除硬编码 `'your-secret-key'`
+- 注册密码最低要求从 4 字符提升到 6 字符
 
-### 2. 流式聊天性能优化
-**问题**：`useChat.ts` 每收到一个 chunk 就 `setMessages`，对 50 条消息数组做全量克隆，导致频繁重渲染。
-**方案**：
-- 用 `useRef` 累积 streaming 文本，而非直接操作 messages 数组
-- 用 `requestAnimationFrame` 或 `setTimeout` 批量更新（每 100ms 一次）
-- 只更新最后一条消息的 text，不克隆整个数组
-- 考虑用 `produce` (immer) 做不可变更新
+### N3 — 聊天存储防抖 🔴
+- `useChat` 自动保存加 500ms debounce
+- 避免流式更新时每秒写入 10+ 次 LocalStorage
 
-**验收**：流式响应时 CPU 占用降低 50%+，UI 不卡顿。
+### N4 — 消除 chat route 中的 any 类型 🟡
+- 定义 `ChatMessage`、`ChatApiError` 接口
+- 替换所有 `any` 为具体类型
 
-### 3. MagicApp.tsx 归档清理
-**问题**：2849 行的旧架构文件仍留在 `app/` 目录，已不再使用。
-**方案**：
-- 创建 `app/archive/` 目录
-- 移动 `MagicApp.tsx` 到 `app/archive/MagicApp.tsx`
-- 确认没有 import 引用
-- 在 README 中注明归档原因
+### N5 — 数据库单例加固 🟡
+- 使用 `globalThis` 缓存 DB 实例
+- 防止 HMR 和热更新时单例丢失
 
-**验收**：`app/` 根目录无 MagicApp.tsx，构建无报错。
+### N7 — 核心 API 输入校验 🟡
+- Chat API 消息数量限制（最多 50 条）
+- 单条消息长度限制（最多 8000 字符）
 
----
+### N9 — 安全头 middleware 🟢
+- 将 `middleware.ts` 移到项目根目录（Next.js 要求）
+- 安全头、CORS、速率限制正式生效
 
-## 🟡 P1 — 代码质量
-
-### 4. 清理 132 处 console.log/error
-**问题**：生产环境不应有调试日志。
-**方案**：
-- 统一使用 `app/lib/logger.ts`
-- 按 NODE_ENV 控制日志级别
-- dev 环境：debug+，prod 环境：warn+
-
-### 5. 消除 `any` 类型残留
-**问题**：`useChat.ts`、`LoginPage.tsx`、`CourseModule.tsx`、`MagicLayout.tsx` 中有 `error: any`、`q: any`。
-**方案**：
-- 全部替换为 `unknown` + 类型守卫
-- 定义 `AppError` 接口
+### N10 — 移除无用语音输入按钮 🔵
+- `ChatModule` 移除未实现的 Mic 按钮
 
 ---
 
-## 🟡 P2 — 体验修复
+## 📋 未来可考虑
 
-### 6. 移动端底部导航图标修正
-**问题**：「我的」tab 用了 `MessageSquare`（和「对话」一样）。
-**方案**：改用 `User` 或 `CircleUser`。
-
-### 7. 白噪音音频源替换
-**问题**：`soundjay.com` URL 可能失效或跨域。
-**方案**：
-- 使用可靠的免费音频 CDN（如 pixabay、freesound）
-- 或打包本地静态资源
-- 添加加载失败 fallback
+| # | 项目 | 优先级 |
+|---|------|--------|
+| F1 | 日志异步化/队列化（避免同步写 DB 拖慢 API） | 🟡 |
+| F2 | 补充 useChat + auth 测试 | 🟢 |
+| F3 | PWA 离线支持完善 | 🟢 |
+| F4 | TypeScript strict mode | 🟢 |
+| F5 | 全局错误监控（Sentry） | 🔵 |
 
 ---
 
-## 🟢 P3 — 工程化
+## 执行记录
 
-### 8. 添加 Error Boundary
-**问题**：无错误边界，任何组件崩溃导致白屏。
-**方案**：
-- 创建 `app/components/ui/ErrorBoundary.tsx`
-- layout.tsx 中包裹根组件
-- 显示友好的错误页面
-
-### 9. 代码分割（Dynamic Import）
-**问题**：所有组件一次性加载。
-**方案**：
-- 右侧边栏模块（成就/专注/练习）用 `next/dynamic` 懒加载
-- 登录页用 `next/dynamic`
-- 测量首屏 LCP 改善
-
-### 10. 补充测试
-**问题**：vitest/playwright 已配置但测试为空。
-**方案**：
-- 先补 hooks 单元测试（useChat、useCourses、useAuth、useLocalStorage）
-- 补 storage.ts 测试
-- 关键组件快照测试
-
----
-
-## 执行顺序
-
-| 批次 | 项目 | 状态 |
-|------|------|------|
-| 第一批 | #1 #2 #3 | ✅ 完成 |
-| 第二批 | #4 #5 #6 #7 | ✅ 完成 |
-| 第三批 | #8 #9 #10 | ⏳ 待执行 |
+| 批次 | 项目 | 状态 | 日期 |
+|------|------|------|------|
+| 第一轮 | #1 #2 #3 | ✅ | 2026-05-03 |
+| 第一轮 | #4 #5 #6 #7 | ✅ | 2026-05-03 |
+| 第一轮 | #8 #9 #10 | ✅ | 2026-05-03 |
+| 第二轮 | N1 N2 N3 N4 N5 N7 N9 N10 | ✅ | 2026-05-05 |
