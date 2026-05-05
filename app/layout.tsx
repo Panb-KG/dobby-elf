@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "魔法小课桌 - 多比学习助手",
@@ -26,7 +27,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

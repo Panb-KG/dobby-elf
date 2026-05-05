@@ -21,10 +21,34 @@ const localStorageMock = {
   clear() {
     this.store = {};
   },
+  get length() {
+    return Object.keys(this.store).length;
+  },
+  key(index: number) {
+    return Object.keys(this.store)[index] || null;
+  },
 };
 
+// Make Object.keys work on the mock
+Object.defineProperty(localStorageMock, Symbol.toStringTag, {
+  value: 'Storage',
+});
+
+// Proxy to make Object.keys work
+const proxiedLocalStorage = new Proxy(localStorageMock, {
+  ownKeys(target) {
+    return Reflect.ownKeys(target.store);
+  },
+  getOwnPropertyDescriptor(target, prop) {
+    if (prop in target.store) {
+      return { enumerable: true, configurable: true, value: target.store[prop as string] };
+    }
+    return undefined;
+  },
+});
+
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
+  value: proxiedLocalStorage,
 });
 
 // 模拟 navigator.onLine

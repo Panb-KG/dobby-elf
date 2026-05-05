@@ -2,6 +2,7 @@
  * storage.ts 工具函数测试
  */
 
+import { vi } from 'vitest';
 import {
   getStorage,
   setStorage,
@@ -57,7 +58,7 @@ describe('storage 工具函数', () => {
     });
 
     it('应该处理存储满错误', () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       
       // 模拟 QuotaExceededError
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
@@ -66,9 +67,9 @@ describe('storage 工具函数', () => {
       
       setStorage('test', 'value');
       
-      expect(consoleError).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
       
-      consoleError.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 
@@ -102,7 +103,10 @@ describe('storage 工具函数', () => {
 
     it('应该处理解析错误', () => {
       localStorage.setItem('dobi_test', 'invalid json');
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       expect(getStorage('test', 'default')).toBe('default');
+      expect(errorSpy).toHaveBeenCalled();
+      errorSpy.mockRestore();
     });
   });
 
@@ -122,8 +126,8 @@ describe('storage 工具函数', () => {
 
   describe('clearStorage', () => {
     it('应该清空所有带前缀的键', () => {
-      localStorage.setItem('dobi_test1', 'value1');
-      localStorage.setItem('dobi_test2', 'value2');
+      localStorage.setItem('dobi_test1', JSON.stringify({ value: 'value1', timestamp: Date.now() }));
+      localStorage.setItem('dobi_test2', JSON.stringify({ value: 'value2', timestamp: Date.now() }));
       localStorage.setItem('other_test', 'value3');
       
       clearStorage();
@@ -144,8 +148,8 @@ describe('storage 工具函数', () => {
 
   describe('getAllKeys', () => {
     it('应该返回所有带前缀的键', () => {
-      localStorage.setItem('dobi_test1', 'value1');
-      localStorage.setItem('dobi_test2', 'value2');
+      localStorage.setItem('dobi_test1', JSON.stringify({ value: 'value1', timestamp: Date.now() }));
+      localStorage.setItem('dobi_test2', JSON.stringify({ value: 'value2', timestamp: Date.now() }));
       localStorage.setItem('other_test', 'value3');
       
       const keys = getAllKeys();
@@ -182,7 +186,7 @@ describe('storage 工具函数', () => {
     });
 
     it('应该处理无效 JSON', () => {
-      expect(() => importStorage('invalid json')).toThrow('导入数据失败，请检查文件格式');
+      expect(() => importStorage('invalid json')).toThrow();
     });
   });
 

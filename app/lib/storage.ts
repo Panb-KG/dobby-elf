@@ -1,3 +1,4 @@
+import { error as logError } from './console';
 /**
  * 统一存储封装
  * 
@@ -76,10 +77,10 @@ export function setStorage<T>(
     }
     
     localStorage.setItem(fullKey, JSON.stringify(data));
-  } catch (error) {
-    error(`Failed to set storage key "${key}":`, error);
+  } catch (err) {
+    logError(`Failed to set storage key "${key}":`, err);
     // 存储满时清理过期数据
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+    if (err instanceof DOMException && err.name === 'QuotaExceededError') {
       cleanupExpired();
     }
   }
@@ -111,8 +112,8 @@ export function getStorage<T>(
     }
     
     return data.value as T;
-  } catch (error) {
-    error(`Failed to get storage key "${key}":`, error);
+  } catch (err) {
+    logError(`Failed to get storage key "${key}":`, err);
     return defaultValue;
   }
 }
@@ -128,8 +129,8 @@ export function removeStorage(
   try {
     const fullKey = getFullKey(key, options.prefix);
     localStorage.removeItem(fullKey);
-  } catch (error) {
-    error(`Failed to remove storage key "${key}":`, error);
+  } catch (err) {
+    logError(`Failed to remove storage key "${key}":`, err);
   }
 }
 
@@ -145,8 +146,8 @@ export function clearStorage(prefix: string = STORAGE_PREFIX): void {
         localStorage.removeItem(key);
       }
     });
-  } catch (error) {
-    error('Failed to clear storage:', error);
+  } catch (err) {
+    logError('Failed to clear storage:', err);
   }
 }
 
@@ -187,8 +188,8 @@ function cleanupExpired(): void {
         // 忽略解析错误
       }
     });
-  } catch (error) {
-    error('Failed to cleanup expired storage:', error);
+  } catch (err) {
+    logError('Failed to cleanup expired storage:', err);
   }
 }
 
@@ -223,8 +224,8 @@ export function importStorage(jsonData: string, prefix: string = STORAGE_PREFIX)
       const fullKey = getFullKey(key, prefix);
       localStorage.setItem(fullKey, JSON.stringify(value));
     });
-  } catch (error) {
-    error('Failed to import storage:', error);
+  } catch (err) {
+    logError('Failed to import storage:', err);
     throw new Error('导入数据失败，请检查文件格式');
   }
 }
