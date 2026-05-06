@@ -9,6 +9,13 @@ import { vi, afterEach } from 'vitest';
 // 模拟 localStorage
 const localStorageMock = {
   store: {} as Record<string, string>,
+  get length() {
+    return Object.keys(this.store).length;
+  },
+  key(index: number) {
+    const keys = Object.keys(this.store);
+    return keys[index] ?? null;
+  },
   getItem(key: string) {
     return this.store[key] || null;
   },
