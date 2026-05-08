@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 定时任务管理 API
  * 
- * GET    /api/admin/tasks              - 获取任务列表
+ * GET    /api/admin/tasks              - 获取任务列表（需要管理员登录）
  * POST   /api/admin/tasks              - 创建任务
  * PUT    /api/admin/tasks              - 更新任务
  * DELETE /api/admin/tasks?id=xxx       - 删除任务
@@ -13,6 +14,12 @@ import { getDb } from '../../../lib/db';
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const db = getDb();
     const tasks = db.prepare(`
@@ -27,6 +34,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const runTaskId = searchParams.get('id');
@@ -81,6 +94,12 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { id, updates } = await req.json();
     
@@ -119,6 +138,12 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 审计日志 API
  * 
- * GET /api/admin/audit - 获取审计日志（分页）
+ * GET /api/admin/audit - 获取审计日志（分页，需要管理员登录）
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');

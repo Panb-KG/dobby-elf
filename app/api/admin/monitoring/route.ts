@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 系统监控 API
  * 
- * GET /api/admin/monitoring - 获取系统监控数据
+ * GET /api/admin/monitoring - 获取系统监控数据（需要管理员登录）
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || '24h';

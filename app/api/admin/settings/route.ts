@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 系统设置 API
  * 
- * GET  /api/admin/settings        - 获取所有设置
+ * GET  /api/admin/settings        - 获取所有设置（需要管理员登录）
  * GET  /api/admin/settings?key=xx - 获取单个设置
  * POST /api/admin/settings        - 更新设置
  * PUT  /api/admin/settings        - 批量更新设置
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const key = searchParams.get('key');
@@ -42,6 +49,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const body = await req.json();
     const db = getDb();
@@ -68,5 +81,11 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   return POST(req); // 同 POST
 }

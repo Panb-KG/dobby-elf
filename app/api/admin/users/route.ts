@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 管理员用户管理 API
  * 
- * GET    /api/admin/users              - 获取用户列表（分页）
+ * GET    /api/admin/users              - 获取用户列表（分页，需要管理员登录）
  * GET    /api/admin/users?userId=xxx   - 获取单个用户详情
  * POST   /api/admin/users              - 创建管理员账号
  * PUT    /api/admin/users              - 更新用户/管理员
@@ -12,6 +13,12 @@ import { getDb } from '../../../lib/db';
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
@@ -75,6 +82,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { username, password, displayName, role } = await req.json();
 
@@ -106,6 +119,12 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { userId, updates, isAdmin } = await req.json();
 
@@ -155,6 +174,12 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
