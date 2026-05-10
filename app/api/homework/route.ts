@@ -61,6 +61,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '作业数据不能为空' }, { status: 400 });
     }
     
+    if (!task.title || typeof task.title !== 'string' || task.title.trim().length === 0) {
+      return NextResponse.json({ error: '作业标题不能为空' }, { status: 400 });
+    }
+    if (task.title.length > 100) {
+      return NextResponse.json({ error: '作业标题不能超过 100 字符' }, { status: 400 });
+    }
+    
     const db = getDb();
     
     const taskId = task.id || `hw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

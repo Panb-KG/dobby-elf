@@ -21,6 +21,13 @@ export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
 
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return NextResponse.json({ error: 'prompt 是必填字段' }, { status: 400 });
+    }
+    if (prompt.length > 500) {
+      return NextResponse.json({ error: 'prompt 长度不能超过 500 字符' }, { status: 400 });
+    }
+
     // 使用 qwen-image-2.0 通过 OpenAI 兼容 API 生成图片
     const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',

@@ -1,5 +1,5 @@
-import { error } from '../../lib/console';
 import { getErrorMessage } from '@/lib/error';
+import { validateBody, validationError, validators } from '@/lib/validate';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
@@ -48,6 +48,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[] };
     const { messages, systemInstruction, tools } = body;
+
+    // 输入校验
+    const messagesArray = messages || [];
+    if (messagesArray.length === 0) {
+      return NextResponse.json({ error: 'messages 不能为空' }, { status: 400 });
+    }
+    if (messagesArray.length > 50) {
+      return NextResponse.json({ error: '消息数量不能超过 50 条' }, { status: 400 });
+    }
 
     // 处理消息格式（支持文件附件）
     const processedMessages = (messages || [])
