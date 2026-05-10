@@ -1,4 +1,5 @@
 import { error, log } from '../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
@@ -50,8 +51,8 @@ export async function POST(req: NextRequest) {
       error('Unexpected response:', JSON.stringify(data).substring(0, 500));
       throw new Error('Invalid API response format');
     }
-  } catch (error: any) {
-    error('Image API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Image API error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

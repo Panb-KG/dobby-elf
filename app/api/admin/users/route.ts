@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { getDb } from '../../../lib/db';
 import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
@@ -55,7 +56,7 @@ export async function GET(req: Request) {
     // 获取用户列表
     let query = 'SELECT id, username, display_name, email, created_at, points, level FROM users';
     let countQuery = 'SELECT COUNT(*) as total FROM users';
-    const params: any[] = [];
+    const params: (string | number | null | undefined)[] = [];
 
     if (keyword) {
       query += ' WHERE username LIKE ? OR display_name LIKE ? OR email LIKE ?';
@@ -75,9 +76,9 @@ export async function GET(req: Request) {
       users,
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
-  } catch (error: any) {
-    error('Admin users error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Admin users error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -112,9 +113,9 @@ export async function POST(req: Request) {
     `).run(adminId, username, hashedPassword, displayName || username, role || 'admin');
 
     return NextResponse.json({ success: true, id: adminId });
-  } catch (error: any) {
-    error('Create admin error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Create admin error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -140,7 +141,7 @@ export async function PUT(req: Request) {
       : ['display_name', 'email', 'avatar_url', 'points', 'level', 'tree_growth'];
 
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null | undefined)[] = [];
 
     for (const field of allowedFields) {
       const camelField = field.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
@@ -167,9 +168,9 @@ export async function PUT(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update user error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -198,9 +199,9 @@ export async function DELETE(req: Request) {
     }
 
     return NextResponse.json({ success: true, deleted: result.changes });
-  } catch (error: any) {
-    error('Delete user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete user error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 

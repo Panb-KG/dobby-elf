@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
@@ -121,8 +122,8 @@ export async function GET(req: Request) {
       },
       timestamp: now.toISOString(),
     });
-  } catch (error: any) {
-    error('Monitoring error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Monitoring error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

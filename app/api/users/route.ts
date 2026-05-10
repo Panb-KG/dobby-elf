@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -41,9 +42,9 @@ export async function GET(req: NextRequest) {
       level: userData.level,
       treeGrowth: userData.tree_growth
     });
-  } catch (error: any) {
-    error('Get user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get user error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -64,7 +65,7 @@ export async function PUT(req: NextRequest) {
     const db = getDb();
     
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null | undefined)[] = [];
     
     const allowedFields = ['displayName', 'email', 'avatarUrl', 'points', 'level', 'treeGrowth'];
     
@@ -93,9 +94,9 @@ export async function PUT(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update user error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -115,8 +116,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete user error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete user error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

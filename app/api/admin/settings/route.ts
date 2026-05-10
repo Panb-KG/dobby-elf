@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
@@ -42,9 +43,9 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    error('Get settings error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get settings error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -74,9 +75,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update settings error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update settings error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 

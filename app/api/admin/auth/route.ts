@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { getDb } from '../../../lib/db';
 import bcrypt from 'bcrypt';
 import { error } from '../../../lib/console';
@@ -25,9 +26,9 @@ export async function POST(req: Request) {
       return handleVerify(req);
     }
     return handleLogin(req);
-  } catch (error: any) {
-    error('Admin auth error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Admin auth error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 

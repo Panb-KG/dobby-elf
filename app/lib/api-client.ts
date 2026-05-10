@@ -67,7 +67,7 @@ export async function authGet(url: string): Promise<Response> {
 /**
  * POST 请求
  */
-export async function authPost(url: string, body?: any): Promise<Response> {
+export async function authPost(url: string, body?: unknown): Promise<Response> {
   return authFetch(url, {
     method: 'POST',
     body: body ? JSON.stringify(body) : undefined,
@@ -77,7 +77,7 @@ export async function authPost(url: string, body?: any): Promise<Response> {
 /**
  * PUT 请求
  */
-export async function authPut(url: string, body?: any): Promise<Response> {
+export async function authPut(url: string, body?: unknown): Promise<Response> {
   return authFetch(url, {
     method: 'PUT',
     body: body ? JSON.stringify(body) : undefined,
@@ -94,7 +94,7 @@ export async function authDelete(url: string): Promise<Response> {
 /**
  * PATCH 请求
  */
-export async function authPatch(url: string, body?: any): Promise<Response> {
+export async function authPatch(url: string, body?: unknown): Promise<Response> {
   return authFetch(url, {
     method: 'PATCH',
     body: body ? JSON.stringify(body) : undefined,

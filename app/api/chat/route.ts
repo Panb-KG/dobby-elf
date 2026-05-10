@@ -1,4 +1,5 @@
 import { error } from '../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
@@ -182,10 +183,10 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
-    error('Chat API error:', error.message);
+  } catch (err: unknown) {
+    error('Chat API error:', getErrorMessage(err));
     return NextResponse.json(
-      { error: error.message || '魔法出错了，请稍后再试' },
+      { error: getErrorMessage(err) || '魔法出错了，请稍后再试' },
       { status: 500 }
     );
   }

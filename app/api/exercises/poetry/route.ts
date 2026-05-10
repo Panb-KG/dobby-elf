@@ -1,4 +1,5 @@
 import { error } from '../../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 
 /**
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
 
-    let poetry: any = null;
+    let poetry: Record<string, unknown> | null = null;
 
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -91,8 +92,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ poetry });
-  } catch (error: any) {
-    error('Generate poetry error:', error);
-    return NextResponse.json({ error: error.message || '生成失败' }, { status: 500 });
+  } catch (err: unknown) {
+    error('Generate poetry error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) || '生成失败' }, { status: 500 });
   }
 }

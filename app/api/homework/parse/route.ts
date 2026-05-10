@@ -1,4 +1,5 @@
 import { error } from '../../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 
 /**
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     // 构建消息内容
-    const content: any[] = [];
+    const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
     
     if (text) {
       content.push({ type: 'text', text: `请识别以下作业内容：\n${text}` });
@@ -100,8 +101,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ tasks });
-  } catch (error: any) {
-    error('Parse homework error:', error);
-    return NextResponse.json({ error: error.message || '识别失败' }, { status: 500 });
+  } catch (err: unknown) {
+    error('Parse homework error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) || '识别失败' }, { status: 500 });
   }
 }

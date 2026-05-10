@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
 
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     const db = getDb();
     
     let query = 'SELECT * FROM system_logs WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number | null | undefined)[] = [];
     
     if (level) {
       query += ' AND level = ?';
@@ -38,9 +39,9 @@ export async function GET(req: Request) {
     const logs = db.prepare(query).all(...params);
     
     return NextResponse.json(logs);
-  } catch (error: any) {
-    error('Get system logs error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get system logs error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -67,9 +68,9 @@ export async function POST(req: Request) {
     );
     
     return NextResponse.json({ success: true, id: logId });
-  } catch (error: any) {
-    error('Create log error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Create log error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -86,8 +87,8 @@ export async function DELETE(req: Request) {
     const result = db.prepare('DELETE FROM system_logs WHERE created_at < ?').run(before);
     
     return NextResponse.json({ success: true, deleted: result.changes });
-  } catch (error: any) {
-    error('Delete logs error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete logs error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

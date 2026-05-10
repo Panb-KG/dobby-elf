@@ -134,10 +134,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         batchTimerRef.current = null;
       }
       flushStreamingText();
-    } catch (error: unknown) {
-      const err = error as Error;
-      if (err.name !== 'AbortError') {
-        logError('Chat error:', err);
+    } catch (err: unknown) {
+      const e = err as Error;
+      if (e.name !== 'AbortError') {
+        logError('Chat error:', e);
         const errorMessage: Message = {
           role: 'system',
           text: '多比的魔法出错了，请稍后再试。',

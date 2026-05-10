@@ -57,15 +57,28 @@
 
 ---
 
+## ✅ 第三轮优化（2026-05-08）— S1 完成
+
+### S1 — Admin 鉴权安全加固 🔴
+- 修复 `admin/auth` 路由 JWT 硬编码 fallback（两处 `|| 'dobi-admin-secret-key-2026'`）
+- 新建 `app/lib/admin-auth.ts` 统一鉴权工具
+- 给 6 个 admin API 全部加鉴权：monitoring、audit、tasks、users、settings、api-records
+- middleware.ts 增加 admin 路由 defense-in-depth 检查
+- 之前普通用户 API 已有鉴权，admin API 完全裸奔，现在补齐
+
 ## 📋 未来可考虑
 
 | # | 项目 | 优先级 |
 |---|------|--------|
-| F1 | 日志异步化/队列化（避免同步写 DB 拖慢 API） | 🟡 |
-| F2 | 补充 useChat + auth 测试 | 🟢 |
-| F3 | PWA 离线支持完善 | 🟢 |
-| F4 | TypeScript strict mode | 🟢 |
-| F5 | 全局错误监控（Sentry） | 🔵 |
+| S2 | 消除剩余 any 类型（catch + params） | 🟡 |
+| S3 | API 路由测试（auth/courses/homework/chat） | 🟡 |
+| S4 | 日志异步队列化 | 🟡 |
+| S5 | 大文件拆分（RightSidebar/LP/db） | 🟢 |
+| S6 | 统一 console 调用 | 🟢 |
+| S7 | 输入校验中间件 | 🟢 |
+| S8 | PWA 完善 | 🟢 |
+| S9 | 数据同步策略 | 🔵 |
+| S10 | 错误监控（Sentry） | 🔵 |
 
 ---
 
@@ -77,3 +90,4 @@
 | 第一轮 | #4 #5 #6 #7 | ✅ | 2026-05-03 |
 | 第一轮 | #8 #9 #10 | ✅ | 2026-05-03 |
 | 第二轮 | N1 N2 N3 N4 N5 N7 N9 N10 | ✅ | 2026-05-05 |
+| 第三轮 | S1 Admin 鉴权加固 | ✅ | 2026-05-08 |
