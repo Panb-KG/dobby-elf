@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { error as logError } from '@/lib/console';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -18,7 +19,7 @@ interface ErrorProps {
 export default function ErrorBoundary({ error, reset }: ErrorProps) {
   useEffect(() => {
     // 记录错误到日志（生产环境可接入 Sentry 等）
-    console.error('[ErrorBoundary] 捕获到错误:', error);
+    logError('[ErrorBoundary] 捕获到错误:', error);
   }, [error]);
 
   return (
