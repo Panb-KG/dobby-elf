@@ -3,6 +3,7 @@ import { validateBody, validationError, validators } from '@/lib/validate';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
+import { error as logError } from '../../lib/console';
 
 // ===== 类型定义 =====
 
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    error('Chat API error:', getErrorMessage(err));
+    logError('Chat API error:', getErrorMessage(err));
     return NextResponse.json(
       { error: getErrorMessage(err) || '魔法出错了，请稍后再试' },
       { status: 500 }
