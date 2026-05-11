@@ -28,12 +28,6 @@ const localStorageMock = {
   clear() {
     this.store = {};
   },
-  get length() {
-    return Object.keys(this.store).length;
-  },
-  key(index: number) {
-    return Object.keys(this.store)[index] || null;
-  },
 };
 
 // Make Object.keys work on the mock

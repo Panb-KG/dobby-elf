@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { Send, Paperclip, X, ImageIcon, Video, File, Sparkles, FileText, Home } from 'lucide-react';
+import { Send, Paperclip, X, ImageIcon, Video, File, Sparkles, FileText, Home, Mic } from 'lucide-react';
 import type { Message } from '../../types';
 import { DobiAvatar } from '../DobiAvatar';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,25 @@ interface ChatModuleProps {
   onComplexContentClick?: (text: string) => void;
   showDailyAdventure?: boolean;
   onToggleDailyAdventure?: () => void;
+  // Voice chat props
+  voiceChat?: {
+    isRecording: boolean;
+    interimText: string;
+    finalText: string;
+    isSpeaking: boolean;
+    isSpeechRecognitionSupported: boolean;
+    isSpeechSynthesisSupported: boolean;
+    autoSpeak: boolean;
+    mode: 'tap' | 'hold';
+    onStartRecording: () => void;
+    onStopRecording: () => void;
+    onCancelRecording: () => void;
+    onSpeak: (text: string) => void;
+    onStopSpeaking: () => void;
+    onToggleAutoSpeak: () => void;
+    onToggleMode: () => void;
+    onSubmitText: (text: string) => void;
+  };
 }
 
 export function ChatModule({
@@ -39,6 +58,7 @@ export function ChatModule({
   onComplexContentClick,
   showDailyAdventure,
   onToggleDailyAdventure,
+  voiceChat,
 }: ChatModuleProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -138,6 +158,39 @@ export function ChatModule({
                 <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
                   {msg.role === 'user' ? 'Seeker' : 'Dobi'}
                 </span>
+                {/* 朗读按钮 */}
+                {msg.role === 'model' && voiceChat?.isSpeechSynthesisSupported && (
+                  <motion.button
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      if (voiceChat.isSpeaking) {
+                        voiceChat.onStopSpeaking();
+                      } else {
+                        voiceChat.onSpeak(msg.text);
+                      }
+                    }}
+                    className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                      voiceChat.isSpeaking
+                        ? "bg-magic-accent/60 text-white"
+                        : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/50"
+                    )}
+                    title={voiceChat.isSpeaking ? '停止朗读' : '朗读回复'}
+                  >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      {voiceChat.isSpeaking ? (
+                        <>
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                        </>
+                      ) : (
+                        <line x1="23" y1="9" x2="17" y2="15" />
+                      )}
+                    </svg>
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           ))}
@@ -203,6 +256,47 @@ export function ChatModule({
         </div>
 
         <div className="relative group flex items-end gap-2">
+          {/* 语音按钮 */}
+          {voiceChat && voiceChat.isSpeechRecognitionSupported && (
+            <div className="relative">
+              {/* 录音状态提示 */}
+              {(voiceChat.isRecording || voiceChat.interimText || voiceChat.finalText) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute bottom-full mb-2 left-0 bg-black/80 backdrop-blur-sm rounded-xl p-2 border border-white/10 max-w-[240px] z-10"
+                >
+                  {voiceChat.isRecording && (
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[9px] text-red-400 font-medium">录音中</span>
+                    </div>
+                  )}
+                  {voiceChat.interimText && (
+                    <p className="text-xs text-white/50 italic">{voiceChat.interimText}</p>
+                  )}
+                  {voiceChat.finalText && (
+                    <p className="text-xs text-white/80">{voiceChat.finalText}</p>
+                  )}
+                </motion.div>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={voiceChat.isRecording ? voiceChat.onStopRecording : voiceChat.onStartRecording}
+                className={
+                  `w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all`
+                  + (voiceChat.isRecording
+                    ? ' bg-red-500 text-white shadow-lg shadow-red-500/40'
+                    : ' bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80')
+                }
+                title={voiceChat.isRecording ? '停止录音' : '语音输入'}
+              >
+                <Mic className="w-5 h-5 md:w-6 md:h-6" />
+              </motion.button>
+            </div>
+          )}
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}

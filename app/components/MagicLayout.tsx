@@ -17,6 +17,7 @@ import Header from './layout/Header';
 import Sidebar from './layout/Sidebar';
 import { ChatModule } from './chat/ChatModule';
 import { RightSidebarContent } from './RightSidebarContent';
+import { useVoiceChat } from '../hooks/useVoiceChat';
 import type { UseChatReturn } from '../hooks/useChat';
 import type { UseCoursesReturn } from '../hooks/useCourses';
 import type { UseHomeworkReturn } from '../hooks/useHomework';
@@ -219,6 +220,16 @@ export default function MagicLayout(props: MagicLayoutProps) {
     prompt: spell.prompt,
   })), [shortcuts]);
 
+  // ===== 语音聊天 =====
+  const voiceChat = useVoiceChat({
+    onResult: (text) => {
+      // 语音识别结果自动发送
+      if (text.trim()) {
+        chat.sendMessage(text.trim());
+      }
+    },
+  });
+
   // ===== 渲染 =====
   return (
     <div className="relative h-screen w-full flex flex-col overflow-hidden">
@@ -349,6 +360,26 @@ export default function MagicLayout(props: MagicLayoutProps) {
               onComplexContentClick={handleComplexContentClick}
               showDailyAdventure={showDailyAdventure}
               onToggleDailyAdventure={() => setShowDailyAdventure(!showDailyAdventure)}
+              voiceChat={{
+                isRecording: voiceChat.isRecording,
+                interimText: voiceChat.interimText,
+                finalText: voiceChat.finalText,
+                isSpeaking: voiceChat.isSpeaking,
+                isSpeechRecognitionSupported: voiceChat.isSpeechRecognitionSupported,
+                isSpeechSynthesisSupported: voiceChat.isSpeechSynthesisSupported,
+                autoSpeak: voiceChat.autoSpeak,
+                mode: voiceChat.mode,
+                onStartRecording: voiceChat.startRecording,
+                onStopRecording: voiceChat.stopRecording,
+                onCancelRecording: voiceChat.cancelRecording,
+                onSpeak: voiceChat.speak,
+                onStopSpeaking: voiceChat.stopSpeaking,
+                onToggleAutoSpeak: voiceChat.toggleAutoSpeak,
+                onToggleMode: voiceChat.toggleMode,
+                onSubmitText: (text) => {
+                  voiceChat.resetFinalText();
+                },
+              }}
             />
           </div>
         </section>

@@ -19,6 +19,8 @@ export interface UseChatReturn {
 
 export interface UseChatOptions {
   initialMessage?: string;
+  /** 当 AI 回复完成时自动朗读（语音聊天模式） */
+  onAutoSpeak?: (text: string) => void;
 }
 
 const DEFAULT_INITIAL_MESSAGE = '呼啦啦！你好呀，小主人！我是你的学习小魔灵多比。今天有什么想探索的知识魔法吗？✨';
@@ -26,7 +28,7 @@ const MAX_CHAT_HISTORY = 50; // 最多保留 50 条消息
 const STREAM_BATCH_MS = 80; // 流式更新批处理间隔（ms）
 
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
-  const { initialMessage = DEFAULT_INITIAL_MESSAGE } = options;
+  const { initialMessage = DEFAULT_INITIAL_MESSAGE, onAutoSpeak } = options;
   
   const [storedMessages] = useLocalStorage<Message[]>({
     key: StorageKeys.CHAT_HISTORY,
@@ -134,6 +136,11 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         batchTimerRef.current = null;
       }
       flushStreamingText();
+      
+      // 自动朗读 AI 回复（语音聊天模式）
+      if (onAutoSpeak && streamingTextRef.current) {
+        onAutoSpeak(streamingTextRef.current);
+      }
     } catch (error: unknown) {
       const err = error as Error;
       if (err.name !== 'AbortError') {
