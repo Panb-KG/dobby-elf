@@ -1,4 +1,5 @@
 import { error } from '../../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 
 /**
@@ -88,8 +89,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ courses });
-  } catch (error: any) {
-    error('Parse course image error:', error);
-    return NextResponse.json({ error: error.message || '识别失败' }, { status: 500 });
+  } catch (err: unknown) {
+    error('Parse course image error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) || '识别失败' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
 import { hashPassword, validateUsername, validatePassword } from '../../../lib/auth';
@@ -87,8 +88,8 @@ export async function POST(req: Request) {
         dailyTasks: tasks.map(t => ({ ...t, completed: false }))
       }
     });
-  } catch (error: any) {
-    error('Registration error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Registration error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

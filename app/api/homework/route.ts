@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     const db = getDb();
     
     let query = `SELECT id, user_id, subject, title, description, status, due_date, image_url, created_at, updated_at FROM homework WHERE user_id = ?`;
-    const params: any[] = [user.userId];
+    const params: (string | number | null | undefined)[] = [user.userId];
     
     if (status && status !== 'all') {
       query += ' AND status = ?';
@@ -39,9 +40,9 @@ export async function GET(req: NextRequest) {
     const tasks = db.prepare(query).all(...params);
     
     return NextResponse.json(tasks);
-  } catch (error: any) {
-    error('Get homework error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get homework error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -58,6 +59,13 @@ export async function POST(req: NextRequest) {
     
     if (!task) {
       return NextResponse.json({ error: '作业数据不能为空' }, { status: 400 });
+    }
+    
+    if (!task.title || typeof task.title !== 'string' || task.title.trim().length === 0) {
+      return NextResponse.json({ error: '作业标题不能为空' }, { status: 400 });
+    }
+    if (task.title.length > 100) {
+      return NextResponse.json({ error: '作业标题不能超过 100 字符' }, { status: 400 });
     }
     
     const db = getDb();
@@ -79,9 +87,9 @@ export async function POST(req: NextRequest) {
     );
     
     return NextResponse.json({ success: true, id: taskId });
-  } catch (error: any) {
-    error('Save homework error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Save homework error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -111,9 +119,9 @@ export async function PATCH(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update homework error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update homework error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -140,8 +148,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete homework error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete homework error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

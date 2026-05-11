@@ -116,9 +116,9 @@ export function CourseModule({
         setIsParsing(false);
       };
       reader.readAsDataURL(file);
-    } catch (error: unknown) {
-      logError('Upload error:', error);
-      setParseError((error instanceof Error && error.message) || '上传失败');
+    } catch (err: unknown) {
+      logError('Upload error:', err);
+      setParseError((err instanceof Error && err.message) || '上传失败');
       setIsParsing(false);
     }
   };

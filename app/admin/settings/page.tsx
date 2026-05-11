@@ -53,7 +53,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const updateSetting = (key: string, value: any) => {
+  const updateSetting = (key: string, value: unknown) => {
     setSettings((prev: Record<string, any>) => ({
       ...prev,
       [key]: value,

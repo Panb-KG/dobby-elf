@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -26,9 +27,9 @@ export async function GET(req: NextRequest) {
     `).all(user.userId);
     
     return NextResponse.json(sessions);
-  } catch (error: any) {
-    error('Get exercises error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get exercises error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -53,9 +54,9 @@ export async function POST(req: NextRequest) {
     `).run(sessionId, user.userId, subject, topic, totalQuestions);
     
     return NextResponse.json({ success: true, id: sessionId });
-  } catch (error: any) {
-    error('Create exercise session error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Create exercise session error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -103,8 +104,8 @@ export async function PATCH(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update exercise session error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update exercise session error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

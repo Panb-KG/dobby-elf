@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * API 使用记录 API
  * 
- * GET /api/admin/api-records - 获取 API 调用记录（分页）
+ * GET /api/admin/api-records - 获取 API 调用记录（分页，需要管理员登录）
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -23,7 +31,7 @@ export async function GET(req: Request) {
 
     let query = 'SELECT * FROM api_usage WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM api_usage WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number | null | undefined)[] = [];
 
     if (endpoint) {
       query += ' AND endpoint = ?';
@@ -69,8 +77,8 @@ export async function GET(req: Request) {
       records,
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
-  } catch (error: any) {
-    error('API records error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('API records error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

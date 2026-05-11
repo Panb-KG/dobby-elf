@@ -129,7 +129,7 @@ class OfflineSyncManager {
       throw new Error(`未知的表：${operation.table}`);
     }
 
-    const body: any = {
+    const body: Record<string, unknown> = {
       userId: operation.data.user_id || operation.data.userId,
     };
 
@@ -203,7 +203,7 @@ class OfflineSyncManager {
       if (saved) {
         const items = JSON.parse(saved);
         // 重新创建 Promise 包装
-        this.queue = items.map((item: any) => ({
+        this.queue = items.map((item: { operation: string; resolve: () => void; reject: () => void }) => ({
           operation: item.operation,
           resolve: () => {}, // 恢复时不触发 resolve
           reject: () => {},

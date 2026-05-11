@@ -1,4 +1,5 @@
 import { error, log } from '../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
@@ -19,6 +20,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const { prompt } = await req.json();
+
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return NextResponse.json({ error: 'prompt 是必填字段' }, { status: 400 });
+    }
+    if (prompt.length > 500) {
+      return NextResponse.json({ error: 'prompt 长度不能超过 500 字符' }, { status: 400 });
+    }
 
     // 使用 qwen-image-2.0 通过 OpenAI 兼容 API 生成图片
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -50,8 +58,8 @@ export async function POST(req: NextRequest) {
       error('Unexpected response:', JSON.stringify(data).substring(0, 500));
       throw new Error('Invalid API response format');
     }
-  } catch (error: any) {
-    error('Image API error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Image API error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

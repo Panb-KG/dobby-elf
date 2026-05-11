@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { getDb } from '../../../lib/db';
 import bcrypt from 'bcrypt';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
+import { ensureJwtSecret } from '../../../lib/auth';
 
 /**
  * 管理员认证 API
@@ -24,9 +26,9 @@ export async function POST(req: Request) {
       return handleVerify(req);
     }
     return handleLogin(req);
-  } catch (error: any) {
-    error('Admin auth error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Admin auth error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -92,7 +94,7 @@ async function handleLogin(req: Request) {
   // 更新最后登录时间
   db.prepare(`UPDATE admins SET last_login = datetime('now') WHERE id = ?`).run(admin.id);
   
-  const secret = process.env.JWT_SECRET || 'dobi-admin-secret-key-2026';
+  const secret = ensureJwtSecret();
   const token = jwt.sign(
     { adminId: admin.id, username: admin.username, role: admin.role },
     secret,
@@ -125,7 +127,7 @@ async function handleVerify(req: Request) {
   }
   
   const token = authHeader.slice(7);
-  const secret = process.env.JWT_SECRET || 'dobi-admin-secret-key-2026';
+  const secret = ensureJwtSecret();
   
   try {
     const decoded = jwt.verify(token, secret) as any;

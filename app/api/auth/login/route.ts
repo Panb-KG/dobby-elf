@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
@@ -98,8 +99,8 @@ export async function POST(req: Request) {
     });
 
     return response;
-  } catch (error: any) {
-    error('Login error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Login error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

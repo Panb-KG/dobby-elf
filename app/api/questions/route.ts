@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     const db = getDb();
     
     let query = `SELECT * FROM questions WHERE 1=1`;
-    const params: any[] = [];
+    const params: (string | number | null | undefined)[] = [];
     
     if (subject) {
       query += ' AND subject = ?';
@@ -50,9 +51,9 @@ export async function GET(req: NextRequest) {
     const questions = db.prepare(query).all(...params);
     
     return NextResponse.json(questions);
-  } catch (error: any) {
-    error('Get questions error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get questions error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -89,9 +90,9 @@ export async function POST(req: NextRequest) {
     );
     
     return NextResponse.json({ success: true, id: questionId });
-  } catch (error: any) {
-    error('Save question error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Save question error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -115,8 +116,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete question error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete question error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

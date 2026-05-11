@@ -1,7 +1,9 @@
-import { error } from '../../lib/console';
+import { getErrorMessage } from '@/lib/error';
+import { validateBody, validationError, validators } from '@/lib/validate';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
+import { error as logError } from '../../lib/console';
 
 // ===== 类型定义 =====
 
@@ -47,6 +49,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[] };
     const { messages, systemInstruction, tools } = body;
+
+    // 输入校验
+    const messagesArray = messages || [];
+    if (messagesArray.length === 0) {
+      return NextResponse.json({ error: 'messages 不能为空' }, { status: 400 });
+    }
+    if (messagesArray.length > 50) {
+      return NextResponse.json({ error: '消息数量不能超过 50 条' }, { status: 400 });
+    }
 
     // 处理消息格式（支持文件附件）
     const processedMessages = (messages || [])
@@ -182,10 +193,10 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
-    error('Chat API error:', error.message);
+  } catch (err: unknown) {
+    logError('Chat API error:', getErrorMessage(err));
     return NextResponse.json(
-      { error: error.message || '魔法出错了，请稍后再试' },
+      { error: getErrorMessage(err) || '魔法出错了，请稍后再试' },
       { status: 500 }
     );
   }

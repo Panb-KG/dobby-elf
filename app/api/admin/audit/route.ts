@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 审计日志 API
  * 
- * GET /api/admin/audit - 获取审计日志（分页）
+ * GET /api/admin/audit - 获取审计日志（分页，需要管理员登录）
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -22,7 +30,7 @@ export async function GET(req: Request) {
 
     let query = 'SELECT * FROM audit_logs WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM audit_logs WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number | null | undefined)[] = [];
 
     if (action) {
       query += ' AND action = ?';
@@ -62,8 +70,8 @@ export async function GET(req: Request) {
       logs,
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
     });
-  } catch (error: any) {
-    error('Audit logs error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Audit logs error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

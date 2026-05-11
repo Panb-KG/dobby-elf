@@ -13,11 +13,34 @@ export const DobiAvatar = ({ size = "md", className = "" }: DobiAvatarProps) => 
     lg: "w-20 h-20"
   };
 
+  const sizeClasses = {
+    sm: {
+      head: "w-6 h-7 rounded-[8px_8px_6px_6px]",
+      face: "w-5 h-5 rounded-full",
+      eye: "w-1.5 h-1.5",
+      glow: "w-4 h-2",
+    },
+    md: {
+      head: "w-10 h-12 rounded-[16px_16px_12px_12px]",
+      face: "w-8 h-8 rounded-full",
+      eye: "w-3 h-3",
+      glow: "w-8 h-3",
+    },
+    lg: {
+      head: "w-16 h-20 rounded-[24px_24px_16px_16px]",
+      face: "w-12 h-12 rounded-full",
+      eye: "w-4 h-4",
+      glow: "w-12 h-4",
+    },
+  };
+
+  const s = sizeClasses[size];
+
   return (
     <motion.div 
       className={`${sizes[size]} relative flex items-center justify-center ${className}`}
       animate={{ 
-        y: [0, -4, 0],
+        y: [0, -3, 0],
       }}
       transition={{ 
         duration: 3, 
@@ -26,69 +49,34 @@ export const DobiAvatar = ({ size = "md", className = "" }: DobiAvatarProps) => 
       }}
     >
       {/* Glow effect */}
-      <div className="absolute inset-0 bg-magic-accent/20 blur-xl rounded-full animate-pulse" />
+      <div className={`absolute ${s.glow} bg-amber-600/20 blur-lg rounded-full`} />
       
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
-        {/* Ears */}
-        <motion.path
-          d="M20 45 Q10 30 25 35"
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="4"
-          strokeLinecap="round"
-          animate={{ rotate: [-5, 5, -5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-        <motion.path
-          d="M80 45 Q90 30 75 35"
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="4"
-          strokeLinecap="round"
-          animate={{ rotate: [5, -5, 5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
+      {/* Head / Hood */}
+      <div className={`${s.head} bg-[#18181b] border border-white/10 relative shadow-lg overflow-hidden flex items-center justify-center`}>
+        {/* Inner Face */}
+        <div className={`${s.face} bg-[#0F0F11] border border-white/5 flex items-center justify-center`}>
+          {/* Eyes */}
+          <div className="flex gap-1">
+            <motion.div 
+              animate={{ scaleY: [1, 1, 0.1, 1] }} 
+              transition={{ repeat: Infinity, duration: 4, times: [0, 0.9, 0.95, 1] }}
+              className={`${s.eye} bg-[#D97706] rounded-full shadow-[0_0_8px_rgba(217,119,6,0.6)]`} 
+            />
+            <motion.div 
+              animate={{ scaleY: [1, 1, 0.1, 1] }} 
+              transition={{ repeat: Infinity, duration: 4, times: [0, 0.9, 0.95, 1] }}
+              className={`${s.eye} bg-[#D97706] rounded-full shadow-[0_0_8px_rgba(217,119,6,0.6)]`} 
+            />
+          </div>
+        </div>
+      </div>
 
-        {/* Body/Face */}
-        <circle cx="50" cy="55" r="35" fill="#064e3b" stroke="#10b981" strokeWidth="2" />
-        
-        {/* Eyes */}
-        <g>
-          <motion.circle 
-            cx="35" cy="50" r="5" fill="#10b981"
-            animate={{ scaleY: [1, 0.1, 1] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-          />
-          <motion.circle 
-            cx="65" cy="50" r="5" fill="#10b981"
-            animate={{ scaleY: [1, 0.1, 1] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-          />
-        </g>
-
-        {/* Mouth */}
-        <motion.path
-          d="M40 70 Q50 78 60 70"
-          fill="none"
-          stroke="#10b981"
-          strokeWidth="3"
-          strokeLinecap="round"
-          animate={{ d: ["M40 70 Q50 78 60 70", "M42 72 Q50 75 58 72", "M40 70 Q50 78 60 70"] }}
-          transition={{ duration: 4, repeat: Infinity }}
-        />
-
-        {/* Magic Sparkles */}
-        <motion.circle
-          cx="20" cy="20" r="2" fill="#fbbf24"
-          animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-        <motion.circle
-          cx="85" cy="75" r="1.5" fill="#fbbf24"
-          animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-        />
-      </svg>
+      {/* Magic Sparkles */}
+      <motion.div
+        className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-amber-400 rounded-full"
+        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
     </motion.div>
   );
 };

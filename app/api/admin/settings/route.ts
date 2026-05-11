@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 系统设置 API
  * 
- * GET  /api/admin/settings        - 获取所有设置
+ * GET  /api/admin/settings        - 获取所有设置（需要管理员登录）
  * GET  /api/admin/settings?key=xx - 获取单个设置
  * POST /api/admin/settings        - 更新设置
  * PUT  /api/admin/settings        - 批量更新设置
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const key = searchParams.get('key');
@@ -35,13 +43,19 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    error('Get settings error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get settings error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const body = await req.json();
     const db = getDb();
@@ -61,12 +75,18 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update settings error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update settings error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   return POST(req); // 同 POST
 }

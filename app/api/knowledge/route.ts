@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -22,9 +23,9 @@ export async function GET(req: NextRequest) {
     `).all(user.userId);
     
     return NextResponse.json(points);
-  } catch (error: any) {
-    error('Get knowledge points error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get knowledge points error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -50,14 +51,14 @@ export async function POST(req: NextRequest) {
       VALUES (?, ?, ?, ?, ?)
     `);
     
-    points.forEach((point: any) => {
+    points.forEach((point: { id?: string; name: string; status: string; subject: string }) => {
       const pointId = point.id || `point_${Date.now()}_${Math.random()}`;
       insertPoint.run(pointId, user.userId, point.name, point.status, point.subject);
     });
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Save knowledge points error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Save knowledge points error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

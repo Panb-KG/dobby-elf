@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -33,9 +34,9 @@ export async function GET(req: NextRequest) {
     `).all(user.userId);
     
     return NextResponse.json(courses);
-  } catch (error: any) {
-    error('Get courses error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get courses error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -63,9 +64,9 @@ export async function POST(req: NextRequest) {
     `).run(courseId, user.userId, course.day, course.subject, course.time, course.type, course.color || '');
     
     return NextResponse.json({ success: true, id: courseId });
-  } catch (error: any) {
-    error('Save course error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Save course error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -92,8 +93,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete course error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete course error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

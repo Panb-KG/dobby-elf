@@ -236,7 +236,7 @@ export class DobiService {
               // 工具调用
               if (data.choices[0].delta?.tool_calls) {
                 const toolCalls = data.choices[0].delta.tool_calls;
-                yield { functionCalls: toolCalls.map((tc: any) => ({
+                yield { functionCalls: toolCalls.map((tc: { function?: { name?: string; arguments?: string } }) => ({
                   name: tc.function?.name,
                   args: tc.function?.arguments ? JSON.parse(tc.function.arguments) : {}
                 })) };
@@ -247,7 +247,7 @@ export class DobiService {
               yield data.output.text;
             }
             else if (data.output?.tool_calls) {
-              yield { functionCalls: data.output.tool_calls.map((tc: any) => ({
+              yield { functionCalls: data.output.tool_calls.map((tc: { function: { name: string; arguments: string } }) => ({
                 name: tc.function.name,
                 args: JSON.parse(tc.function.arguments)
               })) };

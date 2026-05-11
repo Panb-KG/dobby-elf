@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 
 /**
  * 系统健康检查 API
@@ -45,10 +46,10 @@ export async function GET() {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (err: unknown) {
     return NextResponse.json({
       status: 'unhealthy',
-      error: error.message,
+      error: getErrorMessage(err),
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }

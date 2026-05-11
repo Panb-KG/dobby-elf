@@ -67,7 +67,7 @@ export function setStorage<T>(
   if (!isBrowser) return;
   try {
     const fullKey = getFullKey(key, options.prefix);
-    const data: any = {
+    const data: Record<string, unknown> = {
       value,
       timestamp: Date.now(),
     };

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { NextRequest } from 'next/server';
 import { error } from '../../lib/console';
 import { getDb } from '../../lib/db';
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
     const db = getDb();
     
     let query = `SELECT id, user_id, title, description, date, type, icon_name, color, points FROM achievements WHERE user_id = ?`;
-    const params: any[] = [user.userId];
+    const params: (string | number | null | undefined)[] = [user.userId];
     
     if (type) {
       query += ' AND type = ?';
@@ -35,9 +36,9 @@ export async function GET(req: NextRequest) {
     const achievements = db.prepare(query).all(...params);
     
     return NextResponse.json(achievements);
-  } catch (error: any) {
-    error('Get achievements error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get achievements error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -72,9 +73,9 @@ export async function POST(req: NextRequest) {
     );
     
     return NextResponse.json({ success: true, id: achievementId });
-  } catch (error: any) {
-    error('Save achievement error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Save achievement error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
@@ -98,8 +99,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete achievement error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete achievement error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

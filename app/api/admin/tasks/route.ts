@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
+import { getErrorMessage } from '@/lib/error';
 import { error } from '../../../lib/console';
 import { getDb } from '../../../lib/db';
+import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 
 /**
  * 定时任务管理 API
  * 
- * GET    /api/admin/tasks              - 获取任务列表
+ * GET    /api/admin/tasks              - 获取任务列表（需要管理员登录）
  * POST   /api/admin/tasks              - 创建任务
  * PUT    /api/admin/tasks              - 更新任务
  * DELETE /api/admin/tasks?id=xxx       - 删除任务
@@ -13,6 +15,12 @@ import { getDb } from '../../../lib/db';
  */
 
 export async function GET(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const db = getDb();
     const tasks = db.prepare(`
@@ -20,13 +28,19 @@ export async function GET(req: Request) {
     `).all();
 
     return NextResponse.json({ tasks });
-  } catch (error: any) {
-    error('Get tasks error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Get tasks error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const runTaskId = searchParams.get('id');
@@ -74,13 +88,19 @@ export async function POST(req: Request) {
     `).run(newTaskId, name, description || '', cron, handler);
 
     return NextResponse.json({ success: true, id: newTaskId });
-  } catch (error: any) {
-    error('Task error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Task error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { id, updates } = await req.json();
     
@@ -91,7 +111,7 @@ export async function PUT(req: Request) {
     const db = getDb();
     const allowedFields = ['name', 'description', 'cron', 'handler', 'status'];
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null | undefined)[] = [];
 
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
@@ -112,13 +132,19 @@ export async function PUT(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Update task error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Update task error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
+  // 鉴权
+  const admin = requireAdminAuth(req);
+  if (!admin) {
+    return adminUnauthorizedResponse();
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -135,8 +161,8 @@ export async function DELETE(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    error('Delete task error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    error('Delete task error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 });
   }
 }

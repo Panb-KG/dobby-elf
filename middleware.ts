@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSecurityHeaders, apiRateLimiter, isValidUserId } from './app/lib/security';
+import { checkAdminAuth } from './app/lib/admin-auth';
 
 /**
  * API 中间件
@@ -18,6 +19,12 @@ export async function middleware(req: Request) {
   // 只处理 API 请求
   if (!pathname.startsWith('/api/')) {
     return NextResponse.next();
+  }
+
+  // 管理员路由鉴权（defense-in-depth）
+  if (pathname.startsWith('/api/admin/')) {
+    const adminCheck = checkAdminAuth(req as any);
+    if (adminCheck) return adminCheck;
   }
   
   // 1. 速率限制

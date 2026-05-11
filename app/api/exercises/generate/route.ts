@@ -1,4 +1,5 @@
 import { error } from '../../../lib/console';
+import { getErrorMessage } from '@/lib/error';
 import { NextResponse } from 'next/server';
 
 /**
@@ -84,8 +85,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ questions });
-  } catch (error: any) {
-    error('Generate exercises error:', error);
-    return NextResponse.json({ error: error.message || '生成失败' }, { status: 500 });
+  } catch (err: unknown) {
+    error('Generate exercises error:', err);
+    return NextResponse.json({ error: getErrorMessage(err) || '生成失败' }, { status: 500 });
   }
 }
