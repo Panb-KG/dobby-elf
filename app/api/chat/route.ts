@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 import { validateBody, validationError, validators } from '@/lib/validate';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';

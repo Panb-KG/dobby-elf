@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { useSync } from './useSync';
 import { StorageKeys } from '../lib/storage';
 import type { Course, ScheduleView } from '../types';
 
@@ -57,6 +58,9 @@ export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
     type: '校内',
   });
 
+  // 离线同步（用户登录后传入 userId）
+  const { sync } = useSync({ userId: 'local-user', enabled: true });
+
   const addCourse = useCallback(() => {
     if (!newCourse.subject || !newCourse.time) return;
     
@@ -67,13 +71,23 @@ export function useCourses(options: UseCoursesOptions = {}): UseCoursesReturn {
     };
     
     setCourses(prev => [...prev, course]);
+    
+    // 同步到服务器（离线时自动排队）
+    sync('courses', { type: 'create', data: course }).catch(() => {});
+    
     setNewCourse({ day: selectedDay, subject: '', time: '', type: '校内' });
     setIsAddingCourse(false);
-  }, [newCourse, courses.length, selectedDay]);
+  }, [newCourse, courses.length, selectedDay, sync]);
 
   const removeCourse = useCallback((index: number) => {
+    const removed = courses[index];
     setCourses(prev => prev.filter((_, i) => i !== index));
-  }, []);
+    
+    // 同步删除
+    if (removed?.id) {
+      sync('courses', { type: 'delete', data: { id: removed.id } }).catch(() => {});
+    }
+  }, [courses, sync]);
 
   return {
     courses,

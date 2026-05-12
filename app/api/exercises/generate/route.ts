@@ -1,5 +1,5 @@
 import { error } from '../../../lib/console';
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 import { NextResponse } from 'next/server';
 
 /**

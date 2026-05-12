@@ -20,6 +20,7 @@ import { useAchievements } from './hooks/useAchievements';
 import { useFocus } from './hooks/useFocus';
 import { SPELLS } from './lib/Global';
 import LoadingScreen from './components/ui/LoadingScreen';
+import { PWAProvider } from './components/PWAProvider';
 
 // 代码分割：懒加载重组件
 const MagicLayout = dynamic(() => import('./components/MagicLayout'), {
@@ -116,23 +117,25 @@ export default function Page() {
 
   // ========== 主界面 ==========
   return (
-    <MagicLayout
-      user={user}
-      onLogout={logout}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      isRightSidebarOpen={isRightSidebarOpen}
-      onRightSidebarChange={setIsRightSidebarOpen}
-      sidebarContentType={sidebarContentType}
-      onSidebarContentTypeChange={setSidebarContentType as any}
-      chat={chat}
-      shortcuts={SPELLS}
-      course={course}
-      homework={homework}
-      achievements={achievements}
-      focus={focus}
-      streak={streak}
-      onStreak={doStreak}
-    />
+    <PWAProvider>
+      <MagicLayout
+        user={user}
+        onLogout={logout}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isRightSidebarOpen={isRightSidebarOpen}
+        onRightSidebarChange={setIsRightSidebarOpen}
+        sidebarContentType={sidebarContentType}
+        onSidebarContentTypeChange={setSidebarContentType as any}
+        chat={chat}
+        shortcuts={SPELLS}
+        course={course}
+        homework={homework}
+        achievements={achievements}
+        focus={focus}
+        streak={streak}
+        onStreak={doStreak}
+      />
+    </PWAProvider>
   );
 }

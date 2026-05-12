@@ -1,5 +1,5 @@
 import { error, log } from '../../lib/console';
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';

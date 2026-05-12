@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 
 /**
  * 系统健康检查 API

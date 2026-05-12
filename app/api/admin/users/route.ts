@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 import { getDb } from '../../../lib/db';
 import { requireAdminAuth, adminUnauthorizedResponse } from '../../../lib/admin-auth';
 

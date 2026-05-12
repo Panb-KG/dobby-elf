@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
+import { useSync } from './useSync';
 import { StorageKeys } from '../lib/storage';
 import type { HomeworkTask, HomeworkStatus, HomeworkType } from '../types';
 
@@ -52,13 +53,19 @@ export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<HomeworkStatus | 'all'>('all');
 
+  // 离线同步
+  const { sync } = useSync({ userId: 'local-user', enabled: true });
+
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
     const newTask: HomeworkTask = {
       ...task,
       id: `hw_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
     setTasks(prev => [...prev, newTask]);
-  }, []);
+    
+    // 同步到服务器
+    sync('homework', { type: 'create', data: newTask }).catch(() => {});
+  }, [sync]);
 
   const updateTaskStatus = useCallback((id: string, status: HomeworkStatus) => {
     setTasks(prev =>
@@ -67,8 +74,14 @@ export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn
   }, []);
 
   const deleteTask = useCallback((id: string) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
-  }, []);
+    setTasks(prev => {
+      const task = prev.find(t => t.id === id);
+      if (task) {
+        sync('homework', { type: 'delete', data: { id } }).catch(() => {});
+      }
+      return prev.filter(task => task.id !== id);
+    });
+  }, [sync]);
 
   const getTasksBySubject = useCallback(
     (subject: string) => {

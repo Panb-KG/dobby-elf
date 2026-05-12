@@ -2,7 +2,7 @@
  * 错误处理工具测试
  */
 import { describe, it, expect } from 'vitest';
-import { getErrorMessage, isError } from '../app/lib/error';
+import { getErrorMessage, isError } from '../app/lib/error-helper';
 
 describe('getErrorMessage', () => {
   it('应该从 Error 对象提取消息', () => {
