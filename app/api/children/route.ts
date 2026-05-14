@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getErrorMessage } from '@/lib/error';
+import { getErrorMessage } from '@/lib/error-helper';
 import { getDb } from '../../lib/db';
 import { error, info } from '../../lib/console';
 import { authenticateRequest } from '../../lib/auth';
