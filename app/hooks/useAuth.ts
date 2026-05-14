@@ -12,6 +12,7 @@ export interface UseAuthReturn {
   showRegisterModal: boolean;
   authError: string;
   login: (username: string, password: string) => Promise<void>;
+  childLogin: (childId: string, pin: string) => Promise<void>;
   register: (username: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => void;
   setShowLoginModal: (show: boolean) => void;
@@ -57,6 +58,14 @@ export function useAuth(): UseAuthReturn {
     setShowRegisterModal(false);
   }, []);
 
+  const childLogin = useCallback(async (childId: string, pin: string) => {
+    setAuthError('');
+    const user = await authService.childLogin(childId, pin);
+    setUser(user);
+    setShowLoginModal(false);
+    setShowRegisterModal(false);
+  }, []);
+
   const register = useCallback(async (username: string, password: string, confirmPassword: string) => {
     setAuthError('');
 
@@ -64,8 +73,8 @@ export function useAuth(): UseAuthReturn {
       throw new Error('两次输入的密码不一致');
     }
 
-    if (password.length < 4) {
-      throw new Error('密码长度至少4位');
+    if (password.length < 6) {
+      throw new Error('密码长度至少6位');
     }
 
     if (username.length < 2) {
@@ -92,6 +101,7 @@ export function useAuth(): UseAuthReturn {
     showRegisterModal,
     authError,
     login,
+    childLogin,
     register,
     logout,
     setShowLoginModal,

@@ -41,6 +41,7 @@ export default function Page() {
     showRegisterModal,
     authError,
     login,
+    childLogin,
     register,
     logout,
     setShowLoginModal,
@@ -109,6 +110,7 @@ export default function Page() {
         error={authError}
         onLogin={login}
         onRegister={register}
+        onChildLogin={childLogin}
         onCloseLogin={() => setShowLoginModal(false)}
         onCloseRegister={() => setShowRegisterModal(false)}
       />

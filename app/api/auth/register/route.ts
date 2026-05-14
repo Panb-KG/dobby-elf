@@ -4,7 +4,7 @@ import { getDb } from '../../../lib/db';
 import { error } from '../../../lib/console';
 import { hashPassword, validateUsername, validatePassword } from '../../../lib/auth';
 
-// 注册速率限制：每分钟 5 次
+// 注册速率限制：每分钟 3 次（家长注册频率更低）
 const registerLimiter = new Map<string, { count: number; resetAt: number }>();
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -13,7 +13,7 @@ function isRateLimited(ip: string): boolean {
     registerLimiter.set(ip, { count: 1, resetAt: now + 60000 });
     return false;
   }
-  if (record.count >= 5) return true;
+  if (record.count >= 3) return true;
   record.count++;
   return false;
 }
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 });
     }
 
-    const { username, password } = await req.json();
+    const { username, password, phone, realName } = await req.json();
 
     if (!username || !password) {
       return NextResponse.json({ error: '用户名和密码不能为空' }, { status: 400 });
@@ -41,6 +41,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '密码至少6个字符' }, { status: 400 });
     }
 
+    // 手机号格式校验（可选，但填了就要合法）
+    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+      return NextResponse.json({ error: '请输入正确的手机号码' }, { status: 400 });
+    }
+
     const db = getDb();
 
     // 检查用户名是否已存在
@@ -49,43 +54,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户名已存在' }, { status: 409 });
     }
 
-    // 创建新用户
+    // 检查手机号是否已被其他家长注册
+    if (phone) {
+      const existingPhone = db.prepare(
+        "SELECT id FROM parent_profiles WHERE phone = ?"
+      ).get(phone);
+      if (existingPhone) {
+        return NextResponse.json({ error: '该手机号已被注册' }, { status: 409 });
+      }
+    }
+
+    // 创建家长账号
     const userId = `user_${Date.now()}`;
     const hashedPassword = await hashPassword(password);
 
     db.prepare(`
-      INSERT INTO users (id, username, password, display_name, email, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(userId, username, hashedPassword, username, `${username}@dobi.local`, new Date().toISOString());
+      INSERT INTO users (id, username, password, display_name, email, role, created_at)
+      VALUES (?, ?, ?, ?, ?, 'parent', ?)
+    `).run(
+      userId,
+      username,
+      hashedPassword,
+      realName || username,
+      `${username}@dobi.local`,
+      new Date().toISOString()
+    );
 
-    // 创建默认每日任务
-    const tasks = [
-      { id: `task_${Date.now()}_1`, text: '完成3道奥数题', reward: 50 },
-      { id: `task_${Date.now()}_2`, text: '背诵5个新单词', reward: 30 },
-      { id: `task_${Date.now()}_3`, text: '查看今日课程表', reward: 10 },
-    ];
-
-    const insertTask = db.prepare(`
-      INSERT INTO daily_tasks (id, user_id, text, completed, reward)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    tasks.forEach(task => {
-      insertTask.run(task.id, userId, task.text, 0, task.reward);
-    });
+    // 创建家长资料
+    if (phone || realName) {
+      db.prepare(`
+        INSERT INTO parent_profiles (user_id, phone, real_name, relationship)
+        VALUES (?, ?, ?, ?)
+      `).run(userId, phone || null, realName || null, 'parent');
+    }
 
     return NextResponse.json({
       success: true,
+      message: '家长账号注册成功，快去添加孩子吧！',
       user: {
         id: userId,
         username,
-        displayName: username,
-        email: `${username}@dobi.local`,
+        displayName: realName || username,
+        role: 'parent' as const,
         createdAt: new Date().toISOString(),
-        points: 1250,
-        level: '魔法学徒',
-        treeGrowth: 0,
-        dailyTasks: tasks.map(t => ({ ...t, completed: false }))
       }
     });
   } catch (err: unknown) {

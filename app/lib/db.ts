@@ -71,7 +71,7 @@ export function closeDb(): void {
  */
 function runMigrations(database: Database.Database): void {
   const migrations = [
-    // 用户表
+    // 用户表（支持家长-孩子模式）
     `CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -79,12 +79,38 @@ function runMigrations(database: Database.Database): void {
       email TEXT,
       password TEXT NOT NULL,
       avatar_url TEXT,
+      role TEXT DEFAULT 'child',
+      parent_id TEXT,
+      child_name TEXT,
+      grade TEXT,
+      pin_code TEXT,
+      is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       points INTEGER DEFAULT 1250,
       level TEXT DEFAULT '魔法学徒',
-      tree_growth INTEGER DEFAULT 0
+      tree_growth INTEGER DEFAULT 0,
+      FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
+
+    // 家长资料表
+    `CREATE TABLE IF NOT EXISTS parent_profiles (
+      user_id TEXT PRIMARY KEY,
+      phone TEXT,
+      real_name TEXT,
+      relationship TEXT DEFAULT 'parent',
+      notification_enabled INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+
+    // 索引
+    `CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`,
+    `CREATE INDEX IF NOT EXISTS idx_users_parent ON users(parent_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_users_pin ON users(pin_code)`,
+    `CREATE INDEX IF NOT EXISTS idx_parent_profiles_user ON parent_profiles(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_parent_profiles_phone ON parent_profiles(phone)`,
     
     // 课程表
     `CREATE TABLE IF NOT EXISTS courses (
@@ -346,6 +372,38 @@ function runMigrations(database: Database.Database): void {
   database.prepare(`
     INSERT OR IGNORE INTO _migrations (name) VALUES ('initial_schema')
   `).run();
+
+  // ===== 家长-孩子模式迁移（兼容已有数据库） =====
+  const parentChildMigration = 'parent_child_schema_v2';
+  const alreadyMigrated = database.prepare(
+    'SELECT id FROM _migrations WHERE name = ?'
+  ).get(parentChildMigration);
+
+  if (!alreadyMigrated) {
+    // 为已有 users 表添加新字段（SQLite ALTER TABLE 不支持 IF NOT EXISTS，忽略重复添加错误）
+    const newColumns = [
+      "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'child'",
+      'ALTER TABLE users ADD COLUMN parent_id TEXT',
+      "ALTER TABLE users ADD COLUMN child_name TEXT",
+      'ALTER TABLE users ADD COLUMN grade TEXT',
+      'ALTER TABLE users ADD COLUMN pin_code TEXT',
+      'ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1',
+    ];
+    for (const col of newColumns) {
+      try {
+        database.exec(col);
+      } catch {
+        // 列已存在，忽略
+      }
+    }
+
+    // 为已有用户设置默认 role
+    database.exec("UPDATE users SET role = 'child' WHERE role IS NULL");
+
+    database.prepare(
+      `INSERT OR IGNORE INTO _migrations (name) VALUES (?)`
+    ).run(parentChildMigration);
+  }
 }
 
 /**

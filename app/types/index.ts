@@ -3,16 +3,39 @@
 
 // ===== 用户相关类型 =====
 
+export type UserRole = 'parent' | 'child';
+
 export interface User {
   id: string;
   username: string;
   displayName: string;
   email: string;
+  role: UserRole;
+  parentId?: string;
+  childName?: string;
+  grade?: string;
+  pinCode?: string;
+  isActive?: boolean;
   createdAt: string;
   points: number;
   level: string;
   treeGrowth: number;
   dailyTasks: DailyTask[];
+}
+
+export interface ChildAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  childName: string;
+  grade: string;
+  pinCode: string;
+  avatarUrl: string;
+  isActive: boolean;
+  points: number;
+  level: string;
+  treeGrowth: number;
+  createdAt: string;
 }
 
 export interface DailyTask {
