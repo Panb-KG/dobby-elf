@@ -9,9 +9,11 @@ import { authenticateRequest } from '../../../lib/auth';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { childId: string } }
+  context: { params: Promise<{ childId: string }> }
 ) {
   try {
+    const { childId } = await context.params;
+
     const auth = authenticateRequest(req);
     if (!auth) {
       return NextResponse.json({ error: '未登录或登录已过期' }, { status: 401 });
@@ -30,7 +32,7 @@ export async function GET(
              is_active, points, level, tree_growth, created_at
       FROM users
       WHERE id = ? AND role = 'child' AND parent_id = ?
-    `).get(params.childId, auth.userId) as any;
+    `).get(childId, auth.userId) as any;
 
     if (!child) {
       return NextResponse.json({ error: '孩子账号不存在' }, { status: 404 });
@@ -64,9 +66,11 @@ export async function GET(
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { childId: string } }
+  context: { params: Promise<{ childId: string }> }
 ) {
   try {
+    const { childId } = await context.params;
+
     const auth = authenticateRequest(req);
     if (!auth) {
       return NextResponse.json({ error: '未登录或登录已过期' }, { status: 401 });
@@ -83,7 +87,7 @@ export async function PATCH(
     // 确认孩子属于该家长
     const child = db.prepare(`
       SELECT id FROM users WHERE id = ? AND role = 'child' AND parent_id = ?
-    `).get(params.childId, auth.userId);
+    `).get(childId, auth.userId);
 
     if (!child) {
       return NextResponse.json({ error: '孩子账号不存在' }, { status: 404 });
@@ -106,7 +110,7 @@ export async function PATCH(
       // 检查 PIN 是否被其他孩子使用
       const existingPin = db.prepare(
         "SELECT id FROM users WHERE parent_id = ? AND pin_code = ? AND role = 'child' AND id != ?"
-      ).get(auth.userId, body.pinCode, params.childId);
+      ).get(auth.userId, body.pinCode, childId);
       if (existingPin) {
         return NextResponse.json({ error: '该 PIN 码已被其他孩子使用' }, { status: 409 });
       }
@@ -134,11 +138,11 @@ export async function PATCH(
     }
 
     updates.push("updated_at = datetime('now')");
-    values.push(params.childId);
+    values.push(childId);
 
     db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
 
-    info(`家长 ${auth.userId} 更新了孩子 ${params.childId} 的信息`);
+    info(`家长 ${auth.userId} 更新了孩子 ${childId} 的信息`);
 
     return NextResponse.json({ success: true, message: '更新成功' });
   } catch (err: unknown) {
@@ -152,9 +156,11 @@ export async function PATCH(
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { childId: string } }
+  context: { params: Promise<{ childId: string }> }
 ) {
   try {
+    const { childId } = await context.params;
+
     const auth = authenticateRequest(req);
     if (!auth) {
       return NextResponse.json({ error: '未登录或登录已过期' }, { status: 401 });
@@ -171,7 +177,7 @@ export async function DELETE(
     // 确认孩子属于该家长
     const child = db.prepare(`
       SELECT id FROM users WHERE id = ? AND role = 'child' AND parent_id = ?
-    `).get(params.childId, auth.userId);
+    `).get(childId, auth.userId);
 
     if (!child) {
       return NextResponse.json({ error: '孩子账号不存在' }, { status: 404 });
@@ -180,9 +186,9 @@ export async function DELETE(
     // 软删除：停用而非物理删除
     db.prepare(`
       UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ?
-    `).run(params.childId);
+    `).run(childId);
 
-    info(`家长 ${auth.userId} 停用了孩子账号 ${params.childId}`);
+    info(`家长 ${auth.userId} 停用了孩子账号 ${childId}`);
 
     return NextResponse.json({ success: true, message: '孩子账号已停用' });
   } catch (err: unknown) {
