@@ -1,5 +1,3 @@
-'use server';
-
 /**
  * 安全获取错误消息
  * 用于 catch (err: unknown) 块中提取错误信息
