@@ -157,7 +157,7 @@ export function ChatModule({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               className={cn(
                 "flex max-w-[85%] md:max-w-[75%] items-start gap-2",
-                msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto flex-row"
+                msg.role === 'user' ? "ml-auto flex-row-reverse" : msg.role === 'model' ? "mr-auto flex-row" : "mr-auto flex-row"
               )}
             >
               {msg.role === 'model' && <DobiAvatar size="sm" className="mt-0.5 flex-shrink-0" />}
@@ -166,6 +166,8 @@ export function ChatModule({
                   "px-5 py-3 rounded-3xl text-sm md:text-base leading-relaxed",
                   msg.role === 'user'
                     ? "bg-magic-accent/20 border border-magic-accent/30 text-white rounded-tr-none"
+                    : msg.role === 'system'
+                    ? "bg-amber-500/20 border border-amber-500/30 text-amber-200 rounded-tl-none"
                     : "bg-white/5 border border-white/10 text-stone-200 rounded-tl-none"
                 )}>
                   {msg.image && (
@@ -192,7 +194,7 @@ export function ChatModule({
                   msg.role === 'user' ? "flex-row-reverse" : "flex-row"
                 )}>
                   <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                    {msg.role === 'user' ? 'Seeker' : 'Dobi'}
+                    {msg.role === 'user' ? 'Seeker' : msg.role === 'system' ? 'System' : 'Dobi'}
                   </span>
                   {/* 朗读按钮 */}
                   {msg.role === 'model' && voiceChat?.isSpeechSynthesisSupported && (
