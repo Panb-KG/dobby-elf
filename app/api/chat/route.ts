@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
 
     logError('Chat API request - model:', requestBody.model);
     logError('Chat API request - hasImages:', requestBody.messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image')));
+    logError('Chat API request body:', JSON.stringify(requestBody).substring(0, 500));
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
