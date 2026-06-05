@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 
     const requestBody: {
       model: string;
-      messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>;
+      messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image?: string }> }>;
       stream: boolean;
       max_tokens: number;
       temperature: number;
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
     }
 
     logError('Chat API request - model:', requestBody.model);
-    logError('Chat API request - hasImages:', requestBody.messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image_url')));
+    logError('Chat API request - hasImages:', requestBody.messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image')));
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
