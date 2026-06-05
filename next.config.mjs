@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  experimental: {
-    bodyParser: {
-      sizeLimit: '20mb',
-    },
-  },
   images: {
     remotePatterns: [
       {
