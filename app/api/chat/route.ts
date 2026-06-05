@@ -149,6 +149,9 @@ export async function POST(req: NextRequest) {
       requestBody.tools = tools;
     }
 
+    logError('Chat API request - model:', requestBody.model);
+    logError('Chat API request - hasImages:', requestBody.messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image_url')));
+
     const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
@@ -162,6 +165,8 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
+      logError('Chat API error - Status:', response.status, response.statusText);
+      logError('Chat API error - Response:', errorText);
       
       try {
         const apiError = JSON.parse(errorText) as ChatApiError;
