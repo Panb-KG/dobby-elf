@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         
         // 处理带附件的消息
         if (msg.files && msg.files.length > 0) {
-          const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
+          const content: Array<{ type: string; text?: string; image?: string }> = [];
           
           if (text && text.trim()) {
             content.push({ type: 'text', text });
@@ -76,10 +76,8 @@ export async function POST(req: NextRequest) {
           for (const file of msg.files) {
             if (file.mimeType && file.mimeType.startsWith('image/') && file.data) {
               content.push({
-                type: 'image_url',
-                image_url: {
-                  url: `data:${file.mimeType};base64,${file.data}`
-                }
+                type: 'image',
+                image: file.data
               });
             }
           }
