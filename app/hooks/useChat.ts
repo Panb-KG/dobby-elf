@@ -187,6 +187,156 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           } catch (err) {
             logError('Add course error:', err);
           }
+        } else if (call.name === 'addHomework') {
+          streamingTextRef.current += `\n✨ 正在添加作业：${call.args.title || ''} (${call.args.subject || ''})`;
+          scheduleBatchUpdate();
+          
+          try {
+            let token: string | null = null;
+            if (typeof window !== 'undefined') {
+              token = localStorage.getItem('dobi_auth_token');
+            }
+            
+            if (token) {
+              await fetch('/api/homework', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  task: {
+                    title: call.args.title,
+                    subject: call.args.subject,
+                    description: call.args.description,
+                    dueDate: call.args.dueDate,
+                    status: 'pending',
+                  },
+                }),
+              });
+              streamingTextRef.current += '\n✅ 作业添加成功！';
+              scheduleBatchUpdate();
+            }
+          } catch (err) {
+            logError('Add homework error:', err);
+            streamingTextRef.current += '\n❌ 添加作业失败，请稍后再试。';
+            scheduleBatchUpdate();
+          }
+        } else if (call.name === 'completeHomework') {
+          streamingTextRef.current += `\n✨ 正在标记作业完成：${call.args.title || ''}`;
+          scheduleBatchUpdate();
+          
+          try {
+            let token: string | null = null;
+            if (typeof window !== 'undefined') {
+              token = localStorage.getItem('dobi_auth_token');
+            }
+            
+            if (token) {
+              // 先获取作业列表找到对应的作业ID
+              const resp = await fetch('/api/homework?status=pending', {
+                headers: { 'Authorization': `Bearer ${token}` },
+              });
+              if (resp.ok) {
+                const homeworkList = await resp.json();
+                const target = homeworkList.find((h: any) => 
+                  h.title.includes(call.args.title) || call.args.title.includes(h.title)
+                );
+                if (target) {
+                  await fetch('/api/homework', {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ id: target.id, status: 'completed' }),
+                  });
+                  streamingTextRef.current += '\n✅ 作业已完成！太棒啦～';
+                  scheduleBatchUpdate();
+                } else {
+                  streamingTextRef.current += '\n❌ 找不到对应的作业呢';
+                  scheduleBatchUpdate();
+                }
+              }
+            }
+          } catch (err) {
+            logError('Complete homework error:', err);
+            streamingTextRef.current += '\n❌ 更新作业状态失败';
+            scheduleBatchUpdate();
+          }
+        } else if (call.name === 'deleteHomework') {
+          streamingTextRef.current += `\n✨ 正在删除作业：${call.args.title || ''}`;
+          scheduleBatchUpdate();
+          
+          try {
+            let token: string | null = null;
+            if (typeof window !== 'undefined') {
+              token = localStorage.getItem('dobi_auth_token');
+            }
+            
+            if (token) {
+              // 先获取作业列表找到对应的作业ID
+              const resp = await fetch('/api/homework', {
+                headers: { 'Authorization': `Bearer ${token}` },
+              });
+              if (resp.ok) {
+                const homeworkList = await resp.json();
+                const target = homeworkList.find((h: any) => 
+                  h.title.includes(call.args.title) || call.args.title.includes(h.title)
+                );
+                if (target) {
+                  await fetch(`/api/homework?id=${encodeURIComponent(target.id)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                  });
+                  streamingTextRef.current += '\n✅ 作业已删除';
+                  scheduleBatchUpdate();
+                } else {
+                  streamingTextRef.current += '\n❌ 找不到对应的作业';
+                  scheduleBatchUpdate();
+                }
+              }
+            }
+          } catch (err) {
+            logError('Delete homework error:', err);
+            streamingTextRef.current += '\n❌ 删除作业失败';
+            scheduleBatchUpdate();
+          }
+        } else if (call.name === 'listHomework') {
+          streamingTextRef.current += '\n✨ 正在查看作业列表...';
+          scheduleBatchUpdate();
+          
+          try {
+            let token: string | null = null;
+            if (typeof window !== 'undefined') {
+              token = localStorage.getItem('dobi_auth_token');
+            }
+            
+            if (token) {
+              const status = call.args.status || 'all';
+              const resp = await fetch(`/api/homework?status=${status}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+              });
+              if (resp.ok) {
+                const homeworkList = await resp.json();
+                if (homeworkList.length === 0) {
+                  streamingTextRef.current += '\n📝 目前没有作业哦，太轻松啦！';
+                } else {
+                  streamingTextRef.current += '\n📋 作业列表：\n';
+                  homeworkList.forEach((h: any, i: number) => {
+                    const statusIcon = h.status === 'completed' ? '✅' : '⏳';
+                    const dueInfo = h.due_date ? ` (截止：${h.due_date})` : '';
+                    streamingTextRef.current += `${i + 1}. ${statusIcon} ${h.subject} - ${h.title}${dueInfo}\n`;
+                  });
+                }
+                scheduleBatchUpdate();
+              }
+            }
+          } catch (err) {
+            logError('List homework error:', err);
+            streamingTextRef.current += '\n❌ 获取作业列表失败';
+            scheduleBatchUpdate();
+          }
         }
       }
     }
