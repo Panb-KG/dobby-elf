@@ -129,6 +129,14 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         if (typeof chunk === 'string') {
           streamingTextRef.current += chunk;
           scheduleBatchUpdate();
+        } else if (typeof chunk === 'object' && chunk.functionCalls) {
+          logError('Tool calls received:', chunk.functionCalls);
+          for (const call of chunk.functionCalls) {
+            if (call.name === 'addCourse') {
+              streamingTextRef.current += `\n✨ 正在添加课程：${call.args.subject || ''} - ${call.args.day || ''} ${call.args.time || ''}`;
+              scheduleBatchUpdate();
+            }
+          }
         }
       }
 
