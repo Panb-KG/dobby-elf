@@ -11,7 +11,7 @@ export interface UseChatReturn {
   messages: Message[];
   input: string;
   isLoading: boolean;
-  sendMessage: (text: string, image?: string | null) => Promise<void>;
+  sendMessage: (text: string, files?: Array<{ mimeType: string; data: string }>) => Promise<void>;
   handleInputChange: (value: string) => void;
   handleShortcut: (prompt: string) => Promise<void>;
   abortChat: () => void;
@@ -85,13 +85,15 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     abortControllerRef.current?.abort();
   }, []);
 
-  const sendMessage = useCallback(async (text: string, image: string | null = null) => {
-    if (!text.trim()) return;
+  const sendMessage = useCallback(async (text: string, files?: Array<{ mimeType: string; data: string }>) => {
+    if (!text.trim() && (!files || files.length === 0)) return;
 
+    const image = files?.find(f => f.mimeType.startsWith('image/'));
     const userMessage: Message = { 
       role: 'user', 
       text, 
-      image, 
+      image: image ? `data:${image.mimeType};base64,${image.data}` : undefined,
+      files,
       timestamp: new Date().toISOString() 
     };
     
@@ -100,17 +102,14 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     try {
       abortControllerRef.current = new AbortController();
       
-      // 使用函数式更新获取最新的 messages
       let currentMessages: Message[] = [];
       setMessages(prev => {
         currentMessages = [...prev, userMessage];
         return currentMessages;
       });
       
-      // 等待 state 更新后发送请求
       await new Promise(resolve => setTimeout(resolve, 0));
 
-      // 创建流式消息占位
       const streamingMessage: Message = {
         role: 'model',
         text: '',
@@ -119,10 +118,13 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
       setMessages(prev => [...prev, streamingMessage]);
 
-      // 流式接收，用 ref 累积文本，批量更新 UI
       streamingTextRef.current = '';
       for await (const chunk of dobi.chatStream(
-        [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ role: m.role as 'user' | 'model', text: m.text }))
+        [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ 
+          role: m.role as 'user' | 'model', 
+          text: m.text,
+          files: m.files 
+        }))
       )) {
         if (typeof chunk === 'string') {
           streamingTextRef.current += chunk;
@@ -130,14 +132,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         }
       }
 
-      // 最终完成：确保最后一次更新
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
         batchTimerRef.current = null;
       }
       flushStreamingText();
       
-      // 自动朗读 AI 回复（语音聊天模式）
       if (onAutoSpeak && streamingTextRef.current) {
         onAutoSpeak(streamingTextRef.current);
       }

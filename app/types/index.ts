@@ -107,6 +107,7 @@ export interface Message {
   text: string;
   timestamp?: string;
   image?: string | null;
+  files?: Array<{ mimeType: string; data: string }>;
 }
 
 export interface ChatStreamOptions {

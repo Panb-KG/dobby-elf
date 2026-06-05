@@ -1,5 +1,5 @@
 import { error } from '../lib/console';
-// Dobi Magic Service for DashScope
+
 export interface Message {
   role: "user" | "model";
   text: string;
@@ -8,7 +8,7 @@ export interface Message {
 }
 
 export interface ChatOptions {
-  messages: { role: string; content: string }[];
+  messages: { role: string; content: string; files?: { mimeType: string; data: string }[] }[];
   signal?: AbortSignal;
 }
 
@@ -22,7 +22,11 @@ export class DobiService {
     let fullText = '';
 
     for await (const chunk of this.chatStream(
-      messages.map(m => ({ role: m.role as 'user' | 'model', text: m.content }))
+      messages.map(m => ({ 
+        role: m.role as 'user' | 'model', 
+        text: m.content,
+        files: m.files 
+      }))
     )) {
       if (typeof chunk === 'string') {
         fullText += chunk;
@@ -34,7 +38,6 @@ export class DobiService {
 
   async generateMagicImage(prompt: string): Promise<string | null> {
     try {
-      // 获取认证令牌
       let token: string | null = null;
       if (typeof window !== 'undefined') {
         token = localStorage.getItem('dobi_auth_token');
@@ -61,11 +64,13 @@ export class DobiService {
 
   async *chatStream(messages: Message[]) {
     try {
-      // 获取认证令牌
       let token: string | null = null;
       if (typeof window !== 'undefined') {
         token = localStorage.getItem('dobi_auth_token');
       }
+
+      const hasImages = messages.some(m => m.files && m.files.some(f => f.mimeType.startsWith('image/')));
+      const model = hasImages ? 'qwen3-vl-plus' : 'qwen3.6-plus';
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -80,6 +85,7 @@ export class DobiService {
             content: m.text,
             files: m.files
           })),
+          model,
           systemInstruction: `你是多比，魔法小课桌的学习助手精灵。性格:忠诚、贴心、友好、调皮。语言:亲切活泼，偶尔用魔法词汇(呼啦啦、变！)，适合小学生。
 
 核心能力:
@@ -176,7 +182,6 @@ export class DobiService {
         error('Chat API error - Status:', response.status, response.statusText);
         error('Chat API error - Text:', errorText || '(empty response)');
 
-        // 尝试解析错误信息
         let errorMessage = `Chat failed: ${response.status} ${response.statusText}`;
         if (errorText) {
           try {
@@ -188,7 +193,6 @@ export class DobiService {
               errorMessage = `API Error: ${errorJson.message}`;
             }
           } catch (e) {
-            // 如果不是 JSON,使用原始错误文本
             if (errorText.trim()) {
               errorMessage = `API Error: ${errorText.substring(0, 200)}`;
             }
@@ -213,7 +217,6 @@ export class DobiService {
         buffer = lines.pop() || '';
 
         for (const line of lines) {
-          // SSE 格式: "data: {...}" 或 "data: [DONE]"
           const trimmed = line.trim();
           if (!trimmed || trimmed === 'data: [DONE]') continue;
 
@@ -227,13 +230,11 @@ export class DobiService {
           try {
             const data = JSON.parse(jsonStr);
 
-            // OpenAI 兼容格式: choices[0].delta.content
             if (data.choices && data.choices[0]) {
               const delta = data.choices[0].delta;
               if (delta && delta.content) {
                 yield delta.content;
               }
-              // 工具调用
               if (data.choices[0].delta?.tool_calls) {
                 const toolCalls = data.choices[0].delta.tool_calls;
                 yield { functionCalls: toolCalls.map((tc: { function?: { name?: string; arguments?: string } }) => ({
@@ -242,7 +243,6 @@ export class DobiService {
                 })) };
               }
             }
-            // DashScope 格式 (备用)
             else if (data.output && data.output.text) {
               yield data.output.text;
             }
@@ -253,7 +253,6 @@ export class DobiService {
               })) };
             }
           } catch (e) {
-            // 忽略解析错误(可能是 SSE 注释行等)
           }
         }
       }

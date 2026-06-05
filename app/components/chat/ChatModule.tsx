@@ -13,7 +13,7 @@ interface ChatModuleProps {
   messages: Message[];
   input: string;
   isLoading: boolean;
-  onSend: (text: string, image?: string | null) => void;
+  onSend: (text: string, files?: Array<{ mimeType: string; data: string }>) => void;
   onInputChange: (value: string) => void;
   onShortcut: (prompt: string) => void;
   shortcuts: Array<{
@@ -64,6 +64,7 @@ export function ChatModule({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
   // 自动滚动
   React.useEffect(() => {
@@ -78,11 +79,32 @@ export function ChatModule({
     }
   }, [input]);
 
-  const handleSend = () => {
-    if ((input.trim() || attachments.length > 0) && !isLoading) {
-      onSend(input.trim());
+  const handleSend = async () => {
+    if ((input.trim() || attachments.length > 0) && !isLoading && !isSending) {
+      setIsSending(true);
+      
+      // 将附件转换为 base64 格式
+      const files = await Promise.all(
+        attachments.map(file => {
+          return new Promise<{ mimeType: string; data: string }>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const result = e.target?.result as string;
+              const base64Data = result.split(',')[1];
+              resolve({
+                mimeType: file.type,
+                data: base64Data
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+      
+      onSend(input.trim(), files.length > 0 ? files : undefined);
       onInputChange('');
       setAttachments([]);
+      setIsSending(false);
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -99,7 +121,20 @@ export function ChatModule({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setAttachments(prev => [...prev, ...newFiles]);
+      const maxFiles = 5;
+      const maxSizeMB = 10;
+      const validFiles = newFiles.filter(file => {
+        if (attachments.length >= maxFiles) {
+          alert(`最多只能上传 ${maxFiles} 个文件`);
+          return false;
+        }
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          alert(`文件大小不能超过 ${maxSizeMB}MB`);
+          return false;
+        }
+        return true;
+      });
+      setAttachments(prev => [...prev, ...validFiles]);
     }
   };
 
@@ -225,10 +260,17 @@ export function ChatModule({
                     <ImageIcon className="w-4 h-4 text-emerald-400" />
                   ) : file.type.startsWith('video/') ? (
                     <Video className="w-4 h-4 text-blue-400" />
+                  ) : file.type.startsWith('application/pdf') ? (
+                    <FileText className="w-4 h-4 text-red-400" />
                   ) : (
                     <File className="w-4 h-4 text-amber-400" />
                   )}
                   <span className="text-[10px] text-white/60 max-w-[80px] truncate">{file.name}</span>
+                  <span className="text-[9px] text-white/30">
+                    {file.size < 1024 ? `${file.size}B` : 
+                     file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)}KB` : 
+                     `${(file.size / (1024 * 1024)).toFixed(1)}MB`}
+                  </span>
                   <button
                     onClick={() => removeAttachment(idx)}
                     className="p-1 rounded-full bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -303,7 +345,7 @@ export function ChatModule({
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入你的问题，让魔法发生..."
+              placeholder="输入你的问题，让魔法发生...支持图片、文档等附件"
               className="w-full bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl px-6 py-4 pr-32 text-sm md:text-base focus:outline-none focus:border-magic-accent/50 focus:bg-white/10 transition-all resize-none min-h-[56px] max-h-32"
               rows={1}
             />
@@ -323,6 +365,7 @@ export function ChatModule({
                 onChange={handleFileChange}
                 className="hidden"
                 multiple
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -337,7 +380,7 @@ export function ChatModule({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() && attachments.length === 0 || isLoading || isSending}
             className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-magic-accent flex items-center justify-center text-white shadow-lg shadow-magic-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-5 h-5" />

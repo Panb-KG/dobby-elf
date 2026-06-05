@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[] };
+    const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[]; model?: string };
     const { messages, systemInstruction, tools } = body;
 
     // 输入校验
@@ -125,9 +125,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const model = 'qwen3.6-plus';
-    const apiEndpoint = baseUrl + '/chat/completions';
-
     const requestBody: {
       model: string;
       messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>;
@@ -136,17 +133,18 @@ export async function POST(req: NextRequest) {
       temperature: number;
       tools?: unknown[];
     } = {
-      model,
+      model: body.model || 'qwen3.6-plus',
       messages: [
         { role: 'system', content: systemInstruction || '你是多比，一个友好、有耐心的小学学习助手。用简单易懂的语言回答，适当使用emoji。' },
         ...processedMessages
       ],
-      stream: true,  // 启用流式响应，降低首字延迟
-      max_tokens: 2048,  // 限制最大输出 token 数
-      temperature: 0.7,  // 平衡创造性和稳定性
+      stream: true,
+      max_tokens: 2048,
+      temperature: 0.7,
     };
 
-    // 添加工具定义（如果提供）
+    const apiEndpoint = baseUrl + '/chat/completions';
+
     if (tools && tools.length > 0) {
       requestBody.tools = tools;
     }

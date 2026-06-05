@@ -16,7 +16,7 @@
     "healthcheck": "node -e \"require('http').get('http://localhost:'+(process.env.PORT||3000)+'/api/users', (r) => {process.exit(r.statusCode===200?0:1)}).on('error', () => process.exit(1))\""
   },
   "dependencies": {
-    "@sentry/node": "^10.52.0",
+    "@sentry/node": "^10.56.0",
     "@tailwindcss/postcss": "^4.2.1",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.8.0",
