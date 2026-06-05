@@ -186,10 +186,14 @@ export function ChatModule({
                     </div>
                   )}
                   <div className="markdown-body">
+                  {msg.text ? (
                     <Markdown rehypePlugins={[rehypeRaw]}>{msg.text}</Markdown>
-                  </div>
+                  ) : (
+                    <span className="text-magic-accent/60 text-xs italic font-serif">正在施展魔法...</span>
+                  )}
                 </div>
-                <div className={cn(
+              </div>
+              <div className={cn(
                   "flex items-center gap-2 mt-2",
                   msg.role === 'user' ? "flex-row-reverse" : "flex-row"
                 )}>
@@ -234,16 +238,6 @@ export function ChatModule({
             </motion.div>
           ))}
         </AnimatePresence>
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-3 text-magic-accent/60"
-          >
-            <DobiAvatar size="sm" />
-            <span className="text-xs italic font-serif">正在施展魔法...</span>
-          </motion.div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
