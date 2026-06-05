@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# 设置环境变量
+export DASHSCOPE_API_KEY=sk-8f7aea4ee20a4d368454333dea87722e
+export DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export JWT_SECRET=02d8abbc3d753338ac95f9f481d4a945eb44fef9b69076caf7cf77a9f6f0357a8ff4250d066c30bc7a3e814010c7ede02e5a037fda5f425f51fd21dd0ba02f92
+
+# 启动开发服务器
+npm run dev
