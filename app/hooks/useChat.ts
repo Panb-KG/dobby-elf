@@ -146,10 +146,10 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       if (err.name !== 'AbortError') {
         logError('Chat error:', err);
         const errorMessage: Message = {
-          role: 'system',
+          role: 'model',
           text: '多比的魔法出错了，请稍后再试。',
         };
-        setMessages(prev => [...prev, errorMessage]);
+        setMessages(prev => [...prev.slice(0, -1), errorMessage]);
       }
     } finally {
       setIsLoading(false);
