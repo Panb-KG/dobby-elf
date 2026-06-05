@@ -4,8 +4,8 @@
     "dockerfile": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node server.js",
-    "healthcheckPath": "/api/users"
+    "startCommand": "npm run start",
+    "healthcheckPath": "/api/health"
   },
   "env": {
     "NODE_ENV": "production",
