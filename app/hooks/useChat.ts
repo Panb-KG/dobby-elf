@@ -119,26 +119,78 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       setMessages(prev => [...prev, streamingMessage]);
 
       streamingTextRef.current = '';
-      for await (const chunk of dobi.chatStream(
-        [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ 
-          role: m.role as 'user' | 'model', 
-          text: m.text,
-          files: m.files 
-        }))
-      )) {
-        if (typeof chunk === 'string') {
-          streamingTextRef.current += chunk;
+  for await (const chunk of dobi.chatStream(
+    [...currentMessages].filter(m => m.role === 'user' || m.role === 'model').map(m => ({ 
+      role: m.role as 'user' | 'model', 
+      text: m.text,
+      files: m.files 
+    }))
+  )) {
+    if (typeof chunk === 'string') {
+      streamingTextRef.current += chunk;
+      scheduleBatchUpdate();
+    } else if (typeof chunk === 'object' && chunk.functionCalls) {
+      logError('Tool calls received:', chunk.functionCalls);
+      
+      for (const call of chunk.functionCalls) {
+        if (call.name === 'addCourse') {
+          streamingTextRef.current += `\n✨ 正在添加课程：${call.args.subject || ''} - ${call.args.day || ''} ${call.args.time || ''}`;
           scheduleBatchUpdate();
-        } else if (typeof chunk === 'object' && chunk.functionCalls) {
-          logError('Tool calls received:', chunk.functionCalls);
-          for (const call of chunk.functionCalls) {
-            if (call.name === 'addCourse') {
-              streamingTextRef.current += `\n✨ 正在添加课程：${call.args.subject || ''} - ${call.args.day || ''} ${call.args.time || ''}`;
-              scheduleBatchUpdate();
+          
+          // 实际调用API添加课程
+          try {
+            let token: string | null = null;
+            if (typeof window !== 'undefined') {
+              token = localStorage.getItem('dobi_auth_token');
             }
+            
+            if (token) {
+              // 如果用户说"更新课表"，先删除旧课程
+              const userMessageText = messages.find(m => m.role === 'user')?.text || '';
+              if (userMessageText.includes('更新') || userMessageText.includes('清除') || userMessageText.includes('替换')) {
+                // 获取并删除现有课程
+                const getCoursesResp = await fetch('/api/courses', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                });
+                if (getCoursesResp.ok) {
+                  const courses = await getCoursesResp.json();
+                  for (const course of courses) {
+                    await fetch(`/api/courses?id=${encodeURIComponent(course.id)}`, {
+                      method: 'DELETE',
+                      headers: {
+                        'Authorization': `Bearer ${token}`,
+                      },
+                    });
+                  }
+                }
+              }
+              
+              // 添加新课程
+              await fetch('/api/courses', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  course: {
+                    day: call.args.day,
+                    subject: call.args.subject,
+                    time: call.args.time,
+                    type: call.args.type || '校内',
+                  },
+                }),
+              });
+            }
+          } catch (err) {
+            logError('Add course error:', err);
           }
         }
       }
+    }
+  }
 
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
