@@ -145,9 +145,18 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       const err = error as Error;
       if (err.name !== 'AbortError') {
         logError('Chat error:', err);
+        let errorText = '多比的魔法出错了，请稍后再试。';
+        
+        const errorStr = err.message || '';
+        if (errorStr.includes('Model not exist') && files && files.length > 0) {
+          errorText = '多比暂时无法识别图片呢！请尝试发送文字消息，或者稍后再试。';
+        } else if (errorStr.includes('图片') || errorStr.includes('image') || errorStr.includes('vision')) {
+          errorText = '图片识别功能暂时不可用，请先发送文字消息吧！';
+        }
+        
         const errorMessage: Message = {
           role: 'model',
-          text: '多比的魔法出错了，请稍后再试。',
+          text: errorText,
         };
         setMessages(prev => [...prev.slice(0, -1), errorMessage]);
       }
