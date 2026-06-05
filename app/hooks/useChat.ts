@@ -168,21 +168,36 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
               }
               
               // 添加新课程
+              const courseData = {
+                day: call.args.day,
+                subject: call.args.subject,
+                time: call.args.time,
+                type: call.args.type || '校内',
+              };
               await fetch('/api/courses', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  course: {
-                    day: call.args.day,
-                    subject: call.args.subject,
-                    time: call.args.time,
-                    type: call.args.type || '校内',
-                  },
-                }),
+                body: JSON.stringify({ course: courseData }),
               });
+              
+              // 更新本地存储并触发刷新
+              if (typeof window !== 'undefined') {
+                const existingCourses = JSON.parse(localStorage.getItem('dobi_courses') || '{"value":[]}').value || [];
+                const newCourse = {
+                  ...courseData,
+                  color: 'bg-blue-500/20 border-blue-500/30',
+                };
+                localStorage.setItem('dobi_courses', JSON.stringify({
+                  value: [...existingCourses, newCourse],
+                  timestamp: Date.now(),
+                }));
+                // 触发自定义事件通知UI刷新
+                window.dispatchEvent(new CustomEvent('courses-updated'));
+                window.dispatchEvent(new CustomEvent('data-updated', { detail: { type: 'courses' } }));
+              }
             }
           } catch (err) {
             logError('Add course error:', err);
@@ -198,24 +213,46 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
             }
             
             if (token) {
-              await fetch('/api/homework', {
+              const homeworkData = {
+                title: call.args.title,
+                subject: call.args.subject,
+                description: call.args.description,
+                status: 'pending',
+              };
+              const resp = await fetch('/api/homework', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  task: {
-                    title: call.args.title,
-                    subject: call.args.subject,
-                    description: call.args.description,
-                    dueDate: call.args.dueDate,
-                    status: 'pending',
-                  },
-                }),
+                body: JSON.stringify({ task: homeworkData }),
               });
-              streamingTextRef.current += '\n✅ 作业添加成功！';
-              scheduleBatchUpdate();
+              
+              if (resp.ok) {
+                streamingTextRef.current += '\n✅ 作业添加成功！';
+                scheduleBatchUpdate();
+                
+                // 更新本地存储并触发刷新
+                if (typeof window !== 'undefined') {
+                  const existingHomework = JSON.parse(localStorage.getItem('dobi_homework') || '{"value":[]}').value || [];
+                  const newHomework = {
+                    ...homeworkData,
+                    id: `hw_${Date.now()}`,
+                    due_date: call.args.dueDate || null,
+                    created_at: new Date().toISOString(),
+                  };
+                  localStorage.setItem('dobi_homework', JSON.stringify({
+                    value: [...existingHomework, newHomework],
+                    timestamp: Date.now(),
+                  }));
+                  // 触发自定义事件通知UI刷新
+                  window.dispatchEvent(new CustomEvent('homework-updated'));
+                  window.dispatchEvent(new CustomEvent('data-updated', { detail: { type: 'homework' } }));
+                }
+              } else {
+                streamingTextRef.current += '\n❌ 添加作业失败，请稍后再试。';
+                scheduleBatchUpdate();
+              }
             }
           } catch (err) {
             logError('Add homework error:', err);
@@ -253,6 +290,22 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   });
                   streamingTextRef.current += '\n✅ 作业已完成！太棒啦～';
                   scheduleBatchUpdate();
+                  
+                  // 更新本地存储并触发刷新
+                  if (typeof window !== 'undefined') {
+                    const existingHomework = JSON.parse(localStorage.getItem('dobi_homework') || '{"value":[]}').value || [];
+                    const updatedHomework = existingHomework.map((h: any) => 
+                      h.title.includes(call.args.title) || call.args.title.includes(h.title)
+                        ? { ...h, status: 'completed' }
+                        : h
+                    );
+                    localStorage.setItem('dobi_homework', JSON.stringify({
+                      value: updatedHomework,
+                      timestamp: Date.now(),
+                    }));
+                    window.dispatchEvent(new CustomEvent('homework-updated'));
+                    window.dispatchEvent(new CustomEvent('data-updated', { detail: { type: 'homework' } }));
+                  }
                 } else {
                   streamingTextRef.current += '\n❌ 找不到对应的作业呢';
                   scheduleBatchUpdate();
@@ -291,6 +344,20 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   });
                   streamingTextRef.current += '\n✅ 作业已删除';
                   scheduleBatchUpdate();
+                  
+                  // 更新本地存储并触发刷新
+                  if (typeof window !== 'undefined') {
+                    const existingHomework = JSON.parse(localStorage.getItem('dobi_homework') || '{"value":[]}').value || [];
+                    const filteredHomework = existingHomework.filter((h: any) => 
+                      !(h.title.includes(call.args.title) || call.args.title.includes(h.title))
+                    );
+                    localStorage.setItem('dobi_homework', JSON.stringify({
+                      value: filteredHomework,
+                      timestamp: Date.now(),
+                    }));
+                    window.dispatchEvent(new CustomEvent('homework-updated'));
+                    window.dispatchEvent(new CustomEvent('data-updated', { detail: { type: 'homework' } }));
+                  }
                 } else {
                   streamingTextRef.current += '\n❌ 找不到对应的作业';
                   scheduleBatchUpdate();
