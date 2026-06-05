@@ -47,7 +47,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[]; model?: string };
+    const rawBody = await req.text();
+    logError('Raw request body:', rawBody.substring(0, 500));
+    
+    const body = JSON.parse(rawBody) as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[]; model?: string };
     const { messages, systemInstruction, tools } = body;
 
     // 输入校验
