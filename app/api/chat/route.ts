@@ -47,10 +47,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const rawBody = await req.text();
-    logError('Raw request body:', rawBody.substring(0, 500));
-    
-    const body = JSON.parse(rawBody) as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[]; model?: string };
+    const body = await req.json() as { messages?: ChatMessage[]; systemInstruction?: string; tools?: unknown[]; model?: string };
     const { messages, systemInstruction, tools } = body;
 
     // 输入校验
@@ -149,10 +146,6 @@ export async function POST(req: NextRequest) {
     if (tools && tools.length > 0) {
       requestBody.tools = tools;
     }
-
-    logError('Chat API request - model:', requestBody.model);
-    logError('Chat API request - hasImages:', requestBody.messages.some(m => Array.isArray(m.content) && m.content.some(c => c.type === 'image')));
-    logError('Chat API request body:', JSON.stringify(requestBody).substring(0, 500));
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
