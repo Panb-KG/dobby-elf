@@ -1,5 +1,6 @@
 import { getErrorMessage } from '@/lib/error-helper';
 import { validateBody, validationError, validators } from '@/lib/validate';
+import { selectModel, isComplexQuestion, type TaskType } from '@/lib/ai-model-scheduler';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
@@ -131,7 +132,17 @@ export async function POST(req: NextRequest) {
       temperature: number;
       tools?: unknown[];
     } = {
-      model: body.model || 'qwen3.6-flash',
+      // 使用 AI 模型调度器选择最优模型
+      model: body.model || selectModel('text_chat', {
+        hasImages: processedMessages.some(m => 
+          typeof m?.content === 'object' && Array.isArray(m.content) && 
+          m.content.some((c: { type: string }) => c.type === 'image')
+        ),
+        isComplex: messagesArray.some(m => {
+          const text = 'content' in m ? (typeof m.content === 'string' ? m.content : '') : '';
+          return isComplexQuestion(text);
+        }),
+      }).model,
       messages: [
         { role: 'system', content: systemInstruction || '你是多比，一个友好、有耐心的小学学习助手。用简单易懂的语言回答，适当使用emoji。' },
         ...processedMessages
