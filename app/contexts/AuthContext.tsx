@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
-import type { User } from '@supabase/supabase-js';
 
 /**
  * 小学生友好认证 Context
@@ -13,8 +12,17 @@ import type { User } from '@supabase/supabase-js';
  * 3. 首次使用自动创建账号
  */
 
+// 自定义应用用户类型（不依赖 Supabase User 类型，避免类型不兼容）
+interface AppUser {
+  id: string;
+  username: string;
+  avatarUrl?: string;
+  grade?: number;
+  role: 'student' | 'parent' | 'teacher';
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   username: string | null;
   isLoading: boolean;
   login: (username: string, pin?: string) => Promise<void>;
@@ -25,7 +33,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUsername = localStorage.getItem('dobby_username');
     if (storedUsername) {
       setUsername(storedUsername);
-      // 使用用户名作为标识（简化版，生产环境需要更安全的方案）
       loadUser(storedUsername);
     }
     setIsLoading(false);
@@ -42,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadUser(username: string) {
     const supabase = getSupabaseBrowserClient();
-    // 查找或创建用户
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -50,17 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error || !data) {
-      // 用户不存在，需要注册
       setUser(null);
       return;
     }
 
-    // 模拟用户对象（简化版）
     setUser({
-      id: data.id,
-      email: null,
-      // ... 其他 User 属性
-    } as User);
+      id: data.id as string,
+      username: data.username as string,
+      avatarUrl: data.avatar_url as string | undefined,
+      grade: data.grade as number | undefined,
+      role: (data.role as 'student' | 'parent' | 'teacher') ?? 'student',
+    });
     setUsername(data.username);
   }
 
@@ -83,7 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem('dobby_username', username);
       setUsername(username);
-      setUser({ id: data.id, email: null } as User);
+      setUser({
+        id: data.id as string,
+        username: data.username as string,
+        avatarUrl: data.avatar_url as string | undefined,
+        grade: data.grade as number | undefined,
+        role: (data.role as 'student' | 'parent' | 'teacher') ?? 'student',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -104,12 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('用户名已存在，请换个名字');
       }
 
-      // 创建新用户（使用 Supabase Auth 的匿名登录或自定义用户表）
+      // 创建新用户
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           username,
-          // TODO: 加密存储PIN
+          // id 需要由 Supabase Auth 触发器或手动生成
+          // 这里使用一个临时 UUID，生产环境应改用 Supabase Auth
         })
         .select()
         .single();
@@ -118,7 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem('dobby_username', username);
       setUsername(username);
-      setUser({ id: data.id, email: null } as User);
+      setUser({
+        id: data.id as string,
+        username: data.username as string,
+        role: 'student',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -137,10 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuthContext() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 }
