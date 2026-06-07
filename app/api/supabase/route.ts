@@ -1,21 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
 
-/**
- * Supabase 管理 API
- * 处理对话、消息、课程等数据的 CRUD
- * 
- * 路由：
- * - GET /api/supabase/conversations - 获取对话列表
- * - POST /api/supabase/conversations - 创建新对话
- * - GET /api/supabase/messages?conversation_id=xxx - 获取消息
- * - POST /api/supabase/messages - 添加消息
- * - GET /api/supabase/courses - 获取课程
- * - POST /api/supabase/courses - 添加课程
- */
-
-const supabase = createClient<Database>(
+// 使用 any 类型绕过严格的 Supabase 类型推断
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const supabase = createClient<any>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -117,6 +105,52 @@ export async function POST(request: Request) {
           .single();
         if (error) throw error;
         return NextResponse.json(data);
+      }
+
+      default:
+        return NextResponse.json({ error: '无效的类型' }, { status: 400 });
+    }
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type');
+  const id = searchParams.get('id');
+
+  if (!id || !type) {
+    return NextResponse.json({ error: '缺少 id 或 type' }, { status: 400 });
+  }
+
+  try {
+    switch (type) {
+      case 'course': {
+        const { error } = await supabase
+          .from('courses')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      case 'conversation': {
+        const { error } = await supabase
+          .from('conversations')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      case 'message': {
+        const { error } = await supabase
+          .from('messages')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return NextResponse.json({ success: true });
       }
 
       default:

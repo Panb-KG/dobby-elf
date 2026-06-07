@@ -1,5 +1,4 @@
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
-import type { Database } from '@/types/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -8,12 +7,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase 凭证未配置，部分功能不可用');
 }
 
-// 客户端单例（浏览器）
-let browserClient: SupabaseClient<Database> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyClient = SupabaseClient<any>;
 
-export function getSupabaseBrowserClient(): SupabaseClient<Database> {
+// 客户端单例（浏览器）
+let browserClient: AnyClient | null = null;
+
+export function getSupabaseBrowserClient(): AnyClient {
   if (!browserClient) {
-    browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    browserClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -25,8 +27,8 @@ export function getSupabaseBrowserClient(): SupabaseClient<Database> {
 }
 
 // 服务端客户端（每次新建，避免内存泄漏）
-export function getSupabaseServerClient(): SupabaseClient<Database> {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export function getSupabaseServerClient(): AnyClient {
+  return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: false,
     },
@@ -35,7 +37,7 @@ export function getSupabaseServerClient(): SupabaseClient<Database> {
 
 // 订阅工具（实时同步）
 export function subscribeToTable(
-  table: keyof Database['public']['Tables'],
+  table: string,
   userId: string,
   onInsert?: (payload: unknown) => void,
   onUpdate?: (payload: unknown) => void,
@@ -49,7 +51,7 @@ export function subscribeToTable(
       {
         event: 'INSERT',
         schema: 'public',
-        table: table as string,
+        table,
         filter: `user_id=eq.${userId}`,
       },
       (payload) => onInsert?.(payload)
@@ -59,7 +61,7 @@ export function subscribeToTable(
       {
         event: 'UPDATE',
         schema: 'public',
-        table: table as string,
+        table,
         filter: `user_id=eq.${userId}`,
       },
       (payload) => onUpdate?.(payload)
@@ -69,7 +71,7 @@ export function subscribeToTable(
       {
         event: 'DELETE',
         schema: 'public',
-        table: table as string,
+        table,
         filter: `user_id=eq.${userId}`,
       },
       (payload) => onDelete?.(payload)

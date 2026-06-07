@@ -52,7 +52,7 @@ export default function Page() {
   const chat = useChat();
 
   // ========== 课程状态 ==========
-  const course = useCourses();
+  const course = useCourses({ userId: user?.id });
 
   // ========== 作业状态 ==========
   const homework = useHomework();

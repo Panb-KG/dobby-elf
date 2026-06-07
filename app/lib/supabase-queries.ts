@@ -4,9 +4,6 @@
  */
 
 import { getSupabaseBrowserClient } from './supabase';
-import type { Database } from '@/types/supabase';
-
-type Tables = Database['public']['Tables'];
 
 // ============================================
 // 对话操作
