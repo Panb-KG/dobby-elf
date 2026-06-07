@@ -9,7 +9,7 @@
  */
 
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs'; // 纯 JS 实现，无需编译，兼容 Zeabur
 import { NextRequest, NextResponse } from 'next/server';
 
 // ===== JWT 配置 =====

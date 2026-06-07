@@ -206,4 +206,4 @@ export async function DELETE(req: Request) {
 }
 
 import { error } from '../../../lib/console';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';

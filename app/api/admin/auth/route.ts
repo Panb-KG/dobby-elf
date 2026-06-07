@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getErrorMessage } from '@/lib/error-helper';
 import { getDb } from '../../../lib/db';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { error } from '../../../lib/console';
 import jwt from 'jsonwebtoken';
 import { ensureJwtSecret } from '../../../lib/auth';
