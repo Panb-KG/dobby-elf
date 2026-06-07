@@ -1,37 +1,63 @@
 /**
- * SQLite 数据库封装
+ * 数据库封装 - 兼容 Supabase（云）和 SQLite（本地开发）
  * 
- * 特性：
- * - 单例共享连接（避免每次请求新建连接）
- * - WAL 模式（高并发读写）
- * - 自动迁移
- * - 事务支持
+ * 在生产环境（Zeabur）中使用 Supabase，better-sqlite3 作为可选依赖
+ * 如果 better-sqlite3 不可用，将使用 Supabase 作为后端
  */
 
-import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+
+// 动态导入 better-sqlite3（可能不可用）
+let Database: typeof import('better-sqlite3') | null = null;
+let sqliteAvailable = false;
+
+try {
+  Database = require('better-sqlite3');
+  sqliteAvailable = true;
+} catch {
+  // better-sqlite3 不可用（Zeabur 生产环境），使用 Supabase
+  console.log('[DB] better-sqlite3 不可用，将使用 Supabase 云数据库');
+}
+
+// 类型定义
+type DbInstance = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const DB_DIR = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DB_DIR, 'dobi.db');
 
 // 使用 globalThis 确保 HMR 和热更新时单例不丢失
 interface GlobalWithDb {
-  __DOBI_DB_INSTANCE__: Database.Database | undefined;
+  __DOBI_DB_INSTANCE__: DbInstance | undefined;
 }
 
-function getGlobalDb(): Database.Database | undefined {
+function getGlobalDb(): DbInstance | undefined {
   return (globalThis as unknown as GlobalWithDb).__DOBI_DB_INSTANCE__;
 }
 
-function setGlobalDb(db: Database.Database): void {
+function setGlobalDb(db: DbInstance): void {
   (globalThis as unknown as GlobalWithDb).__DOBI_DB_INSTANCE__ = db;
 }
 
 /**
- * 获取数据库实例（单例，globalThis 缓存）
+ * 检查 SQLite 是否可用
  */
-export function getDb(): Database.Database {
+export function isSqliteAvailable(): boolean {
+  return sqliteAvailable;
+}
+
+/**
+ * 获取数据库实例（单例，globalThis 缓存）
+ * 如果 better-sqlite3 不可用，抛出错误提示使用 Supabase
+ */
+export function getDb(): DbInstance {
+  if (!sqliteAvailable || !Database) {
+    throw new Error(
+      'SQLite 不可用。请在生产环境使用 Supabase API (/api/supabase)。' +
+      '如果需要在本地开发使用 SQLite，请安装 better-sqlite3: npm install better-sqlite3'
+    );
+  }
+
   let db = getGlobalDb();
   if (db) return db;
   
@@ -40,7 +66,7 @@ export function getDb(): Database.Database {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
   
-  db = new Database(DB_PATH);
+  db = new Database(DB_PATH) as DbInstance;
   setGlobalDb(db);
   
   // WAL 模式：允许并发读 + 单次写
@@ -62,14 +88,14 @@ export function closeDb(): void {
   const db = getGlobalDb();
   if (db) {
     db.close();
-    setGlobalDb(undefined as unknown as Database.Database);
+    setGlobalDb(undefined as unknown as DbInstance);
   }
 }
 
 /**
  * 执行数据库迁移
  */
-function runMigrations(database: Database.Database): void {
+function runMigrations(database: DbInstance): void {
   const migrations = [
     // 用户表（支持家长-孩子模式）
     `CREATE TABLE IF NOT EXISTS users (
@@ -345,8 +371,6 @@ function runMigrations(database: Database.Database): void {
     `CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage(endpoint)`,
     `CREATE INDEX IF NOT EXISTS idx_api_usage_time ON api_usage(created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_api_usage_user ON api_usage(user_id)`,
-    
-    // 新表索引
     `CREATE INDEX IF NOT EXISTS idx_audit_logs_admin ON audit_logs(admin_id)`,
     `CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)`,
     `CREATE INDEX IF NOT EXISTS idx_audit_logs_time ON audit_logs(created_at)`,
@@ -380,7 +404,6 @@ function runMigrations(database: Database.Database): void {
   ).get(parentChildMigration);
 
   if (!alreadyMigrated) {
-    // 为已有 users 表添加新字段（SQLite ALTER TABLE 不支持 IF NOT EXISTS，忽略重复添加错误）
     const newColumns = [
       "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'child'",
       'ALTER TABLE users ADD COLUMN parent_id TEXT',
@@ -397,7 +420,6 @@ function runMigrations(database: Database.Database): void {
       }
     }
 
-    // 为已有用户设置默认 role
     database.exec("UPDATE users SET role = 'child' WHERE role IS NULL");
 
     database.prepare(
@@ -409,7 +431,7 @@ function runMigrations(database: Database.Database): void {
 /**
  * 执行事务
  */
-export function transaction<T>(fn: (db: Database.Database) => T): T {
+export function transaction<T>(fn: (db: DbInstance) => T): T {
   const database = getDb();
   return database.transaction(fn)(database);
 }
@@ -417,7 +439,7 @@ export function transaction<T>(fn: (db: Database.Database) => T): T {
 /**
  * 批量插入辅助
  */
-export function batchInsert<T extends Record<string, any>>(
+export function batchInsert<T extends Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
   table: string,
   data: T[]
 ): { changes: number } {

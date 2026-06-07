@@ -12,7 +12,7 @@
     "migrate": "npx tsx scripts/migrate.ts",
     "migrate:status": "npx tsx scripts/migrate.ts --status",
     "migrate:reset": "npx tsx scripts/migrate.ts --reset",
-    "postinstall": "npm rebuild better-sqlite3 bcrypt",
+    "postinstall": "echo 'Skipping native module rebuild - using Supabase instead'",
     "healthcheck": "node -e \"require('http').get('http://localhost:'+(process.env.PORT||3000)+'/api/users', (r) => {process.exit(r.statusCode===200?0:1)}).on('error', () => process.exit(1))\""
   },
   "dependencies": {
@@ -20,8 +20,6 @@
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.107.0",
     "@tailwindcss/postcss": "^4.2.1",
-    "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.3",
@@ -33,6 +31,10 @@
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
     "tailwind-merge": "^3.5.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.8.0",
+    "bcrypt": "^6.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
