@@ -1,19 +1,13 @@
 /**
- * 错误监控（Sentry 集成）
+ * 错误监控（控制台日志版本）
  * 
- * 生产环境自动上报错误到 Sentry
- * 开发环境仅 console.error
+ * 生产环境和开发环境都使用控制台日志
+ * 如果需要 Sentry 集成，请安装 @sentry/node 并修改此文件
  * 
  * 使用方式：
- * 1. 设置环境变量 SENTRY_DSN 和 SENTRY_ENVIRONMENT
- * 2. 在错误捕获处调用 captureError()
- * 3. 可选：在 API 路由中使用 withSentry() 包装
+ * 1. 在错误捕获处调用 captureError()
+ * 2. 可选：在 API 路由中使用 withSentry() 包装
  */
-
-// Sentry DSN（从环境变量读取）
-const SENTRY_DSN = process.env.SENTRY_DSN || '';
-const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'development';
-const IS_ENABLED = !!SENTRY_DSN && process.env.NODE_ENV === 'production';
 
 /**
  * 错误信息接口
@@ -27,51 +21,31 @@ export interface ErrorContext {
 }
 
 /**
- * 捕获错误（生产环境上报 Sentry，开发环境仅日志）
+ * 捕获错误（控制台日志）
  */
 export function captureError(error: unknown, context?: ErrorContext): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorObj = error instanceof Error ? error : new Error(String(error));
-
-  if (IS_ENABLED) {
-    // 动态导入 Sentry（避免开发环境增加 bundle）
-    import('@sentry/node').then(({ captureException, setContext, setTag, setUser }) => {
-      // 设置上下文
-      if (context?.tags) {
-        Object.entries(context.tags).forEach(([key, value]) => {
-          setTag(key, value);
-        });
-      }
-      if (context?.extra) {
-        setContext('extra', context.extra);
-      }
-      if (context?.user) {
-        setUser(context.user);
-      }
-
-      captureException(errorObj);
-    }).catch(() => {
-      // Sentry 导入失败，降级到 console
-      console.error('[Sentry] Failed to report error:', errorMessage);
-    });
-  } else {
-    // 开发环境：仅 console
-    const prefix = context?.tags?.route ? `[${context.tags.route}]` : '';
-    console.error(`[Error Monitoring] ${prefix} ${errorMessage}`, context?.extra || '');
-  }
+  
+  // 构建日志前缀
+  const prefix = context?.tags?.route ? `[${context.tags.route}]` : '[Error Monitoring]';
+  
+  // 控制台输出
+  console.error(`${prefix} ${errorMessage}`, {
+    extra: context?.extra || {},
+    user: context?.user || {},
+    stack: error instanceof Error ? error.stack : undefined,
+  });
 }
 
 /**
  * 捕获消息（非错误级别的事件）
  */
 export function captureMessage(message: string, level: ErrorContext['level'] = 'info', tags?: Record<string, string>): void {
-  if (IS_ENABLED) {
-    import('@sentry/node').then(({ captureMessage: sentryCaptureMessage }) => {
-      sentryCaptureMessage(message, { tags });
-    }).catch(() => {});
-  } else {
-    console.log(`[Message ${level}] ${message}`, tags || '');
-  }
+  const logMethod = level === 'info' ? console.log : 
+                   level === 'warning' ? console.warn : 
+                   console.error;
+  
+  logMethod(`[Message ${level}] ${message}`, tags || {});
 }
 
 /**
@@ -89,8 +63,8 @@ export function withSentry<T>(
 }
 
 /**
- * 检查 Sentry 是否已启用
+ * 检查监控是否已启用（兼容接口）
  */
 export function isSentryEnabled(): boolean {
-  return IS_ENABLED;
+  return false;
 }
