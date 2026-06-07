@@ -7,10 +7,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
-RUN npm ci
-
-# Rebuild native modules
-RUN npm rebuild better-sqlite3 bcrypt
+# --omit=optional 跳过 better-sqlite3 等原生模块，避免 Alpine 编译失败
+RUN npm ci --omit=optional
 
 # Build the application
 FROM base AS builder
