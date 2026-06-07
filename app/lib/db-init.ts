@@ -5,11 +5,24 @@
  * - 数据库目录创建
  * - 表结构初始化
  * - 连接获取
+ * 
+ * 注意：better-sqlite3 为可选依赖，生产环境（Zeabur）可能不可用
  */
 
-import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+
+// 动态导入 better-sqlite3（可能不可用）
+let Database: any = null;
+let sqliteAvailable = false;
+
+try {
+  Database = require('better-sqlite3');
+  sqliteAvailable = true;
+} catch {
+  // better-sqlite3 不可用（Zeabur 生产环境），使用 Supabase
+  console.log('[DB-INIT] better-sqlite3 不可用，将使用 Supabase 云数据库');
+}
 
 const dbPath = path.join(process.cwd(), 'data', 'dobi.db');
 
@@ -24,9 +37,23 @@ function ensureDataDir() {
 }
 
 /**
+ * 检查 SQLite 是否可用
+ */
+export function isSqliteAvailable(): boolean {
+  return sqliteAvailable;
+}
+
+/**
  * 获取数据库连接
  */
-export function getDb(): Database.Database {
+export function getDb(): any {
+  if (!sqliteAvailable || !Database) {
+    throw new Error(
+      'SQLite 不可用。请在生产环境使用 Supabase API (/api/supabase)。' +
+      '如果需要在本地开发使用 SQLite，请安装 better-sqlite3: npm install better-sqlite3'
+    );
+  }
+
   ensureDataDir();
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
@@ -37,6 +64,11 @@ export function getDb(): Database.Database {
  * 初始化数据库表结构
  */
 export function initDb() {
+  if (!sqliteAvailable) {
+    console.log('[DB-INIT] SQLite 不可用，跳过数据库初始化');
+    return;
+  }
+
   const db = getDb();
 
   db.exec(`

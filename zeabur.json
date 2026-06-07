@@ -1,21 +1,6 @@
 {
-  "build": {
-    "command": "npm run build",
-    "dockerfile": "Dockerfile"
-  },
   "deploy": {
     "startCommand": "npm run start",
     "healthcheckPath": "/api/health"
-  },
-  "env": {
-    "NODE_ENV": "production",
-    "PORT": "3000",
-    "NEXT_TELEMETRY_DISABLED": "1"
-  },
-  "services": {
-    "app": {
-      "type": "nodejs",
-      "version": "20"
-    }
   }
 }
