@@ -70,7 +70,7 @@ export class DobiService {
       }
 
       const hasImages = messages.some(m => m.files && m.files.some(f => f.mimeType.startsWith('image/')));
-      const model = hasImages ? 'qwen3.6-plus' : 'qwen3.6-plus';
+      const model = hasImages ? 'qwen3.6-flash' : 'qwen3.6-flash';
 
       const response = await fetch('/api/chat', {
         method: 'POST',

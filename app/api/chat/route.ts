@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       temperature: number;
       tools?: unknown[];
     } = {
-      model: body.model || 'qwen3.6-plus',
+      model: body.model || 'qwen3.6-flash',
       messages: [
         { role: 'system', content: systemInstruction || '你是多比，一个友好、有耐心的小学学习助手。用简单易懂的语言回答，适当使用emoji。' },
         ...processedMessages
