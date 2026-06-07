@@ -13,17 +13,14 @@
     "migrate:status": "npx tsx scripts/migrate.ts --status",
     "migrate:reset": "npx tsx scripts/migrate.ts --reset",
     "postinstall": "echo 'Skipping native module rebuild - using Supabase instead'",
-    "healthcheck": "node -e \"require('http').get('http://localhost:'+(process.env.PORT||3000)+'/api/users', (r) => {process.exit(r.statusCode===200?0:1)}).on('error', () => process.exit(1))\""
+    "healthcheck": "node -e \"require('http').get('http://localhost:'+(process.env.PORT||3000)+'/api/health', (r) => {process.exit(r.statusCode===200?0:1)}).on('error', () => process.exit(1))\""
   },
   "dependencies": {
-    "@sentry/node": "^10.56.0",
-    "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.107.0",
     "@tailwindcss/postcss": "^4.2.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
-    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "next": "^16.1.6",
@@ -33,9 +30,7 @@
     "rehype-raw": "^7.0.0",
     "tailwind-merge": "^3.5.0"
   },
-  "optionalDependencies": {
-    "better-sqlite3": "^12.8.0"
-  },
+  "optionalDependencies": {},
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.6.3",

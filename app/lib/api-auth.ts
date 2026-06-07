@@ -1,59 +1,42 @@
 /**
- * API 鉴权中间件工具
- * 
- * 用于保护需要登录的 API 路由
+ * API 鉴权工具（Supabase 版本）
+ * 从 Authorization header 读取 Bearer token，用 Supabase 验证
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '../lib/auth';
-import { getSecurityHeaders } from '../lib/security';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
- * 需要认证的路由前缀
+ * 验证请求中的 Supabase Access Token，返回用户信息
+ * 如果没有有效 token，返回 null
  */
-const PROTECTED_PATHS = [
-  '/api/courses',
-  '/api/homework',
-  '/api/achievements',
-  '/api/users',
-  '/api/focus',
-  '/api/chat',
-  '/api/image',
-  '/api/exercises',
-  '/api/knowledge',
-  '/api/questions',
-];
+export async function requireAuth(req: NextRequest): Promise<{ userId: string; email: string } | null> {
+  try {
+    // 从 header 提取 Bearer token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return null;
+    }
+    const token = authHeader.slice(7);
 
-/**
- * 检查路由是否需要认证
- */
-function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_PATHS.some(prefix => pathname.startsWith(prefix));
-}
+    // 用 anon key 创建客户端，验证 token
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-/**
- * API 鉴权中间件
- * 
- * 在 route.ts 中调用：
- * ```
- * const user = requireAuth(req);
- * if (!user) {
- *   return NextResponse.json({ error: '未授权' }, { status: 401 });
- * }
- * ```
- */
-export function requireAuth(req: NextRequest): { userId: string; username: string } | null {
-  return authenticateRequest(req);
-}
+    if (error || !user) {
+      return null;
+    }
 
-/**
- * 获取用户 ID（从 JWT 或 URL 参数）
- * 
- * 用于需要区分用户数据的 API
- */
-export function getUserId(req: NextRequest, user: { userId: string; username: string }): string {
-  // 可以扩展为支持管理员查看其他用户数据
-  return user.userId;
+    return {
+      userId: user.id,
+      email: user.email || '',
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -62,9 +45,6 @@ export function getUserId(req: NextRequest, user: { userId: string; username: st
 export function unauthorizedResponse(message: string = '未授权，请先登录'): NextResponse {
   return NextResponse.json(
     { error: message },
-    { 
-      status: 401,
-      headers: getSecurityHeaders()
-    }
+    { status: 401 }
   );
 }
