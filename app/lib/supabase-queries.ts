@@ -239,3 +239,237 @@ export function subscribeToConversations(
     )
     .subscribe();
 }
+
+// ============================================
+// 每日任务操作
+// ============================================
+
+export async function getDailyTasks(userId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('daily_tasks')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function addDailyTask(
+  userId: string,
+  text: string,
+  reward: number = 0
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('daily_tasks')
+    .insert({
+      user_id: userId,
+      text,
+      reward,
+      completed: false,
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function completeTask(taskId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('daily_tasks')
+    .update({ completed: true })
+    .eq('id', taskId);
+  
+  if (error) throw error;
+}
+
+export async function deleteTask(taskId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('daily_tasks')
+    .delete()
+    .eq('id', taskId);
+  
+  if (error) throw error;
+}
+
+// ============================================
+// 作业操作
+// ============================================
+
+export async function getHomework(userId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('homework')
+    .select('*')
+    .eq('user_id', userId)
+    .order('due_date', { ascending: true });
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function addHomework(
+  userId: string,
+  homework: {
+    title: string;
+    description?: string;
+    subject?: string;
+    due_date?: string;
+    status?: 'pending' | 'in_progress' | 'completed';
+  }
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('homework')
+    .insert({
+      user_id: userId,
+      ...homework,
+      status: homework.status || 'pending',
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function updateHomeworkStatus(
+  id: string,
+  status: 'pending' | 'in_progress' | 'completed'
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('homework')
+    .update({ status })
+    .eq('id', id);
+  
+  if (error) throw error;
+}
+
+export async function deleteHomework(id: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('homework')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+}
+
+// ============================================
+// 成就操作
+// ============================================
+
+export async function getAchievements(userId: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('achievements')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function unlockAchievement(
+  userId: string,
+  achievement: {
+    title: string;
+    date: string;
+    type: string;
+    icon_name: string;
+    color: string;
+  }
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('achievements')
+    .insert({
+      user_id: userId,
+      ...achievement,
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteAchievement(id: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('achievements')
+    .delete()
+    .eq('id', id);
+  
+  if (error) throw error;
+}
+
+// ============================================
+// 练习题操作
+// ============================================
+
+export async function getExercises(userId: string, conversationId?: string) {
+  const supabase = getSupabaseBrowserClient();
+  let query = supabase
+    .from('exercises')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (conversationId) {
+    query = query.eq('conversation_id', conversationId);
+  }
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function addExercise(
+  userId: string,
+  exercise: {
+    conversation_id?: string;
+    subject: string;
+    question: string;
+    answer?: string;
+    user_answer?: string;
+    is_correct?: boolean;
+  }
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      user_id: userId,
+      ...exercise,
+    })
+    .select()
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+export async function updateExerciseResult(
+  id: string,
+  userAnswer: string,
+  isCorrect: boolean
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('exercises')
+    .update({
+      user_answer: userAnswer,
+      is_correct: isCorrect,
+    })
+    .eq('id', id);
+  
+  if (error) throw error;
+}

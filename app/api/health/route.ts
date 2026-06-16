@@ -8,6 +8,14 @@ export async function GET() {
   try {
     const supabase = getSupabaseBrowserClient();
     
+    if (!supabase) {
+      return Response.json({
+        status: 'degraded',
+        message: 'Supabase 未配置',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
     // 简单 ping Supabase（查一条记录）
     const { error } = await supabase
       .from('profiles')

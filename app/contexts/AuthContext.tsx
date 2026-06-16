@@ -105,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const supabase = getSupabaseBrowserClient();
+      
       // 检查用户名是否已存在
       const { data: existing } = await supabase
         .from('profiles')
@@ -116,18 +117,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('用户名已存在，请换个名字');
       }
 
-      // 创建新用户
+      // 生成 UUID 并创建新用户
+      const newUserId = crypto.randomUUID();
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: newUserId,
           username,
-          // id 需要由 Supabase Auth 触发器或手动生成
-          // 这里使用一个临时 UUID，生产环境应改用 Supabase Auth
+          role: 'student',
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // 如果是唯一约束冲突（用户名已存在）
+        if (error.code === '23505') {
+          throw new Error('用户名已存在，请换个名字');
+        }
+        throw error;
+      }
 
       localStorage.setItem('dobby_username', username);
       setUsername(username);

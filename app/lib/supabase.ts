@@ -1,11 +1,7 @@
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase 凭证未配置，部分功能不可用');
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = SupabaseClient<any>;
@@ -13,7 +9,12 @@ type AnyClient = SupabaseClient<any>;
 // 客户端单例（浏览器）
 let browserClient: AnyClient | null = null;
 
-export function getSupabaseBrowserClient(): AnyClient {
+export function getSupabaseBrowserClient(): AnyClient | null {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase 凭证未配置，部分功能不可用');
+    return null;
+  }
+  
   if (!browserClient) {
     browserClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -27,7 +28,11 @@ export function getSupabaseBrowserClient(): AnyClient {
 }
 
 // 服务端客户端（每次新建，避免内存泄漏）
-export function getSupabaseServerClient(): AnyClient {
+export function getSupabaseServerClient(): AnyClient | null {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null;
+  }
+  
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: false,
@@ -42,8 +47,10 @@ export function subscribeToTable(
   onInsert?: (payload: unknown) => void,
   onUpdate?: (payload: unknown) => void,
   onDelete?: (payload: unknown) => void
-): RealtimeChannel {
+): RealtimeChannel | null {
   const client = getSupabaseBrowserClient();
+  if (!client) return null;
+  
   const channel = client
     .channel(`${table}:user_id=eq.${userId}`)
     .on(
@@ -81,6 +88,8 @@ export function subscribeToTable(
   return channel;
 }
 
-export function unsubscribeChannel(channel: RealtimeChannel): void {
-  channel.unsubscribe();
+export function unsubscribeChannel(channel: RealtimeChannel | null): void {
+  if (channel) {
+    channel.unsubscribe();
+  }
 }
