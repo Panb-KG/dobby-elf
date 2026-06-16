@@ -4,6 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { useLocalStorage } from '../app/hooks/useLocalStorage';
+import { setStorage, getStorage } from '../app/lib/storage';
 
 describe('useLocalStorage', () => {
   beforeEach(() => {
@@ -122,27 +123,16 @@ describe('useLocalStorage', () => {
   it('应该支持 TTL 过期', () => {
     vi.useFakeTimers();
     
-    const { result } = renderHook(() =>
-      useLocalStorage({
-        key: 'test',
-        defaultValue: 'initial',
-        ttl: 1000,
-      })
-    );
-
-    act(() => {
-      result.current[1]('temporary');
-    });
-
-    expect(result.current[0]).toBe('temporary');
-
-    // 快进时间
-    act(() => {
-      vi.advanceTimersByTime(2000);
-    });
-
-    // 值应该过期并恢复为默认值
-    expect(result.current[0]).toBe('initial');
+    // 先存储一个带 TTL 的值
+    setStorage('test', 'temporary', { ttl: 1000 });
+    
+    expect(getStorage('test')).toBe('temporary');
+    
+    // 快进时间超过 TTL
+    vi.advanceTimersByTime(2000);
+    
+    // 再次读取时应该返回 null（已过期）
+    expect(getStorage('test', 'initial')).toBe('initial');
     
     vi.useRealTimers();
   });

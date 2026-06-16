@@ -76,8 +76,8 @@ export function useLocalStorage<T>(options: UseLocalStorageOptions<T>) {
     
     try {
       setStorage(key, value, storageOptions);
-    } catch (error) {
-      error(`[useLocalStorage] Failed to save "${key}":`, error);
+    } catch (err) {
+      logError(`[useLocalStorage] Failed to save "${key}":`, err);
     }
     
     onChangeRef.current?.(value);

@@ -5,7 +5,8 @@ import { DobiAvatar } from './DobiAvatar';
 describe('DobiAvatar', () => {
   it('renders without crashing', () => {
     const { container } = render(<DobiAvatar />);
-    expect(container.querySelector('svg')).toBeTruthy();
+    // DobiAvatar 渲染的是一个带 motion.div 的容器，不是 SVG
+    expect(container.firstChild).toBeTruthy();
   });
 
   it('renders with different sizes', () => {
