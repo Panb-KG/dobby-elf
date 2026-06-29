@@ -10,6 +10,7 @@ import { SYSTEM_PROMPT, SAFETY_PROMPT } from './system-prompt';
 import { recognizeIntent, checkSafety } from './intent-router';
 import { getToolsForIntent } from './tools';
 import { searchKnowledge } from '../knowledge';
+import { checkTextSafety, checkInputSafety, sanitizeContent, hybridSafetyCheck } from '../safety-filter';
 
 /**
  * Agent 主入口
@@ -26,15 +27,27 @@ export async function processMessage(
   config: AgentConfig,
   userId: string
 ): Promise<AgentResponse> {
-  // ===== Step 1: 安全检查 =====
-  const safetyCheck = checkSafety(userMessage);
-  if (!safetyCheck.passed) {
+  // ===== Step 1: 安全检查（关键词 + 输入过滤 + 可选 LLM 审核） =====
+  const inputSafety = checkInputSafety(userMessage);
+  if (!inputSafety.passed) {
     return {
-      text: safetyCheck.reason || '这个话题我们换个聊聊吧～不如跟我说说你今天在学校学到了什么有趣的东西？',
+      text: inputSafety.suggestion || '这个话题我们换个聊聊吧～不如跟我说说你今天在学校学到了什么有趣的东西？',
       intent: 'safety_violation',
       toolsUsed: [],
       safetyBlocked: true,
-      safetyReason: safetyCheck.reason,
+      safetyReason: inputSafety.reason,
+    };
+  }
+
+  // 关键词快速检查
+  const quickSafety = checkSafety(userMessage);
+  if (!quickSafety.passed) {
+    return {
+      text: quickSafety.reason || inputSafety.suggestion || '这个话题我们换个聊聊吧～',
+      intent: 'safety_violation',
+      toolsUsed: [],
+      safetyBlocked: true,
+      safetyReason: quickSafety.reason,
     };
   }
 
@@ -112,11 +125,13 @@ export async function processMessage(
     panelAction = inferPanelAction(intent, knowledgeRefs);
   }
 
-  // ===== Step 7: 回复内容安全检查 =====
-  const replySafety = checkSafety(response.text);
-  if (!replySafety.passed) {
-    response.text = replySafety.reason || '让我想想怎么回答你更好～';
+  // ===== Step 7: 回复内容安全检查（关键词 + 敏感信息脱敏） =====
+  const replySafety = checkTextSafety(response.text);
+  if (replySafety.level === 'blocked') {
+    response.text = replySafety.suggestion || '让我想想怎么回答你更好～';
   }
+  // 敏感信息脱敏
+  response.text = sanitizeContent(response.text);
 
   // ===== Step 8: 返回结果 =====
   return {
@@ -203,10 +218,12 @@ export async function processMessageStream(
   config: AgentConfig,
   userId: string
 ): Promise<ReadableStream> {
-  // 安全检查（同步）
+  // 安全检查（同步）- 增强版：双重检查
   const safetyCheck = checkSafety(userMessage);
-  if (!safetyCheck.passed) {
-    const safeText = safetyCheck.reason || '这个话题我们换个聊聊吧～';
+  const inputSafety = checkInputSafety(userMessage);
+  
+  if (!safetyCheck.passed || !inputSafety.passed) {
+    const safeText = inputSafety.suggestion || safetyCheck.reason || '这个话题我们换个聊聊吧～';
     return new ReadableStream({
       start(controller) {
         controller.enqueue(new TextEncoder().encode(safeText));

@@ -5,7 +5,7 @@ import { error } from '../lib/console';
 import { User } from '../services/types';
 
 // 使用 Supabase 认证（新）
-const USE_SUPABASE_AUTH = true;
+const USE_SUPABASE_AUTH = false; // Supabase 凭证未配置，使用 SQLite 认证
 
 export interface UseAuthReturn {
   user: User | null;
