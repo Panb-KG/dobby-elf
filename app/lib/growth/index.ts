@@ -1,7 +1,4 @@
-/**
- * 成长积分模块 - 统一导出
- * v2.0 新增
- */
+// Stub: SQLite growth module replaced by Supabase
 
 export * from './tree';
 export * from './scoring';

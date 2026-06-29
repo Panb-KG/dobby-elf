@@ -9,16 +9,14 @@ import { createClient } from '@supabase/supabase-js';
  * GET  /api/auth-sb?action=me        - 获取当前用户
  */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('Supabase 凭证未配置，认证功能不可用');
-}
-
-// 使用 any 类型绕过严格的 Supabase 类型检查
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const supabase = createClient<any>(supabaseUrl, supabaseServiceKey);
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  return createClient<any>(supabaseUrl, supabaseServiceKey);
+}
 
 // 简易 token 生成（生产环境应使用 JWT）
 function generateToken(): string {
@@ -42,8 +40,10 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: '用户名至少2个字' }, { status: 400 });
         }
 
-        // 检查用户名是否已存在
-        const { data: existing } = await supabase
+        const client = getSupabase();
+        if (!client) return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
+
+        const { data: existing } = await client
           .from('profiles')
           .select('id, username')
           .eq('username', username.trim())
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         const userId = crypto.randomUUID();
         
         // 创建 profile
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await client
           .from('profiles')
           .insert({
             id: userId,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 查找用户
-        const { data: profile, error } = await supabase
+        const { data: profile, error } = await client
           .from('profiles')
           .select('*')
           .eq('username', username.trim())
@@ -159,7 +159,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '登录已过期' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const client = getSupabase();
+    if (!client) return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
+
+    const { data: profile } = await client
       .from('profiles')
       .select('*')
       .eq('id', userId)

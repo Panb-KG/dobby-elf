@@ -13,16 +13,25 @@ import {
   ChevronLeft, ChevronRight, Search, Calendar,
   Sparkles, BookOpen, Image as ImageIcon,
 } from 'lucide-react';
+import type { DiaryEntry } from '@/lib/diary';
 import {
   getDiaryEntries,
   createDiaryEntry,
   updateDiaryEntry,
   deleteDiaryEntry,
   getDiaryDates,
-  MOOD_OPTIONS,
-  WEATHER_OPTIONS,
 } from '@/lib/agent/client';
-import type { DiaryEntry } from '@/lib/diary';
+
+const MOOD_OPTIONS = [
+  { emoji: '😊', label: '开心' }, { emoji: '😢', label: '难过' }, { emoji: '😡', label: '生气' },
+  { emoji: '', label: '思考' }, { emoji: '😴', label: '困了' }, { emoji: '🥳', label: '兴奋' },
+  { emoji: '😨', label: '害怕' }, { emoji: '🥰', label: '温暖' }, { emoji: '😤', label: '不服' }, { emoji: '', label: '酷' },
+];
+const WEATHER_OPTIONS = [
+  { emoji: '☀️', label: '晴天' }, { emoji: '⛅', label: '多云' }, { emoji: '🌧️', label: '下雨' },
+  { emoji: '️', label: '下雪' }, { emoji: '🌈', label: '彩虹' }, { emoji: '🌙', label: '夜晚' },
+  { emoji: '💨', label: '刮风' }, { emoji: '️', label: '雾天' },
+];
 
 export default function DiaryPanel() {
   const [selectedDate, setSelectedDate] = useState(

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// 使用 any 类型绕过严格的 Supabase 类型推断
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const supabase = createClient<any>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  return createClient<any>(supabaseUrl, supabaseServiceKey);
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,10 +19,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: '缺少 user_id' }, { status: 400 });
   }
 
+  const client = getSupabase();
+  if (!client) return NextResponse.json({ error: 'Supabase 未配置' }, { status: 503 });
+
   try {
     switch (type) {
       case 'conversations': {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('conversations')
           .select('*')
           .eq('user_id', userId)
@@ -34,7 +39,7 @@ export async function GET(request: Request) {
         if (!conversationId) {
           return NextResponse.json({ error: '缺少 conversation_id' }, { status: 400 });
         }
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('messages')
           .select('*')
           .eq('conversation_id', conversationId)
@@ -44,7 +49,7 @@ export async function GET(request: Request) {
       }
 
       case 'courses': {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('courses')
           .select('*')
           .eq('user_id', userId)
@@ -65,11 +70,14 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { type } = body;
 
+  const client = getSupabase();
+  if (!client) return NextResponse.json({ error: 'Supabase 未配置' }, { status: 503 });
+
   try {
     switch (type) {
       case 'conversation': {
         const { user_id, title, model } = body;
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('conversations')
           .insert({ user_id, title: title || '新对话', model: model || 'qwen3.6-flash' })
           .select()
@@ -80,15 +88,14 @@ export async function POST(request: Request) {
 
       case 'message': {
         const { conversation_id, user_id, role, content, images } = body;
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('messages')
           .insert({ conversation_id, user_id, role, content, images })
           .select()
           .single();
         if (error) throw error;
 
-        // 更新对话的 updated_at
-        await supabase
+        await client
           .from('conversations')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', conversation_id);
@@ -98,7 +105,7 @@ export async function POST(request: Request) {
 
       case 'course': {
         const { user_id, name, teacher, location, day_of_week, start_time, end_time, color } = body;
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('courses')
           .insert({ user_id, name, teacher, location, day_of_week, start_time, end_time, color })
           .select()
@@ -124,10 +131,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: '缺少 id 或 type' }, { status: 400 });
   }
 
+  const client = getSupabase();
+  if (!client) return NextResponse.json({ error: 'Supabase 未配置' }, { status: 503 });
+
   try {
     switch (type) {
       case 'course': {
-        const { error } = await supabase
+        const { error } = await client
           .from('courses')
           .delete()
           .eq('id', id);
@@ -136,7 +146,7 @@ export async function DELETE(request: Request) {
       }
 
       case 'conversation': {
-        const { error } = await supabase
+        const { error } = await client
           .from('conversations')
           .delete()
           .eq('id', id);
@@ -145,7 +155,7 @@ export async function DELETE(request: Request) {
       }
 
       case 'message': {
-        const { error } = await supabase
+        const { error } = await client
           .from('messages')
           .delete()
           .eq('id', id);
