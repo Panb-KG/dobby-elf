@@ -45,12 +45,13 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
 
   // 401 未授权
   if (response.status === 401) {
-    // 清除本地 token
+    // 不立即清除 token，允许离线模式继续使用
+    // 只在关键操作（如需要服务器验证的操作）时才强制重新登录
+    console.log('[API] 401 Unauthorized, but keeping session for offline mode');
+    
+    // 触发一个通知事件，让组件决定是否需要重新认证
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem('dobi_user_data');
-      // 触发登录状态变化事件
-      window.dispatchEvent(new CustomEvent('auth-required'));
+      window.dispatchEvent(new CustomEvent('auth-token-expired', { detail: { url } }));
     }
   }
 

@@ -20,6 +20,15 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
   useEffect(() => {
     // 记录错误到日志（生产环境可接入 Sentry 等）
     logError('[ErrorBoundary] 捕获到错误:', error);
+    
+    // 在控制台输出详细错误信息，方便调试
+    console.error('=== 应用错误详情 ===');
+    console.error('错误消息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    if (error.digest) {
+      console.error('错误 Digest:', error.digest);
+    }
+    console.error('==================');
   }, [error]);
 
   return (
@@ -49,15 +58,22 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
           </p>
         </div>
 
-        {/* 错误详情（开发环境） */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="p-4 rounded-xl bg-black/30 border border-white/10 text-left">
-            <p className="text-xs text-red-400 font-mono break-all">{error.message}</p>
-            {error.digest && (
-              <p className="text-[10px] text-white/30 font-mono mt-2">Digest: {error.digest}</p>
-            )}
-          </div>
-        )}
+        {/* 错误详情（开发环境或始终显示关键信息） */}
+        <div className="p-4 rounded-xl bg-black/30 border border-white/10 text-left">
+          <h3 className="text-xs font-bold text-white/70 mb-2">错误详情：</h3>
+          <p className="text-xs text-red-400 font-mono break-all whitespace-pre-wrap">{error.message}</p>
+          {error.digest && (
+            <p className="text-[10px] text-white/30 font-mono mt-2">Digest: {error.digest}</p>
+          )}
+          {process.env.NODE_ENV === 'development' && error.stack && (
+            <details className="mt-2">
+              <summary className="text-[10px] text-white/50 cursor-pointer hover:text-white/70">查看完整堆栈</summary>
+              <pre className="text-[8px] text-white/40 font-mono mt-2 overflow-x-auto max-h-40 overflow-y-auto">
+                {error.stack}
+              </pre>
+            </details>
+          )}
+        </div>
 
         {/* 操作按钮 */}
         <div className="flex gap-3 justify-center">

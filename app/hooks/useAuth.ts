@@ -50,13 +50,18 @@ export function useAuth(): UseAuthReturn {
               if (response.ok) {
                 const data = await response.json();
                 setUser(data.user);
+              } else if (response.status === 401) {
+                // Token 已过期，但保留本地用户数据作为离线模式
+                // 这样用户可以继续使用应用，直到需要重新认证的操作
+                console.log('[Auth] Token expired, using offline mode');
+                setUser(parsed);
               } else {
-                // Token 过期，清除本地数据
-                localStorage.removeItem(USER_DATA_KEY);
-                localStorage.removeItem(AUTH_TOKEN_KEY);
+                // 其他错误（5xx等），使用本地缓存
+                setUser(parsed);
               }
-            } catch {
-              // 网络错误，仍然使用本地缓存
+            } catch (networkError) {
+              // 网络错误，仍然使用本地缓存（离线模式）
+              console.log('[Auth] Network error, using cached user:', networkError);
               setUser(parsed);
             }
           } else {
