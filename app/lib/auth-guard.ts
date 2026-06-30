@@ -9,13 +9,15 @@ import type { PanelType } from '@/components/v2/v2-constants';
 /**
  * 需要登录才能使用的功能列表
  * 
- * 这些功能涉及个性化数据或个人隐私：
- * - 成长之树（个人进度）
- * - 魔法日记（个人记录）
- * - 亲子打分（家庭互动）
- * - 作业本（个人作业）
- * - 专注沙漏（个人计时）
- * - 我的宝藏（个人成就）
+ * 判断标准：是否需要向 Supabase 写入数据
+ * 
+ * 这些功能涉及个性化数据写入：
+ * - 成长之树 → growth_records 表（浇水记录、成长进度）
+ * - 魔法日记 → diary_entries 表（日记条目）
+ * - 亲子打分 → score_daily 表（评分记录）
+ * - 作业本 → homework 表（个人作业清单）
+ * - 专注沙漏 → focus_sessions 表（专注时长记录）
+ * - 我的宝藏 → achievements 表（成就解锁记录）
  */
 const REQUIRES_AUTH_PANELS: Set<PanelType> = new Set([
   'growth_tree',
