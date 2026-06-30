@@ -19,6 +19,7 @@ import { LeftSidebar } from '@/components/v2/LeftSidebar';
 import { ChatArea } from '@/components/v2/ChatArea';
 import { RightPanel } from '@/components/v2/RightPanel';
 import type { LeftTab, PanelType } from '@/components/v2/v2-constants';
+import { requiresAuth, actionRequiresAuth, getAuthPrompt } from '@/lib/auth-guard';
 
 const LoginPage = dynamic(() => import('@/components/auth/LoginPage'), {
   loading: () => <LoadingScreen />,
@@ -26,7 +27,7 @@ const LoginPage = dynamic(() => import('@/components/auth/LoginPage'), {
 });
 
 export default function PageV2() {
-  const { user, isAuthReady, showLoginModal, showRegisterModal, authError, login, childLogin, register, logout, setShowLoginModal, setShowRegisterModal } = useAuth();
+  const { user, isGuest, isAuthReady, showLoginModal, showRegisterModal, authError, login, childLogin, register, autoRegister, logout, setShowLoginModal, setShowRegisterModal } = useAuth();
   const agentChat = useAgentChat();
 
   // ===== UI 状态 =====
@@ -46,19 +47,28 @@ export default function PageV2() {
   useEffect(() => {
     if (agentChat.panelAction) {
       const action = agentChat.panelAction;
+      
+      // 检查是否需要登录
+      if (isGuest && requiresAuth(action.type)) {
+        // 访客尝试访问需要登录的功能，显示提示并打开登录弹窗
+        alert(getAuthPrompt(action.type));
+        setShowLoginModal(true);
+        return;
+      }
+      
       setRightPanelType(action.type);
       setRightPanelTitle(action.title || '');
       setRightPanelData(action.data);
       if (action.open) setIsRightOpen(true);
     }
-  }, [agentChat.panelAction]);
+  }, [agentChat.panelAction, isGuest]);
 
   // ===== 加载成长之树 =====
   useEffect(() => {
-    if (user) {
+    if (user && !isGuest) {
       getGrowthTree().then(res => setGrowthTree(res.tree)).catch(() => {});
     }
-  }, [user]);
+  }, [user, isGuest]);
 
   // ===== 浇水 =====
   const handleWater = useCallback(async () => {
@@ -111,6 +121,13 @@ export default function PageV2() {
 
   // ===== 左栏操作点击 =====
   const handleActionClick = useCallback((actionId: string) => {
+    // 检查是否需要登录
+    if (isGuest && actionRequiresAuth(actionId)) {
+      alert(getAuthPrompt(actionId));
+      setShowLoginModal(true);
+      return;
+    }
+    
     setLeftTab(actionId as LeftTab);
     const panelMap: Record<string, { type: PanelType; title: string }> = {
       tree: { type: 'growth_tree', title: '成长之树' },
@@ -130,28 +147,13 @@ export default function PageV2() {
     } else {
       setIsRightOpen(false);
     }
-  }, []);
+  }, [isGuest]);
 
   // ===== 加载状态 =====
   if (!isAuthReady) return <LoadingScreen />;
 
-  // ===== 未登录 =====
-  if (!user) {
-    return (
-      <LoginPage
-        showLogin={showLoginModal}
-        showRegister={showRegisterModal}
-        error={authError}
-        onLogin={login}
-        onRegister={register}
-        onChildLogin={childLogin}
-        onCloseLogin={() => setShowLoginModal(false)}
-        onCloseRegister={() => setShowRegisterModal(false)}
-      />
-    );
-  }
-
-  // ===== 主界面 =====
+  // ===== 主界面（始终显示，包括访客）=====
+  // 注意：移除了强制登录检查，访客也可以使用公共功能
   return (
     <PWAProvider>
       <div className="h-screen w-screen flex bg-[#0a0502] text-white overflow-hidden">
@@ -159,12 +161,14 @@ export default function PageV2() {
           isLeftCollapsed={isLeftCollapsed}
           onToggleCollapse={() => setIsLeftCollapsed(!isLeftCollapsed)}
           user={user}
+          isGuest={isGuest}
           growthTree={growthTree}
           leftTab={leftTab}
           onActionClick={handleActionClick}
           onWater={handleWater}
           waterMessage={waterMessage}
           onLogout={logout}
+          onLogin={() => setShowLoginModal(true)}
         />
 
         <ChatArea

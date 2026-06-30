@@ -9,6 +9,7 @@ const USE_SUPABASE_AUTH = true;
 
 export interface UseAuthReturn {
   user: User | null;
+  isGuest: boolean; // 是否为访客
   isAuthReady: boolean;
   showLoginModal: boolean;
   showRegisterModal: boolean;
@@ -16,6 +17,7 @@ export interface UseAuthReturn {
   login: (username: string, password: string) => Promise<void>;
   childLogin: (childId: string, pin: string) => Promise<void>;
   register: (username: string, password: string, confirmPassword: string, phone?: string, realName?: string) => Promise<void>;
+  autoRegister: () => Promise<void>; // 自动注册为访客
   logout: () => void;
   setShowLoginModal: (show: boolean) => void;
   setShowRegisterModal: (show: boolean) => void;
@@ -23,11 +25,13 @@ export interface UseAuthReturn {
 
 const AUTH_TOKEN_KEY = 'dobi_auth_token';
 const USER_DATA_KEY = 'dobi_user_data';
+const GUEST_ID_KEY = 'dobi_guest_id';
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false); // 访客标识
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false); // 默认不显示登录弹窗
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [authError, setAuthError] = useState('');
 
@@ -50,26 +54,36 @@ export function useAuth(): UseAuthReturn {
               if (response.ok) {
                 const data = await response.json();
                 setUser(data.user);
+                setIsGuest(false);
               } else if (response.status === 401) {
                 // Token 已过期，但保留本地用户数据作为离线模式
-                // 这样用户可以继续使用应用，直到需要重新认证的操作
                 console.log('[Auth] Token expired, using offline mode');
                 setUser(parsed);
+                setIsGuest(false);
               } else {
                 // 其他错误（5xx等），使用本地缓存
                 setUser(parsed);
+                setIsGuest(false);
               }
             } catch (networkError) {
               // 网络错误，仍然使用本地缓存（离线模式）
               console.log('[Auth] Network error, using cached user:', networkError);
               setUser(parsed);
+              setIsGuest(false);
             }
           } else {
             setUser(parsed);
+            setIsGuest(false);
           }
+        } else {
+          // 没有登录信息，标记为访客
+          console.log('[Auth] No auth found, guest mode');
+          setIsGuest(true);
         }
       } catch (err) {
         error('Failed to restore auth:', err);
+        // 出错也允许访客模式
+        setIsGuest(true);
       } finally {
         setIsAuthReady(true);
       }
@@ -201,12 +215,41 @@ export function useAuth(): UseAuthReturn {
       import('../services/auth').then(({ authService }) => authService.logout());
     }
     setUser(null);
-    setShowLoginModal(true);
+    setIsGuest(true); // 登出后变为访客
+    setShowLoginModal(false); // 不强制显示登录弹窗
     setShowRegisterModal(false);
+  }, []);
+
+  // 自动注册为访客（生成一个临时用户ID）
+  const autoRegister = useCallback(async () => {
+    try {
+      const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(GUEST_ID_KEY, guestId);
+      
+      // 创建一个临时访客用户对象
+      const guestUser: User = {
+        id: guestId,
+        username: `访客${guestId.substr(-4)}`,
+        role: 'student',
+        grade: 0,
+        displayName: `访客${guestId.substr(-4)}`,
+        points: 0,
+        level: '1',
+        treeGrowth: 0,
+        dailyTasks: [],
+      };
+      
+      setUser(guestUser);
+      setIsGuest(false);
+      console.log('[Auth] Auto-registered as guest:', guestId);
+    } catch (err) {
+      error('Failed to auto-register:', err);
+    }
   }, []);
 
   return {
     user,
+    isGuest,
     isAuthReady,
     showLoginModal,
     showRegisterModal,
@@ -214,6 +257,7 @@ export function useAuth(): UseAuthReturn {
     login,
     childLogin,
     register,
+    autoRegister,
     logout,
     setShowLoginModal,
     setShowRegisterModal,

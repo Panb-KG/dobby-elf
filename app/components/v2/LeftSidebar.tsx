@@ -13,17 +13,19 @@ interface LeftSidebarProps {
   isLeftCollapsed: boolean;
   onToggleCollapse: () => void;
   user: User;
+  isGuest: boolean; // 是否为访客
   growthTree: GrowthTreeNode | null;
   leftTab: LeftTab;
   onActionClick: (actionId: string) => void;
   onWater: () => void;
   waterMessage: string | null;
   onLogout: () => void;
+  onLogin?: () => void; // 显示登录弹窗
 }
 
 export function LeftSidebar({
-  isLeftCollapsed, onToggleCollapse, user, growthTree,
-  leftTab, onActionClick, onWater, waterMessage, onLogout,
+  isLeftCollapsed, onToggleCollapse, user, isGuest, growthTree,
+  leftTab, onActionClick, onWater, waterMessage, onLogout, onLogin,
 }: LeftSidebarProps) {
   return (
     <div className={`flex-shrink-0 transition-all duration-300 border-r border-orange-900/30 ${
@@ -46,9 +48,21 @@ export function LeftSidebar({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">{user.displayName || user.username}</div>
-              <div className="text-xs text-gray-400">{growthTree ? `${growthTree.treeStage}` : '魔法学徒'}</div>
+              <div className="text-xs text-gray-400">
+                {isGuest ? '👤 访客模式' : (growthTree ? `${growthTree.treeStage}` : '魔法学徒')}
+              </div>
             </div>
           </div>
+          
+          {/* 访客提示登录 */}
+          {isGuest && onLogin && (
+            <button
+              onClick={onLogin}
+              className="mt-2 w-full py-1.5 text-xs rounded-lg bg-blue-600/30 hover:bg-blue-600/50 transition-colors text-blue-300 font-medium"
+            >
+              🔐 登录/注册
+            </button>
+          )}
         </div>
       )}
 
@@ -87,12 +101,21 @@ export function LeftSidebar({
         )}
       </div>
 
-      {/* 底部：退出 */}
+      {/* 底部：退出或登录 */}
       {!isLeftCollapsed && (
         <div className="p-2 border-t border-orange-900/20">
-          <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 text-gray-400 text-sm transition-colors">
-            <X size={16} /><span>退出登录</span>
-          </button>
+          {isGuest ? (
+            <button
+              onClick={onLogin}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-sm transition-colors font-medium"
+            >
+              🔐 <span>登录/注册以保存进度</span>
+            </button>
+          ) : (
+            <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 text-gray-400 text-sm transition-colors">
+              <X size={16} /><span>退出登录</span>
+            </button>
+          )}
         </div>
       )}
     </div>
