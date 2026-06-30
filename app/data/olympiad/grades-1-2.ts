@@ -1,0 +1,122 @@
+/**
+ * 小学奥数知识库 - 低年级（1-2年级）
+ * 题型：图形计数、规律找数、趣味数学、简单逻辑推理
+ */
+
+import type { OlympiadProblem } from './types';
+
+export const grades12: OlympiadProblem[] = [
+  // ========== 1年级：图形计数 ==========
+  {
+    id: 'g1-001',
+    grade: 1,
+    topic: '图形计数',
+    difficulty: 1,
+    type: 'fill',
+    question: '数一数，下图中有几个三角形？△△△△△',
+    answer: '5',
+    explanation: '直接数出三角形的数量即可。图中有5个三角形。',
+  },
+  {
+    id: 'g1-002',
+    grade: 1,
+    topic: '图形计数',
+    difficulty: 2,
+    type: 'fill',
+    question: '一个正方形里面画一条对角线，可以分成几个三角形？',
+    answer: '2',
+    explanation: '正方形画一条对角线后，被分成2个完全相同的三角形。',
+  },
+  {
+    id: 'g1-003',
+    grade: 1,
+    topic: '规律找数',
+    difficulty: 2,
+    type: 'fill',
+    question: '找规律填数：2, 4, 6, 8, __, __',
+    answer: '10, 12',
+    explanation: '每个数比前一个数大2，这是等差数列。8+2=10，10+2=12。',
+  },
+  {
+    id: 'g1-004',
+    grade: 1,
+    topic: '规律找数',
+    difficulty: 3,
+    type: 'fill',
+    question: '找规律填数：1, 3, 6, 10, __, __',
+    answer: '15, 21',
+    explanation: '相邻两数的差依次为2, 3, 4, 5, 6... 所以10+5=15，15+6=21。这些数也叫三角形数。',
+  },
+  {
+    id: 'g1-005',
+    grade: 1,
+    topic: '趣味数学',
+    difficulty: 2,
+    type: 'word',
+    question: '小明有3个苹果，小红给了他2个，小明吃掉了1个。小明现在有几个苹果？',
+    answer: '4个',
+    explanation: '3 + 2 - 1 = 4（个）。先算收到苹果后的总数，再减去吃掉的。',
+  },
+
+  // ========== 2年级：鸡兔同笼（入门） ==========
+  {
+    id: 'g2-001',
+    grade: 2,
+    topic: '鸡兔同笼',
+    difficulty: 3,
+    type: 'word',
+    question: '笼子里有鸡和兔共5只，数一数共有14条腿。问鸡和兔各几只？',
+    answer: '鸡3只，兔2只',
+    explanation: '假设全是鸡：5×2=10条腿，少了14-10=4条腿。每把一只鸡换成兔多2条腿，4÷2=2只兔。所以兔2只，鸡5-2=3只。',
+  },
+  {
+    id: 'g2-002',
+    grade: 2,
+    topic: '植树问题',
+    difficulty: 2,
+    type: 'word',
+    question: '在一条20米长的小路一边种树，每隔5米种一棵，两头都种。一共需要种几棵树？',
+    answer: '5棵',
+    explanation: '两端都种树：棵数 = 间隔数 + 1。20÷5=4个间隔，4+1=5棵树。',
+  },
+  {
+    id: 'g2-003',
+    grade: 2,
+    topic: '植树问题',
+    difficulty: 3,
+    type: 'word',
+    question: '圆形花坛周长30米，每隔5米种一棵树，一共种几棵？',
+    answer: '6棵',
+    explanation: '封闭图形（环形）植树：棵数 = 间隔数。30÷5=6棵。',
+  },
+  {
+    id: 'g2-004',
+    grade: 2,
+    topic: '周期问题',
+    difficulty: 3,
+    type: 'word',
+    question: '有一串彩灯按"红、黄、蓝、绿、红、黄、蓝、绿..."排列，第19盏灯是什么颜色？',
+    answer: '蓝色',
+    explanation: '周期为4（红黄蓝绿）。19÷4=4余3，余数3对应周期中第3个颜色，即蓝色。',
+  },
+  {
+    id: 'g2-005',
+    grade: 2,
+    topic: '周期问题',
+    difficulty: 2,
+    type: 'word',
+    question: '今天星期三，再过10天是星期几？',
+    answer: '星期六',
+    explanation: '星期以7为周期。10÷7=1...3，从星期三往后数3天：四、五、六，所以是星期六。',
+  },
+  {
+    id: 'g2-006',
+    grade: 2,
+    topic: '简单逻辑推理',
+    difficulty: 4,
+    type: 'word',
+    question: '三个小朋友比身高：小明比小红高，小红比小华高。谁最高？谁最矮？',
+    answer: '小明最高，小华最矮',
+    explanation: '小明 > 小红 > 小华。根据条件推理：小明比小红高，小红又比小华高，所以小明最高，小华最矮。',
+  },
+];

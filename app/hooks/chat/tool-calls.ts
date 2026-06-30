@@ -212,12 +212,44 @@ async function handleListHomework(call: FunctionCall, ctx: ToolCallContext) {
   }
 }
 
+async function handleGetOlympiadProblem(call: FunctionCall, ctx: ToolCallContext) {
+  const { streamingTextRef, scheduleBatchUpdate } = ctx;
+  streamingTextRef.current += '\n✨ 正在从奥数题库抽取题目...';
+  scheduleBatchUpdate();
+
+  try {
+    const params = new URLSearchParams({ action: 'random' });
+    if (call.args.grade) params.set('grade', call.args.grade);
+    if (call.args.topic) params.set('topic', call.args.topic);
+    if (call.args.difficulty) params.set('difficulty', call.args.difficulty);
+
+    const resp = await fetch(`/api/olympiad?${params.toString()}`);
+    if (resp.ok) {
+      const { problem } = await resp.json();
+      if (problem) {
+        const diffStars = '⭐'.repeat(problem.difficulty || 1);
+        streamingTextRef.current += `\n\n🏅 **奥数挑战**（${problem.grade}年级 · ${problem.topic} · ${diffStars}）\n\n${problem.question}\n\n*先自己想一想，想好了告诉我你的答案，多比来帮你检查！*`;
+      } else {
+        streamingTextRef.current += '\n❌ 没有找到匹配的奥数题';
+      }
+    } else {
+      streamingTextRef.current += '\n❌ 获取题目失败，请稍后再试';
+    }
+    scheduleBatchUpdate();
+  } catch (err) {
+    logError('Olympiad problem error:', err);
+    streamingTextRef.current += '\n❌ 获取奥数题失败';
+    scheduleBatchUpdate();
+  }
+}
+
 const TOOL_HANDLERS: Record<string, (call: FunctionCall, ctx: ToolCallContext) => Promise<void>> = {
   addCourse: handleAddCourse,
   addHomework: handleAddHomework,
   completeHomework: handleCompleteHomework,
   deleteHomework: handleDeleteHomework,
   listHomework: handleListHomework,
+  getOlympiadProblem: handleGetOlympiadProblem,
 };
 
 export async function processToolCalls(functionCalls: FunctionCall[], ctx: ToolCallContext) {
