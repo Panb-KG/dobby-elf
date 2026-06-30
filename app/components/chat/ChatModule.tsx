@@ -1,390 +1,48 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import Markdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import { Send, Paperclip, X, ImageIcon, Video, File, Sparkles, FileText, Home, Mic } from 'lucide-react';
 import type { Message } from '../../types';
-import { DobiAvatar } from '../DobiAvatar';
-import { cn } from '@/lib/utils';
+import { ChatMessages } from './ChatMessages';
+import { ChatInput } from './ChatInput';
+import type { VoiceChatProps, ShortcutItem } from './types';
 
-interface ChatModuleProps {
+export interface ChatModuleProps {
   messages: Message[];
   input: string;
   isLoading: boolean;
   onSend: (text: string, files?: Array<{ mimeType: string; data: string }>) => void;
   onInputChange: (value: string) => void;
   onShortcut: (prompt: string) => void;
-  shortcuts: Array<{
-    id: string;
-    name: string;
-    prompt: string;
-  }>;
+  shortcuts: ShortcutItem[];
   isComplexContent?: (text: string) => boolean;
   onComplexContentClick?: (text: string) => void;
   showDailyAdventure?: boolean;
   onToggleDailyAdventure?: () => void;
-  // Voice chat props
-  voiceChat?: {
-    isRecording: boolean;
-    interimText: string;
-    finalText: string;
-    isSpeaking: boolean;
-    isSpeechRecognitionSupported: boolean;
-    isSpeechSynthesisSupported: boolean;
-    autoSpeak: boolean;
-    mode: 'tap' | 'hold';
-    onStartRecording: () => void;
-    onStopRecording: () => void;
-    onCancelRecording: () => void;
-    onSpeak: (text: string) => void;
-    onStopSpeaking: () => void;
-    onToggleAutoSpeak: () => void;
-    onToggleMode: () => void;
-    onSubmitText: (text: string) => void;
-  };
+  voiceChat?: VoiceChatProps;
 }
 
 export function ChatModule({
-  messages,
-  input,
-  isLoading,
-  onSend,
-  onInputChange,
-  onShortcut,
-  shortcuts,
-  isComplexContent,
-  onComplexContentClick,
-  showDailyAdventure,
-  onToggleDailyAdventure,
-  voiceChat,
+  messages, input, isLoading, onSend, onInputChange, onShortcut, shortcuts,
+  isComplexContent, onComplexContentClick, showDailyAdventure, onToggleDailyAdventure, voiceChat,
 }: ChatModuleProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachments, setAttachments] = useState<File[]>([]);
-  const [isSending, setIsSending] = useState(false);
-
-  // 自动滚动
-  React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // 自动调整 textarea 高度
-  React.useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 128) + 'px';
-    }
-  }, [input]);
-
-  const handleSend = async () => {
-    if ((input.trim() || attachments.length > 0) && !isLoading && !isSending) {
-      setIsSending(true);
-      
-      // 将附件转换为 base64 格式
-      const files = await Promise.all(
-        attachments.map(file => {
-          return new Promise<{ mimeType: string; data: string }>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const result = e.target?.result as string;
-              const base64Data = result.split(',')[1];
-              resolve({
-                mimeType: file.type,
-                data: base64Data
-              });
-            };
-            reader.readAsDataURL(file);
-          });
-        })
-      );
-      
-      onSend(input.trim(), files.length > 0 ? files : undefined);
-      onInputChange('');
-      setAttachments([]);
-      setIsSending(false);
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      const maxFiles = 5;
-      const maxSizeMB = 10;
-      const validFiles = newFiles.filter(file => {
-        if (attachments.length >= maxFiles) {
-          alert(`最多只能上传 ${maxFiles} 个文件`);
-          return false;
-        }
-        if (file.size > maxSizeMB * 1024 * 1024) {
-          alert(`文件大小不能超过 ${maxSizeMB}MB`);
-          return false;
-        }
-        return true;
-      });
-      setAttachments(prev => [...prev, ...validFiles]);
-    }
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
-
   return (
     <div className="flex flex-col h-full">
-      {/* 消息列表 */}
-      <div
-        className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth"
-        style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 95%, transparent 100%)' }}
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className={cn(
-                "flex max-w-[85%] md:max-w-[75%] items-start gap-2",
-                msg.role === 'user' ? "ml-auto flex-row-reverse" : msg.role === 'model' ? "mr-auto flex-row" : "mr-auto flex-row"
-              )}
-            >
-              {msg.role === 'model' && <DobiAvatar size="sm" className="mt-0.5 flex-shrink-0" />}
-              <div className="flex flex-col">
-                <div className={cn(
-                  "px-5 py-3 rounded-3xl text-sm md:text-base leading-relaxed",
-                  msg.role === 'user'
-                    ? "bg-magic-accent/20 border border-magic-accent/30 text-white rounded-tr-none"
-                    : msg.role === 'system'
-                    ? "bg-amber-500/20 border border-amber-500/30 text-amber-200 rounded-tl-none"
-                    : "bg-white/5 border border-white/10 text-stone-200 rounded-tl-none"
-                )}>
-                  {msg.image && (
-                    <div className="mb-3 rounded-xl overflow-hidden">
-                      <img src={msg.image} alt="附件图片" className="max-w-full h-auto" />
-                    </div>
-                  )}
-                  {/* 复杂内容显示 */}
-                  {msg.role === 'model' && isComplexContent?.(msg.text) && onComplexContentClick && (
-                    <div
-                      className="flex items-center gap-2 mb-3 p-2 rounded-xl bg-black/20 border border-white/5 cursor-pointer hover:bg-black/30 transition-colors"
-                      onClick={() => onComplexContentClick(msg.text)}
-                    >
-                      <FileText className="w-4 h-4 text-magic-accent" />
-                      <span className="text-sm text-white/70">查看详细内容 →</span>
-                    </div>
-                  )}
-                  <div className="markdown-body">
-                  {msg.text ? (
-                    <Markdown rehypePlugins={[rehypeRaw]}>{msg.text}</Markdown>
-                  ) : (
-                    <span className="text-magic-accent/60 text-xs italic font-serif">正在施展魔法...</span>
-                  )}
-                </div>
-              </div>
-              <div className={cn(
-                  "flex items-center gap-2 mt-2",
-                  msg.role === 'user' ? "flex-row-reverse" : "flex-row"
-                )}>
-                  <span className="text-[10px] text-white/30 uppercase tracking-widest font-bold">
-                    {msg.role === 'user' ? 'Seeker' : msg.role === 'system' ? 'System' : 'Dobi'}
-                  </span>
-                  {/* 朗读按钮 */}
-                  {msg.role === 'model' && voiceChat?.isSpeechSynthesisSupported && (
-                    <motion.button
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        if (voiceChat.isSpeaking) {
-                          voiceChat.onStopSpeaking();
-                        } else {
-                          voiceChat.onSpeak(msg.text);
-                        }
-                      }}
-                      className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center transition-all",
-                        voiceChat.isSpeaking
-                          ? "bg-magic-accent/60 text-white"
-                          : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/50"
-                      )}
-                      title={voiceChat.isSpeaking ? '停止朗读' : '朗读回复'}
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        {voiceChat.isSpeaking ? (
-                          <>
-                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                          </>
-                        ) : (
-                          <line x1="23" y1="9" x2="17" y2="15" />
-                        )}
-                      </svg>
-                    </motion.button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* 输入区 */}
-      <div className="p-4 md:p-6 border-t border-white/5 bg-black/20">
-        {/* 附件预览 */}
-        <AnimatePresence>
-          {attachments.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="flex flex-wrap gap-2 mb-4"
-            >
-              {attachments.map((file, idx) => (
-                <div key={idx} className="relative group p-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
-                  {file.type.startsWith('image/') ? (
-                    <ImageIcon className="w-4 h-4 text-emerald-400" />
-                  ) : file.type.startsWith('video/') ? (
-                    <Video className="w-4 h-4 text-blue-400" />
-                  ) : file.type.startsWith('application/pdf') ? (
-                    <FileText className="w-4 h-4 text-red-400" />
-                  ) : (
-                    <File className="w-4 h-4 text-amber-400" />
-                  )}
-                  <span className="text-[10px] text-white/60 max-w-[80px] truncate">{file.name}</span>
-                  <span className="text-[9px] text-white/30">
-                    {file.size < 1024 ? `${file.size}B` : 
-                     file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)}KB` : 
-                     `${(file.size / (1024 * 1024)).toFixed(1)}MB`}
-                  </span>
-                  <button
-                    onClick={() => removeAttachment(idx)}
-                    className="p-1 rounded-full bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* 快捷指令 (移动端) */}
-        <div className="flex md:hidden gap-2 overflow-x-auto pb-4 no-scrollbar">
-          {shortcuts.map((spell) => (
-            <button
-              key={spell.id}
-              onClick={() => onShortcut(spell.prompt)}
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/70"
-            >
-              <Sparkles className="w-3 h-3" />
-              {spell.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative group flex items-end gap-2">
-          {/* 语音按钮 */}
-          {voiceChat && voiceChat.isSpeechRecognitionSupported && (
-            <div className="relative">
-              {/* 录音状态提示 */}
-              {(voiceChat.isRecording || voiceChat.interimText || voiceChat.finalText) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute bottom-full mb-2 left-0 bg-black/80 backdrop-blur-sm rounded-xl p-2 border border-white/10 max-w-[240px] z-10"
-                >
-                  {voiceChat.isRecording && (
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      <span className="text-[9px] text-red-400 font-medium">录音中</span>
-                    </div>
-                  )}
-                  {voiceChat.interimText && (
-                    <p className="text-xs text-white/50 italic">{voiceChat.interimText}</p>
-                  )}
-                  {voiceChat.finalText && (
-                    <p className="text-xs text-white/80">{voiceChat.finalText}</p>
-                  )}
-                </motion.div>
-              )}
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                onClick={voiceChat.isRecording ? voiceChat.onStopRecording : voiceChat.onStartRecording}
-                className={
-                  `w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all`
-                  + (voiceChat.isRecording
-                    ? ' bg-red-500 text-white shadow-lg shadow-red-500/40'
-                    : ' bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80')
-                }
-                title={voiceChat.isRecording ? '停止录音' : '语音输入'}
-              >
-                <Mic className="w-5 h-5 md:w-6 md:h-6" />
-              </motion.button>
-            </div>
-          )}
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => onInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="输入你的问题，让魔法发生...支持图片、文档等附件"
-              className="w-full bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl px-6 py-4 pr-32 text-sm md:text-base focus:outline-none focus:border-magic-accent/50 focus:bg-white/10 transition-all resize-none min-h-[56px] max-h-32"
-              rows={1}
-            />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {onToggleDailyAdventure && (
-                <button
-                  onClick={onToggleDailyAdventure}
-                  className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                  title={showDailyAdventure ? '收起今日冒险' : '查看今日冒险'}
-                >
-                  <Home className="w-5 h-5" />
-                </button>
-              )}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                multiple
-                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-                title="上传附件"
-              >
-                <Paperclip className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSend}
-            disabled={!input.trim() && attachments.length === 0 || isLoading || isSending}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-magic-accent flex items-center justify-center text-white shadow-lg shadow-magic-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-5 h-5" />
-          </motion.button>
-        </div>
-      </div>
+      <ChatMessages
+        messages={messages}
+        isComplexContent={isComplexContent}
+        onComplexContentClick={onComplexContentClick}
+        voiceChat={voiceChat}
+      />
+      <ChatInput
+        input={input}
+        isLoading={isLoading}
+        onSend={onSend}
+        onInputChange={onInputChange}
+        onShortcut={onShortcut}
+        shortcuts={shortcuts}
+        voiceChat={voiceChat}
+        showDailyAdventure={showDailyAdventure}
+        onToggleDailyAdventure={onToggleDailyAdventure}
+      />
     </div>
   );
 }

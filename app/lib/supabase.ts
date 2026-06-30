@@ -27,6 +27,13 @@ export function getSupabaseBrowserClient(): AnyClient | null {
   return browserClient;
 }
 
+// 非空版本：如果凭证未配置则抛出异常，避免 TS possibly null 错误
+export function requireSupabaseClient(): AnyClient {
+  const client = getSupabaseBrowserClient();
+  if (!client) throw new Error('Supabase 凭证未配置，无法执行数据库操作');
+  return client;
+}
+
 // 服务端客户端（每次新建，避免内存泄漏）
 export function getSupabaseServerClient(): AnyClient | null {
   if (!supabaseUrl || !supabaseAnonKey) {

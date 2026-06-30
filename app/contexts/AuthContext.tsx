@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { requireSupabaseClient } from '@/lib/supabase';
 
 /**
  * 小学生友好认证 Context
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function loadUser(username: string) {
-    const supabase = getSupabaseBrowserClient();
+    const supabase = requireSupabaseClient();
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(username: string, pin?: string) {
     setIsLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
+      const supabase = requireSupabaseClient();
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function register(username: string, pin?: string) {
     setIsLoading(true);
     try {
-      const supabase = getSupabaseBrowserClient();
+      const supabase = requireSupabaseClient();
       
       // 检查用户名是否已存在
       const { data: existing } = await supabase

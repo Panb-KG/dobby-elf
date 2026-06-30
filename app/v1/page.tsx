@@ -12,22 +12,22 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from './hooks/useAuth';
-import { useChat } from './hooks/useChat';
-import { useCourses } from './hooks/useCourses';
-import { useHomework } from './hooks/useHomework';
-import { useAchievements } from './hooks/useAchievements';
-import { useFocus } from './hooks/useFocus';
-import { SPELLS } from './lib/Global';
-import LoadingScreen from './components/ui/LoadingScreen';
-import { PWAProvider } from './components/PWAProvider';
+import { useAuth } from '@/hooks/useAuth';
+import { useChat } from '@/hooks/useChat';
+import { useCourses } from '@/hooks/useCourses';
+import { useHomework } from '@/hooks/useHomework';
+import { useAchievements } from '@/hooks/useAchievements';
+import { useFocus } from '@/hooks/useFocus';
+import { SPELLS } from '@/lib/Global';
+import LoadingScreen from '@/components/ui/LoadingScreen';
+import { PWAProvider } from '@/components/PWAProvider';
 
 // 代码分割：懒加载重组件
-const MagicLayout = dynamic(() => import('./components/MagicLayout'), {
+const MagicLayout = dynamic(() => import('@/components/MagicLayout'), {
   loading: () => <LoadingScreen />,
   ssr: false,
 });
-const LoginPage = dynamic(() => import('./components/auth/LoginPage'), {
+const LoginPage = dynamic(() => import('@/components/auth/LoginPage'), {
   loading: () => <LoadingScreen />,
   ssr: false,
 });
