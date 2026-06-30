@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
   const subject = searchParams.get('subject');
 
   if (!userId) {
-    return NextResponse.json({ error: '缺少 user_id' }, { status: 400 });
+    // AI Agent 调用时可能没有 user_id，返回空数组而不是报错
+    return NextResponse.json([]);
   }
 
   const client = getSupabase();
