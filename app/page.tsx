@@ -17,7 +17,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import {
   MessageSquare, Calendar, BookOpen, Star, TreePine,
   ChevronLeft, ChevronRight, Mic, Send, Square,
-  Loader2, Sparkles, X, PenLine
+  Loader2, Sparkles, X, PenLine,
+  Pencil, BrainCircuit, Hourglass, Trophy
 } from 'lucide-react';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { PWAProvider } from '@/components/PWAProvider';
@@ -43,6 +44,10 @@ const DiaryPanel = dynamic(() => import('@/components/v2/DiaryPanel'), {
   loading: () => null,
   ssr: false,
 });
+const ClassicPanels = dynamic(() => import('@/components/v2/ClassicPanels'), {
+  loading: () => null,
+  ssr: false,
+});
 
 // ===== 快捷操作 =====
 const QUICK_ACTIONS = [
@@ -51,11 +56,17 @@ const QUICK_ACTIONS = [
   { id: 'diary', label: '魔法日记', icon: PenLine, color: 'from-pink-500 to-pink-600' },
   { id: 'tree', label: '成长之树', icon: TreePine, color: 'from-green-500 to-green-600' },
   { id: 'score', label: '亲子打分', icon: Star, color: 'from-amber-500 to-amber-600' },
+  // v1 经典功能
+  { id: 'schedule', label: '今日课表', icon: Calendar, color: 'from-cyan-500 to-cyan-600' },
+  { id: 'homework', label: '作业本', icon: Pencil, color: 'from-rose-500 to-rose-600' },
+  { id: 'exercise', label: '练习题', icon: BrainCircuit, color: 'from-violet-500 to-violet-600' },
+  { id: 'focus', label: '专注沙漏', icon: Hourglass, color: 'from-teal-500 to-teal-600' },
+  { id: 'achievements', label: '我的宝藏', icon: Trophy, color: 'from-yellow-500 to-yellow-600' },
 ];
 
 // ===== 类型 =====
-type LeftTab = 'chat' | 'knowledge' | 'diary' | 'tree' | 'score';
-type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary';
+type LeftTab = 'chat' | 'knowledge' | 'diary' | 'tree' | 'score' | 'schedule' | 'homework' | 'exercise' | 'focus' | 'achievements';
+type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary' | 'focus' | 'achievements';
 
 // ===== 主页面 =====
 export default function PageV2() {
@@ -224,8 +235,11 @@ export default function PageV2() {
               const Icon = action.icon;
               const isActive = leftTab === action.id;
               return (
+                <div key={action.id}>
+                {action.id === 'schedule' && (
+                  <div className="my-2 border-t border-orange-900/20" />
+                )}
                 <button
-                  key={action.id}
                   onClick={() => {
                     setLeftTab(action.id as LeftTab);
                     if (action.id === 'tree') {
@@ -240,6 +254,26 @@ export default function PageV2() {
                       setRightPanelType('diary');
                       setRightPanelTitle('魔法日记');
                       setIsRightOpen(true);
+                    } else if (action.id === 'schedule') {
+                      setRightPanelType('schedule');
+                      setRightPanelTitle('今日课表');
+                      setIsRightOpen(true);
+                    } else if (action.id === 'homework') {
+                      setRightPanelType('homework');
+                      setRightPanelTitle('作业本');
+                      setIsRightOpen(true);
+                    } else if (action.id === 'exercise') {
+                      setRightPanelType('exercise');
+                      setRightPanelTitle('练习题');
+                      setIsRightOpen(true);
+                    } else if (action.id === 'focus') {
+                      setRightPanelType('focus');
+                      setRightPanelTitle('专注沙漏');
+                      setIsRightOpen(true);
+                    } else if (action.id === 'achievements') {
+                      setRightPanelType('achievements');
+                      setRightPanelTitle('我的宝藏');
+                      setIsRightOpen(true);
                     } else {
                       setIsRightOpen(false);
                     }
@@ -253,6 +287,7 @@ export default function PageV2() {
                   <Icon size={18} />
                   {!isLeftCollapsed && <span className="text-sm">{action.label}</span>}
                 </button>
+                </div>
               );
             })}
 
@@ -456,19 +491,19 @@ export default function PageV2() {
                   />
                 )}
                 {rightPanelType === 'schedule' && (
-                  <div className="text-sm text-gray-400 text-center py-8">
-                    📅 课程表功能开发中...
-                  </div>
+                  <ClassicPanels type="schedule" userId={user.id} />
                 )}
                 {rightPanelType === 'homework' && (
-                  <div className="text-sm text-gray-400 text-center py-8">
-                    📝 作业功能开发中...
-                  </div>
+                  <ClassicPanels type="homework" userId={user.id} />
                 )}
                 {rightPanelType === 'exercise' && (
-                  <div className="text-sm text-gray-400 text-center py-8">
-                    🧮 练习题功能开发中...
-                  </div>
+                  <ClassicPanels type="exercise" userId={user.id} />
+                )}
+                {rightPanelType === 'focus' && (
+                  <ClassicPanels type="focus" userId={user.id} />
+                )}
+                {rightPanelType === 'achievements' && (
+                  <ClassicPanels type="achievements" userId={user.id} />
                 )}
                 {rightPanelType === 'image' && (
                   <div className="text-sm text-gray-400 text-center py-8">

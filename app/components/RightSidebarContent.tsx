@@ -180,7 +180,7 @@ function PlusIcon() {
   );
 }
 
-function ImageContent({ generatedImage }: { generatedImage: string | null }) {
+export function ImageContent({ generatedImage }: { generatedImage: string | null }) {
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/20 min-h-[200px] flex items-center justify-center">
@@ -220,7 +220,7 @@ interface CourseSidebarProps {
   onAddCourse: () => void;
 }
 
-function CourseSidebarContent({
+export function CourseSidebarContent({
   courses, scheduleView, selectedDay, isAddingCourse, newCourse,
   onScheduleViewChange, onSelectedDayChange, onIsAddingCourseChange,
   onNewCourseChange, onAddCourse,
@@ -315,7 +315,7 @@ interface ExerciseSidebarProps {
   onDynamicExercisesChange: (ex: { subject: string; grade: string; questions: Array<{ id: string; question: string; options: string[]; answer: string; explanation: string }> } | null) => void;
 }
 
-function ExerciseSidebarContent({
+export function ExerciseSidebarContent({
   knowledgeGraph, dynamicExercises, currentExerciseIndex, exerciseAnswers,
   showExerciseResult, onCurrentExerciseIndexChange, onExerciseAnswersChange,
   onShowExerciseResultChange, onDynamicExercisesChange,
@@ -412,7 +412,7 @@ function ExerciseSidebarContent({
 
 // ===== 成就侧边栏 =====
 
-function AchievementsSidebarContent({
+export function AchievementsSidebarContent({
   points, level, treeGrowth, dailyTasks, achievements, onCompleteTask, onWaterTree,
 }: Pick<RightSidebarContentProps, 'points' | 'level' | 'treeGrowth' | 'dailyTasks' | 'achievements' | 'onCompleteTask' | 'onWaterTree'>) {
   const getIconComponent = (iconName: string) => {
@@ -494,7 +494,7 @@ function AchievementsSidebarContent({
 
 // ===== 专注侧边栏 =====
 
-function FocusSidebarContent({ focus, audioRef }: Pick<RightSidebarContentProps, 'focus' | 'audioRef'>) {
+export function FocusSidebarContent({ focus, audioRef }: Pick<RightSidebarContentProps, 'focus' | 'audioRef'>) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
