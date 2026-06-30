@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { error } from '../lib/console';
 import { User } from '../services/types';
 
-// 使用 Supabase 认证（新）
-const USE_SUPABASE_AUTH = false; // Supabase 凭证未配置，使用 SQLite 认证
+// 使用 Supabase 认证（服务端 API）
+const USE_SUPABASE_AUTH = true;
 
 export interface UseAuthReturn {
   user: User | null;
@@ -73,15 +73,15 @@ export function useAuth(): UseAuthReturn {
     initAuth();
   }, []);
 
-  const login = useCallback(async (username: string, _password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     setAuthError('');
     try {
       if (USE_SUPABASE_AUTH) {
-        // Supabase 认证
+        // Supabase 认证（带密码验证）
         const response = await fetch('/api/auth-sb', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'login', username }),
+          body: JSON.stringify({ action: 'login', username, password }),
         });
 
         if (!response.ok) {
@@ -112,11 +112,11 @@ export function useAuth(): UseAuthReturn {
     setAuthError('');
     try {
       if (USE_SUPABASE_AUTH) {
-        // Supabase 简化版：直接用用户名登录
+        // 孩子 PIN 登录
         const response = await fetch('/api/auth-sb', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'login', username: childId, pin }),
+          body: JSON.stringify({ action: 'child_login', childId, pin }),
         });
 
         if (!response.ok) {
@@ -142,20 +142,26 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const register = useCallback(async (username: string, _password: string, _confirmPassword: string) => {
+  const register = useCallback(async (username: string, password: string, _confirmPassword: string) => {
     setAuthError('');
     
     if (username.trim().length < 2) {
       throw new Error('用户名长度至少2位');
     }
+    if (password.length < 6) {
+      throw new Error('密码至少需要6个字符');
+    }
+    if (password !== _confirmPassword) {
+      throw new Error('两次输入的密码不一致');
+    }
 
     try {
       if (USE_SUPABASE_AUTH) {
-        // Supabase 注册
+        // 家长注册（带密码，通过服务端 Admin API 创建已确认用户）
         const response = await fetch('/api/auth-sb', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'register', username: username.trim() }),
+          body: JSON.stringify({ action: 'register_parent', username: username.trim(), password }),
         });
 
         if (!response.ok) {
@@ -170,7 +176,7 @@ export function useAuth(): UseAuthReturn {
       } else {
         // 旧注册（SQLite）
         const { authService } = await import('../services/auth');
-        const registeredUser = await authService.register(username, _password);
+        const registeredUser = await authService.register(username, password);
         setUser(registeredUser);
       }
       
