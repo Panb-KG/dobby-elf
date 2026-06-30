@@ -6,8 +6,11 @@ const AUTH_TOKEN_KEY = 'dobi_auth_token';
 const USER_DATA_KEY = 'dobi_user_data';
 
 // Supabase Auth 用假 email（用户名登录）
+// 必须使用有效的邮箱格式，否则 Supabase Auth 会拒绝
 function toFakeEmail(username: string): string {
-  return `${username.trim()}@dobby-elf.internal`;
+  // 清理用户名：只保留字母数字和下划线，确保邮箱格式有效
+  const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  return `${cleanUsername}@dobby-elf.app`;
 }
 
 export class AuthService {
