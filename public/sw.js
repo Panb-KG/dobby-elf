@@ -24,7 +24,7 @@ const API_ROUTES = [
 /**
  * 安装事件 - 预缓存静态资源
  */
-self.addEventListener('install', (event: ExtendableEvent) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
@@ -36,7 +36,7 @@ self.addEventListener('install', (event: ExtendableEvent) => {
 /**
  * 激活事件 - 清理旧缓存
  */
-self.addEventListener('activate', (event: ExtendableEvent) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -52,7 +52,7 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
 /**
  * 请求拦截
  */
-self.addEventListener('fetch', (event: FetchEvent) => {
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
   // API 请求：Network First
@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
 /**
  * API 请求：Network First，失败时返回缓存
  */
-async function handleApiRequest(request: Request): Promise<Response> {
+async function handleApiRequest(request) {
   const cache = await caches.open(API_CACHE_NAME);
   
   try {
@@ -132,7 +132,7 @@ async function handleApiRequest(request: Request): Promise<Response> {
 /**
  * 图片请求：Cache First
  */
-async function handleImageRequest(request: Request): Promise<Response> {
+async function handleImageRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   
@@ -157,7 +157,7 @@ async function handleImageRequest(request: Request): Promise<Response> {
 /**
  * 静态资源：Cache First
  */
-async function handleStaticRequest(request: Request): Promise<Response> {
+async function handleStaticRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
   
@@ -182,13 +182,13 @@ async function handleStaticRequest(request: Request): Promise<Response> {
 /**
  * 后台同步
  */
-self.addEventListener('sync', (event: SyncEvent) => {
+self.addEventListener('sync', (event) => {
   if (event.tag === 'dobi-sync') {
     event.waitUntil(syncData());
   }
 });
 
-async function syncData(): Promise<void> {
+async function syncData() {
   // 通知客户端执行同步
   const clients = await self.clients.matchAll();
   clients.forEach((client) => {
@@ -202,7 +202,7 @@ async function syncData(): Promise<void> {
 /**
  * 推送通知（预留）
  */
-self.addEventListener('push', (event: PushEvent) => {
+self.addEventListener('push', (event) => {
   if (event.data) {
     const data = event.data.json();
     

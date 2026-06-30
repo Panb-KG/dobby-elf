@@ -127,6 +127,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: '创建用户资料失败: ' + (insertError?.message || '') }, { status: 500 });
           }
           profile = newProfile;
+        } else if (profile.role !== 'parent') {
+          // trigger 可能设置了默认 role，更新为 parent
+          const { data: updated } = await client
+            .from('profiles')
+            .update({ role: 'parent', display_name: realName || profile.display_name || username.trim() })
+            .eq('id', authData.user.id)
+            .select('*')
+            .single();
+          if (updated) profile = updated;
         }
 
         const token = generateToken();
