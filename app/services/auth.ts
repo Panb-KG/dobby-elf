@@ -108,7 +108,17 @@ export class AuthService {
     });
 
     if (authError || !authData.user) {
-      throw new Error(authError?.message || '登录失败');
+      // 将 Supabase 英文错误信息翻译为中文
+      const errorMsg = authError?.message || '';
+      let chineseMsg = '登录失败，请重试';
+      if (errorMsg.includes('Invalid login credentials')) {
+        chineseMsg = '用户名或密码错误，请重试';
+      } else if (errorMsg.includes('Email not confirmed')) {
+        chineseMsg = '账号尚未验证，请联系管理员';
+      } else if (errorMsg.includes('rate limit')) {
+        chineseMsg = '尝试次数太多，请稍后再试';
+      }
+      throw new Error(chineseMsg);
     }
 
     // 2. 获取 profile
@@ -185,7 +195,17 @@ export class AuthService {
     });
 
     if (authError || !authData.user) {
-      throw new Error(authError?.message || '注册失败');
+      // 将 Supabase 英文错误信息翻译为中文
+      const errorMsg = authError?.message || '';
+      let chineseMsg = '注册失败，请重试';
+      if (errorMsg.includes('User already registered')) {
+        chineseMsg = '该用户名已存在，请换个名字';
+      } else if (errorMsg.includes('Password should be at least')) {
+        chineseMsg = '密码太短，至少需要6个字符';
+      } else if (errorMsg.includes('Email rate limit')) {
+        chineseMsg = '注册太频繁，请稍后再试';
+      }
+      throw new Error(chineseMsg);
     }
 
     // 3. 等待 profile 被 trigger 创建（或手动创建）
