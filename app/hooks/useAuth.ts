@@ -15,7 +15,7 @@ export interface UseAuthReturn {
   authError: string;
   login: (username: string, password: string) => Promise<void>;
   childLogin: (childId: string, pin: string) => Promise<void>;
-  register: (username: string, password: string, confirmPassword: string) => Promise<void>;
+  register: (username: string, password: string, confirmPassword: string, phone?: string, realName?: string) => Promise<void>;
   logout: () => void;
   setShowLoginModal: (show: boolean) => void;
   setShowRegisterModal: (show: boolean) => void;
@@ -96,7 +96,7 @@ export function useAuth(): UseAuthReturn {
       } else {
         // 旧认证（SQLite）
         const { authService } = await import('../services/auth');
-        const loggedInUser = await authService.login(username, _password);
+        const loggedInUser = await authService.login(username, password);
         setUser(loggedInUser);
       }
       
@@ -142,7 +142,7 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const register = useCallback(async (username: string, password: string, _confirmPassword: string) => {
+  const register = useCallback(async (username: string, password: string, _confirmPassword: string, phone?: string, realName?: string) => {
     setAuthError('');
     
     if (username.trim().length < 2) {
@@ -161,7 +161,7 @@ export function useAuth(): UseAuthReturn {
         const response = await fetch('/api/auth-sb', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'register_parent', username: username.trim(), password }),
+          body: JSON.stringify({ action: 'register_parent', username: username.trim(), password, phone, realName }),
         });
 
         if (!response.ok) {

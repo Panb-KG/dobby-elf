@@ -34,7 +34,7 @@ const GRADES = ['一年级', '二年级', '三年级', '四年级', '五年级',
 
 interface LoginPageProps {
   onLogin: (username: string, password: string) => Promise<void>;
-  onRegister: (username: string, password: string, confirm: string) => Promise<void>;
+  onRegister: (username: string, password: string, confirm: string, phone?: string, realName?: string) => Promise<void>;
   onChildLogin?: (childId: string, pin: string) => Promise<void>;
   error: string;
   showLogin: boolean;
@@ -172,7 +172,7 @@ export default function LoginPage({
 
     setIsLoading(true);
     try {
-      await onRegister(username.trim(), password, confirmPassword);
+      await onRegister(username.trim(), password, confirmPassword, phone || undefined, realName || undefined);
       setSuccessMessage('注册成功！欢迎来到魔法小课桌！🎉');
     } catch (err: unknown) {
       const msg = (err instanceof Error && err.message) || '魔法出错了，请稍后再试~';
