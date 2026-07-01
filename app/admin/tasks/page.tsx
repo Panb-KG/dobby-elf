@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface Task {
   id: string;
@@ -22,6 +23,13 @@ export default function AdminTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     fetchTasks();
@@ -81,11 +89,12 @@ export default function AdminTasksPage() {
         method: 'POST',
       });
       if (res.ok) {
-        alert('任务已触发执行');
+        setDialogConfig({ isOpen: true, message: '任务已触发执行', type: 'success' });
         fetchTasks();
       }
     } catch (error) {
       error('Failed to run task:', error);
+      setDialogConfig({ isOpen: true, message: '运行任务失败', type: 'error' });
     }
   };
 
@@ -174,6 +183,15 @@ export default function AdminTasksPage() {
           )}
         </div>
       </div>
+      
+      {/* 对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   );
 }

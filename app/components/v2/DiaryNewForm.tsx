@@ -7,6 +7,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Mic, Square, Save, X, Plus } from 'lucide-react';
 import { MOOD_OPTIONS, WEATHER_OPTIONS } from './diary-constants';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface DiaryNewFormProps {
   selectedDate: string;
@@ -29,6 +30,13 @@ export function DiaryNewForm({ selectedDate, onCreate, onCancel }: DiaryNewFormP
   const [weather, setWeather] = useState('');
   const [isVoice, setIsVoice] = useState(false);
 
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
+
   const recognitionRef = useRef<any>(null);
   const voiceTimerRef = useRef<number | null>(null);
   const [voiceSeconds, setVoiceSeconds] = useState(0);
@@ -44,7 +52,11 @@ export function DiaryNewForm({ selectedDate, onCreate, onCancel }: DiaryNewFormP
     }
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert('你的浏览器不支持语音输入，请使用 Chrome 浏览器'); return; }
+    if (!SR) {
+      // 使用 ConfirmDialog 替代 alert
+      setDialogConfig({ isOpen: true, message: '你的浏览器不支持语音输入，请使用 Chrome 浏览器', type: 'warning' });
+      return;
+    }
 
     const recognition = new SR();
     recognition.lang = 'zh-CN';
@@ -138,6 +150,15 @@ export function DiaryNewForm({ selectedDate, onCreate, onCancel }: DiaryNewFormP
         className="w-full py-2.5 rounded-lg bg-gradient-to-br from-orange-500/40 to-amber-500/40 hover:from-orange-500/60 hover:to-amber-500/60 disabled:opacity-30 disabled:cursor-not-allowed text-orange-300 text-sm transition-all flex items-center justify-center gap-2">
         <Save size={14} />保存日记 (+5 积分)
       </button>
+
+      {/* 错误提示对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }

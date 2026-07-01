@@ -20,6 +20,7 @@ import {
 import { DiaryNewForm } from './DiaryNewForm';
 import { DiaryEntryItem } from './DiaryEntryItem';
 import { formatDate } from './diary-constants';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function DiaryPanel() {
   const [selectedDate, setSelectedDate] = useState(
@@ -32,6 +33,13 @@ export default function DiaryPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<DiaryEntry[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     loadData();
@@ -77,7 +85,7 @@ export default function DiaryPanel() {
       setShowNewForm(false);
       loadData();
     } catch (e: any) {
-      alert(e.message || '创建失败');
+      setDialogConfig({ isOpen: true, message: e.message || '创建失败', type: 'error' });
     }
   };
 
@@ -86,7 +94,7 @@ export default function DiaryPanel() {
       await updateDiaryEntry(id, data);
       loadData();
     } catch (e: any) {
-      alert(e.message || '保存失败');
+      setDialogConfig({ isOpen: true, message: e.message || '保存失败', type: 'error' });
     }
   };
 
@@ -96,7 +104,7 @@ export default function DiaryPanel() {
       await deleteDiaryEntry(id);
       loadData();
     } catch (e: any) {
-      alert(e.message || '删除失败');
+      setDialogConfig({ isOpen: true, message: e.message || '删除失败', type: 'error' });
     }
   };
 
@@ -212,6 +220,15 @@ export default function DiaryPanel() {
           </div>
         ))}
       </div>
+      
+      {/* 错误提示对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }

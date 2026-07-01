@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { error } from '../../lib/console';
 import AdminLayout from '../AdminLayout';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface User {
   id: string;
@@ -22,6 +23,13 @@ export default function AdminUsersPage() {
   const [keyword, setKeyword] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
   const pageSize = 20;
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     fetchUsers();
@@ -64,12 +72,13 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (res.ok) {
         fetchUsers();
+        setDialogConfig({ isOpen: true, message: '删除成功', type: 'success' });
       } else {
-        alert(data.error || '删除失败');
+        setDialogConfig({ isOpen: true, message: data.error || '删除失败', type: 'error' });
       }
     } catch (error) {
       error('Failed to delete user:', error);
-      alert('删除失败');
+      setDialogConfig({ isOpen: true, message: '删除失败', type: 'error' });
     }
   };
 
@@ -197,6 +206,15 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+      
+      {/* 对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </AdminLayout>
   );
 }

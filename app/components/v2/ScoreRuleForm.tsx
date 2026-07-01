@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PRESET_RULES } from '@/lib/growth';
 import { addScoreRule as apiAddScoreRule } from '@/lib/agent/client';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface ScoreRuleFormProps {
   rules: any[];
@@ -18,6 +19,13 @@ export function ScoreRuleForm({ rules, onAdded, onCancel }: ScoreRuleFormProps) 
     title: '', description: '', maxPoints: 5, icon: '⭐', category: 'study',
   });
 
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
+
   const handleAddRule = async () => {
     if (!newRule.title.trim()) return;
     try {
@@ -27,12 +35,14 @@ export function ScoreRuleForm({ rules, onAdded, onCancel }: ScoreRuleFormProps) 
       });
       setNewRule({ title: '', description: '', maxPoints: 5, icon: '⭐', category: 'study' });
       onAdded();
-    } catch (e) { alert('添加规则失败'); }
+    } catch (e) {
+      setDialogConfig({ isOpen: true, message: '添加规则失败', type: 'error' });
+    }
   };
 
   const handleAddPreset = async (preset: any) => {
     try { await apiAddScoreRule(preset); onAdded(); }
-    catch (e) { alert('添加失败'); }
+    catch (e) { setDialogConfig({ isOpen: true, message: '添加失败', type: 'error' }); }
   };
 
   return (
@@ -79,6 +89,15 @@ export function ScoreRuleForm({ rules, onAdded, onCancel }: ScoreRuleFormProps) 
           ))}
         </div>
       </div>
+      
+      {/* 错误提示对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }

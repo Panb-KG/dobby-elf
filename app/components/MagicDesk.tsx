@@ -16,6 +16,7 @@ import {
   Download
 } from 'lucide-react';
 import DobiMascot from './DobiMascot';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export const MagicDesk = () => {
   const [messages, setMessages] = useState([
@@ -28,10 +29,19 @@ export const MagicDesk = () => {
     {
       id: 2,
       role: 'user',
-      content: '这是我这学期的课程表',
-      attachment: 'course_plan_2024.jpg'
+      content: '好的，Dobi，我已经记下来了。',
+      emo: '( ^ _ ^ )'
     }
   ]);
+  const [inputValue, setInputValue] = useState('');
+  const [showExportCode, setShowExportCode] = useState(false);
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   const downloadSource = () => {
     // This is a bit recursive/meta, but it fulfills the "downloadable code" request perfectly.
@@ -48,7 +58,7 @@ import { motion, AnimatePresence } from 'motion/react';
     // But since I'm the AI, I've already created the file in /src/components/MagicDesk.tsx
     // The user can download the whole project.
     // I'll add a toast or message.
-    alert("Source code has been generated in /src/components/MagicDesk.tsx. You can export the project to download all files.");
+    setDialogConfig({ isOpen: true, message: '源代码已生成在 /src/components/MagicDesk.tsx。你可以导出项目以下载所有文件。', type: 'info' });
   };
 
   return (
@@ -179,6 +189,15 @@ import { motion, AnimatePresence } from 'motion/react';
           </div>
         </div>
       </div>
+      
+      {/* 对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 };

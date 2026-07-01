@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Copy, Trash2, RefreshCw } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 /**
  * 调试页面 - 用于诊断登录状态和其他问题
@@ -12,6 +13,13 @@ export default function DebugPage() {
   const [sessionStorageData, setSessionStorageData] = useState<Record<string, any>>({});
   const [userAgent, setUserAgent] = useState('');
   const [timestamp, setTimestamp] = useState(new Date().toISOString());
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     // 读取 localStorage
@@ -49,7 +57,7 @@ export default function DebugPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('已复制到剪贴板');
+    setDialogConfig({ isOpen: true, message: '已复制到剪贴板', type: 'success' });
   };
 
   const clearLocalStorage = () => {
@@ -204,6 +212,15 @@ export default function DebugPage() {
           </div>
         </div>
       </motion.div>
+      
+      {/* 对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }

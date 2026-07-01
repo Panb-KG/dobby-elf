@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, Paperclip, X, ImageIcon, Video, File, Sparkles, FileText, Home, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { VoiceChatProps, ShortcutItem } from './types';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface ChatInputProps {
   input: string;
@@ -26,6 +27,13 @@ export function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -63,8 +71,14 @@ export function ChatInput({
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       const validFiles = newFiles.filter(file => {
-        if (attachments.length >= 5) { alert('最多只能上传 5 个文件'); return false; }
-        if (file.size > 10 * 1024 * 1024) { alert('文件大小不能超过 10MB'); return false; }
+        if (attachments.length >= 5) {
+          setDialogConfig({ isOpen: true, message: '最多只能上传 5 个文件', type: 'warning' });
+          return false;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          setDialogConfig({ isOpen: true, message: '文件大小不能超过 10MB', type: 'warning' });
+          return false;
+        }
         return true;
       });
       setAttachments(prev => [...prev, ...validFiles]);
@@ -154,6 +168,15 @@ export function ChatInput({
           <Send className="w-5 h-5" />
         </motion.button>
       </div>
+
+      {/* 错误提示对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { recordDailyScore as apiRecordDailyScore } from '@/lib/agent/client';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface ScoreRuleItemProps {
   rule: any;
@@ -13,6 +14,13 @@ interface ScoreRuleItemProps {
 export function ScoreRuleItem({ rule, isScored, existingScore, onScored }: ScoreRuleItemProps) {
   const [scoring, setScoring] = useState<Record<string, number>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
+  
+  // 对话框状态
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    message: string;
+    type: 'error' | 'success' | 'warning' | 'info';
+  }>({ isOpen: false, message: '', type: 'info' });
 
   const handleSubmitScore = async (ruleId: string) => {
     const score = scoring[ruleId];
@@ -24,7 +32,9 @@ export function ScoreRuleItem({ rule, isScored, existingScore, onScored }: Score
       });
       setScoring(prev => { const next = { ...prev }; delete next[ruleId]; return next; });
       onScored();
-    } catch (e: any) { alert(e.message || '打分失败'); }
+    } catch (e: any) {
+      setDialogConfig({ isOpen: true, message: e.message || '打分失败', type: 'error' });
+    }
   };
 
   return (
@@ -68,6 +78,15 @@ export function ScoreRuleItem({ rule, isScored, existingScore, onScored }: Score
           </button>
         </div>
       )}
+      
+      {/* 错误提示对话框 */}
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        message={dialogConfig.message}
+        type={dialogConfig.type}
+        showCancel={false}
+        onConfirm={() => setDialogConfig({ isOpen: false, message: '', type: 'info' })}
+      />
     </div>
   );
 }
