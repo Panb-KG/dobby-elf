@@ -184,7 +184,7 @@ export default function PageV2() {
           panelTitle={rightPanelTitle}
           panelData={rightPanelData}
           growthTree={growthTree}
-          userId={user.id}
+          userId={user?.id || 'guest'}
           knowledgeRefs={agentChat.knowledgeRefs}
           onWater={handleWater}
           waterMessage={waterMessage}

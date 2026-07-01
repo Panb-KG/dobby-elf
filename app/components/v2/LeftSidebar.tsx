@@ -40,7 +40,7 @@ export function LeftSidebar({
       </div>
 
       {/* 用户信息 */}
-      {!isLeftCollapsed && (
+      {!isLeftCollapsed && user && (
         <div className="p-3 border-b border-orange-900/20">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-sm font-bold">
