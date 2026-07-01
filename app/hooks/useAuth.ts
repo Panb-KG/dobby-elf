@@ -37,10 +37,13 @@ export function useAuth(): UseAuthReturn {
 
   useEffect(() => {
     const initAuth = async () => {
+      console.log('[Auth] Initializing auth...');
       try {
         // 尝试从 localStorage 恢复用户
         const userData = localStorage.getItem(USER_DATA_KEY);
         const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        
+        console.log('[Auth] userData:', !!userData, 'token:', !!token);
         
         if (userData && token) {
           const parsed = JSON.parse(userData);
@@ -55,6 +58,7 @@ export function useAuth(): UseAuthReturn {
                 const data = await response.json();
                 setUser(data.user);
                 setIsGuest(false);
+                console.log('[Auth] User restored from server');
               } else if (response.status === 401) {
                 // Token 已过期，但保留本地用户数据作为离线模式
                 console.log('[Auth] Token expired, using offline mode');
@@ -85,6 +89,7 @@ export function useAuth(): UseAuthReturn {
         // 出错也允许访客模式
         setIsGuest(true);
       } finally {
+        console.log('[Auth] Auth ready, isGuest:', true);
         setIsAuthReady(true);
       }
     };

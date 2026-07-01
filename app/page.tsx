@@ -150,7 +150,12 @@ export default function PageV2() {
   }, [isGuest]);
 
   // ===== 加载状态 =====
-  if (!isAuthReady) return <LoadingScreen />;
+  if (!isAuthReady) {
+    console.log('[Page] Waiting for auth to be ready...');
+    return <LoadingScreen />;
+  }
+
+  console.log('[Page] Auth ready, rendering main UI, user:', !!user, 'isGuest:', isGuest);
 
   // ===== 主界面（始终显示，包括访客）=====
   // 注意：移除了强制登录检查，访客也可以使用公共功能
