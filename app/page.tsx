@@ -20,6 +20,7 @@ import { ChatArea } from '@/components/v2/ChatArea';
 import { RightPanel } from '@/components/v2/RightPanel';
 import type { LeftTab, PanelType } from '@/components/v2/v2-constants';
 import { requiresAuth, actionRequiresAuth, getAuthPrompt } from '@/lib/auth-guard';
+import AuthConfirmDialog from '@/components/ui/AuthConfirmDialog';
 
 const LoginPage = dynamic(() => import('@/components/auth/LoginPage'), {
   loading: () => <LoadingScreen />,
@@ -28,6 +29,12 @@ const LoginPage = dynamic(() => import('@/components/auth/LoginPage'), {
 
 export default function PageV2() {
   const { user, isGuest, isAuthReady, showLoginModal, showRegisterModal, authError, login, childLogin, register, autoRegister, logout, setShowLoginModal, setShowRegisterModal } = useAuth();
+
+  // ===== 认证确认对话框状态 =====
+  const [showAuthConfirm, setShowAuthConfirm] = useState(false);
+  const [authConfirmTitle, setAuthConfirmTitle] = useState('');
+  const [authConfirmMessage, setAuthConfirmMessage] = useState('');
+  const [pendingAction, setPendingAction] = useState<{ type: string; data?: any } | null>(null);
   const agentChat = useAgentChat();
 
   // ===== UI 状态 =====
@@ -50,9 +57,11 @@ export default function PageV2() {
       
       // 检查是否需要登录
       if (isGuest && requiresAuth(action.type)) {
-        // 访客尝试访问需要登录的功能，显示提示并打开登录弹窗
-        alert(getAuthPrompt(action.type));
-        setShowLoginModal(true);
+        // 访客尝试访问需要登录的功能，显示确认对话框
+        setAuthConfirmTitle('🔐 需要登录');
+        setAuthConfirmMessage(getAuthPrompt(action.type));
+        setPendingAction({ type: action.type, data: action.data });
+        setShowAuthConfirm(true);
         return;
       }
       
@@ -123,8 +132,10 @@ export default function PageV2() {
   const handleActionClick = useCallback((actionId: string) => {
     // 检查是否需要登录
     if (isGuest && actionRequiresAuth(actionId)) {
-      alert(getAuthPrompt(actionId));
-      setShowLoginModal(true);
+      setAuthConfirmTitle('🔐 需要登录');
+      setAuthConfirmMessage(getAuthPrompt(actionId));
+      setPendingAction({ type: actionId });
+      setShowAuthConfirm(true);
       return;
     }
     
@@ -194,6 +205,52 @@ export default function PageV2() {
           onWater={handleWater}
           waterMessage={waterMessage}
           onClose={() => { setIsRightOpen(false); setRightPanelType('none'); }}
+        />
+
+        {/* 认证确认对话框 */}
+        <AuthConfirmDialog
+          isOpen={showAuthConfirm}
+          title={authConfirmTitle}
+          message={authConfirmMessage}
+          onLogin={() => {
+            setShowAuthConfirm(false);
+            setShowLoginModal(true);
+            // 如果有待处理的操作，登录后执行
+            if (pendingAction) {
+              const action = pendingAction;
+              setPendingAction(null);
+              // 根据操作类型执行相应逻辑
+              if (action.type === 'tree' || action.type === 'growth_tree') {
+                setRightPanelType('growth_tree');
+                setRightPanelTitle('成长之树');
+                setIsRightOpen(true);
+              } else if (action.type === 'diary') {
+                setRightPanelType('diary');
+                setRightPanelTitle('魔法日记');
+                setIsRightOpen(true);
+              } else if (action.type === 'score' || action.type === 'parent_score') {
+                setRightPanelType('parent_score');
+                setRightPanelTitle('亲子打分');
+                setIsRightOpen(true);
+              } else if (action.type === 'homework') {
+                setRightPanelType('homework');
+                setRightPanelTitle('作业本');
+                setIsRightOpen(true);
+              } else if (action.type === 'focus') {
+                setRightPanelType('focus');
+                setRightPanelTitle('专注沙漏');
+                setIsRightOpen(true);
+              } else if (action.type === 'achievements') {
+                setRightPanelType('achievements');
+                setRightPanelTitle('我的宝藏');
+                setIsRightOpen(true);
+              }
+            }
+          }}
+          onCancel={() => {
+            setShowAuthConfirm(false);
+            setPendingAction(null);
+          }}
         />
       </div>
     </PWAProvider>
