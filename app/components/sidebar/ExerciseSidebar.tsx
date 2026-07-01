@@ -45,7 +45,7 @@ export function ExerciseSidebarContent({
           ))}
         </div>
       </div>
-      {dynamicExercises ? (
+      {dynamicExercises && dynamicExercises.questions && dynamicExercises.questions.length > 0 ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">互动练习：{dynamicExercises.subject}</h3>
