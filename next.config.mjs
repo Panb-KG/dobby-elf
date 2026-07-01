@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // 移除 standalone 模式，使用标准部署以兼容 Zeabur
+  // output: "standalone",
   typescript: {
     // 允许在生产构建时忽略类型错误（Supabase 凭证在运行时注入）
     ignoreBuildErrors: true,
