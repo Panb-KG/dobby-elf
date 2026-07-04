@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Droplets, TrendingUp, Award } from 'lucide-react';
-import type { GrowthTreeNode } from '@/lib/growth';
+import type { GrowthTreeNode } from '@/lib/growth/tree';
 import { getPointRecords, waterTree } from '@/lib/agent/client';
 
 interface GrowthTreePanelProps {

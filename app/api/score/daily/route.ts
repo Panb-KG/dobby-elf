@@ -8,30 +8,27 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { ensureV2Schema } from '@/lib/db-migration-v2';
-import { getTodayScores, recordDailyScore, getDailyTotal, addGrowthPoints } from '@/lib/growth';
+import { getTodayScores, recordDailyScore, getDailyTotal, addGrowthPoints, ensureScoreTables } from '@/lib/growth';
 
 export async function GET(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
+  await ensureScoreTables();
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date') || undefined;
 
-  const records = getTodayScores(user.id, date);
-  const total = getDailyTotal(user.id, date);
+  const records = await getTodayScores(user.id, date);
+  const total = await getDailyTotal(user.id, date);
 
   return NextResponse.json({ records, total });
 }
 
 export async function POST(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
+  await ensureScoreTables();
   const body = await req.json();
   const { ruleId, score, comment, scoredBy, date } = body;
 
@@ -43,7 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const record = recordDailyScore(
+    const record = await recordDailyScore(
       user.id,
       ruleId,
       score,
@@ -54,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     // 打分计入成长积分（得分 × 2）
     try {
-      addGrowthPoints(user.id, score * 2, `亲子打分: ${comment || record.ruleTitle}`, 'parent_score');
+      await addGrowthPoints(user.id, score * 2, `亲子打分: ${comment || record.ruleTitle}`, 'parent_score');
     } catch { /* ignore */ }
 
     return NextResponse.json({ record });

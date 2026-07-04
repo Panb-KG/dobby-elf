@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { PRESET_RULES } from '@/lib/growth';
+import { PRESET_RULES } from '@/lib/growth/constants';
 import { addScoreRule as apiAddScoreRule } from '@/lib/agent/client';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 

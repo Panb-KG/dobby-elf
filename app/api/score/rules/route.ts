@@ -9,25 +9,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { ensureV2Schema } from '@/lib/db-migration-v2';
-import { getScoreRules, addScoreRule, deleteScoreRule, PRESET_RULES } from '@/lib/growth';
+import { getScoreRules, addScoreRule, deleteScoreRule, ensureScoreTables } from '@/lib/growth';
+import { PRESET_RULES } from '@/lib/growth/constants';
 
 export async function GET(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  const rules = getScoreRules(user.id);
+  await ensureScoreTables();
+  const rules = await getScoreRules(user.id);
   return NextResponse.json({ rules, presets: PRESET_RULES });
 }
 
 export async function POST(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
+  await ensureScoreTables();
   const body = await req.json();
   const { title, description, maxPoints, icon, category } = body;
 
@@ -38,14 +36,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rule = addScoreRule(user.id, title, description || '', maxPoints, icon || '⭐', category || 'other');
-
-  return NextResponse.json({ rule });
+  try {
+    const rule = await addScoreRule(user.id, title, description || '', maxPoints, icon || '⭐', category || 'other');
+    return NextResponse.json({ rule });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '添加失败';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
@@ -56,7 +56,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'id 参数不能为空' }, { status: 400 });
   }
 
-  const deleted = deleteScoreRule(id, user.id);
-
+  const deleted = await deleteScoreRule(id, user.id);
   return NextResponse.json({ deleted });
 }
