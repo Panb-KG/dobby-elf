@@ -20,12 +20,13 @@ import type { PanelType } from '@/components/v2/v2-constants';
  * - 我的宝藏 → achievements 表（成就解锁记录）
  */
 const REQUIRES_AUTH_PANELS: Set<PanelType> = new Set([
-  'growth_tree',
-  'diary',
-  'parent_score',
-  'homework',
-  'focus',
-  'achievements',
+  // TODO: 登录功能搁置期间，所有功能均可访客使用
+  // 'growth_tree',
+  // 'diary',
+  // 'parent_score',
+  // 'homework',
+  // 'focus',
+  // 'achievements',
 ]);
 
 /**
@@ -43,15 +44,17 @@ export function requiresAuth(panelType: PanelType): boolean {
  * @returns 是否需要登录
  */
 export function actionRequiresAuth(actionId: string): boolean {
-  const authRequiredActions = [
-    'tree',        // 成长之树
-    'diary',       // 魔法日记
-    'score',       // 亲子打分
-    'homework',    // 作业本
-    'focus',       // 专注沙漏
-    'achievements', // 我的宝藏
-  ];
-  return authRequiredActions.includes(actionId);
+  // TODO: 登录功能搁置期间，所有功能均可访客使用
+  return false;
+  // const authRequiredActions = [
+  //   'tree',        // 成长之树
+  //   'diary',       // 魔法日记
+  //   'score',       // 亲子打分
+  //   'homework',    // 作业本
+  //   'focus',       // 专注沙漏
+  //   'achievements', // 我的宝藏
+  // ];
+  // return authRequiredActions.includes(actionId);
 }
 
 /**
