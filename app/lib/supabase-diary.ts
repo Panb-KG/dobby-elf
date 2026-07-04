@@ -38,6 +38,7 @@ export interface DiaryRaw {
     weather?: string;
     mood?: string;
     voice_duration?: number;
+    audio_url?: string; // 语音录音 URL
     [key: string]: any;
   };
 }
@@ -321,6 +322,7 @@ export function convertRawToDiaryEntry(raw: DiaryRaw): DiaryEntry {
     weather: raw.metadata?.weather,
     isVoice: raw.input_type === 'voice',
     voiceDuration: raw.metadata?.voice_duration,
+    audioUrl: raw.metadata?.audio_url,
     images: raw.image_urls || [],
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,

@@ -1,19 +1,21 @@
 /**
  * 魔法日记 - 新建日记表单
+ * 支持文字 + 图片 + 语音录制
  */
 
 "use client";
 
 import { useState, useRef, useCallback } from 'react';
-import { Mic, Square, Save, X, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Mic, Save, X, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { MOOD_OPTIONS, WEATHER_OPTIONS } from './diary-constants';
+import { VoiceRecorderModal } from './VoiceRecorderModal';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { validateImageFile } from '@/lib/supabase-storage';
 import { authFetch } from '@/lib/api-client';
 
 interface DiaryNewFormProps {
   selectedDate: string;
-  userId: string; // 新增：用户 ID
+  userId: string;
   onCreate: (data: {
     date: string;
     title: string;
@@ -22,7 +24,8 @@ interface DiaryNewFormProps {
     weather?: string;
     isVoice: boolean;
     voiceDuration?: number;
-    images?: string[]; // 新增：图片 URL 数组
+    audioUrl?: string;
+    images?: string[];
   }) => Promise<void>;
   onCancel: () => void;
 }
@@ -32,10 +35,14 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
   const [content, setContent] = useState('');
   const [mood, setMood] = useState('');
   const [weather, setWeather] = useState('');
-  const [isVoice, setIsVoice] = useState(false);
-  const [images, setImages] = useState<File[]>([]); // 新增：待上传图片
-  const [imageUrls, setImageUrls] = useState<string[]>([]); // 新增：已上传 URL
-  const [uploading, setUploading] = useState(false); // 新增：上传中状态
+  const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // 语音录制状态
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [audioDuration, setAudioDuration] = useState<number>(0);
 
   // 对话框状态
   const [dialogConfig, setDialogConfig] = useState<{
@@ -44,61 +51,45 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
     type: 'error' | 'success' | 'warning' | 'info';
   }>({ isOpen: false, message: '', type: 'info' });
 
-  const recognitionRef = useRef<any>(null);
-  const voiceTimerRef = useRef<number | null>(null);
-  const [voiceSeconds, setVoiceSeconds] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-
-  const toggleVoiceInput = useCallback(() => {
-    if (isRecording) {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
-      setIsRecording(false);
-      setIsVoice(true);
-      return;
-    }
-
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      // 使用 ConfirmDialog 替代 alert
-      setDialogConfig({ isOpen: true, message: '你的浏览器不支持语音输入，请使用 Chrome 浏览器', type: 'warning' });
-      return;
-    }
-
-    const recognition = new SR();
-    recognition.lang = 'zh-CN';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    let finalTranscript = '';
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalTranscript += t;
-        else interim += t;
+  // 处理语音录制确认
+  const handleVoiceConfirm = useCallback(async (audioBlob: Blob, durationSeconds: number) => {
+    try {
+      // 上传音频
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      const uploadRes = await authFetch('/api/diary/audio-upload', {
+        method: 'POST',
+        body: formData,
+        headers: {}, // 不设 Content-Type，让浏览器自动设置
+      });
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}));
+        throw new Error(errData.error || '音频上传失败');
       }
-      setContent(prev => prev + finalTranscript + interim);
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => {
-      setIsRecording(false);
-      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-    setVoiceSeconds(0);
-    voiceTimerRef.current = window.setInterval(() => setVoiceSeconds(p => p + 1), 1000);
-  }, [isRecording]);
+      const data = await uploadRes.json();
+      setAudioUrl(data.url);
+      setAudioDuration(durationSeconds);
+      setShowVoiceRecorder(false);
+      
+      // 如果有音频，自动填入"语音日记"标题和内容提示
+      if (!content.trim()) {
+        setContent(`[语音日记] ${durationSeconds}秒录音`);
+      }
+      if (!title.trim()) {
+        setTitle('语音日记');
+      }
+    } catch (err: any) {
+      setDialogConfig({ isOpen: true, message: err.message || '音频上传失败', type: 'error' });
+      setShowVoiceRecorder(false);
+    }
+  }, [content, title]);
 
   const handleCreate = async () => {
     if (!content.trim()) return;
     
     setUploading(true);
     try {
-      // 通过服务端 API 上传图片（使用 Service Role Key 绕过 Storage Policy）
+      // 上传图片
       let uploadedUrls: string[] = [];
       if (images.length > 0) {
         const formData = new FormData();
@@ -106,7 +97,7 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
         const uploadRes = await authFetch('/api/diary/upload', {
           method: 'POST',
           body: formData,
-          headers: {}, // 不设 Content-Type，让浏览器自动设置 multipart boundary
+          headers: {},
         });
         if (!uploadRes.ok) {
           const errData = await uploadRes.json().catch(() => ({}));
@@ -122,8 +113,9 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
         content: content.trim(),
         mood: mood || undefined,
         weather: weather || undefined,
-        isVoice,
-        voiceDuration: isVoice ? voiceSeconds : undefined,
+        isVoice: !!audioUrl,
+        voiceDuration: audioUrl ? audioDuration : undefined,
+        audioUrl: audioUrl || undefined,
         images: uploadedUrls,
       });
       
@@ -133,10 +125,12 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
       setWeather('');
       setImages([]);
       setImageUrls([]);
+      setAudioUrl('');
+      setAudioDuration(0);
     } catch (error: any) {
       setDialogConfig({ 
         isOpen: true, 
-        message: error.message || '图片上传失败', 
+        message: error.message || '上传失败', 
         type: 'error' 
       });
     } finally {
@@ -194,7 +188,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
           )}
         </div>
         
-        {/* 图片预览 */}
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-2">
             {images.map((img, idx) => (
@@ -217,7 +210,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
           </div>
         )}
         
-        {/* 选择按钮 */}
         <label className="w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-all bg-white/10 hover:bg-white/20 text-gray-300 cursor-pointer">
           <ImageIcon size={16} />
           <span>选择照片（最多 5 张）</span>
@@ -230,7 +222,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
               const files = Array.from(e.target.files || []);
               if (files.length === 0) return;
               
-              // 验证文件
               const validFiles: File[] = [];
               for (const file of files) {
                 const validation = validateImageFile(file, 10);
@@ -241,7 +232,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
                 validFiles.push(file);
               }
               
-              // 限制最多 5 张
               const newImages = [...images, ...validFiles].slice(0, 5);
               setImages(newImages);
             }}
@@ -249,11 +239,36 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
         </label>
       </div>
 
-      <button onClick={toggleVoiceInput}
-        className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-all ${isRecording ? 'bg-red-500/30 text-red-400 animate-pulse' : 'bg-white/10 hover:bg-white/20 text-gray-300'}`}>
-        {isRecording ? <><Square size={16} /><span>停止录音 ({voiceSeconds}s)</span></> : <><Mic size={16} /><span>语音输入</span></>}
-      </button>
+      {/* 语音录制 */}
+      <div>
+        <button onClick={() => setShowVoiceRecorder(true)}
+          className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-all ${
+            audioUrl 
+              ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+              : 'bg-white/10 hover:bg-white/20 text-gray-300'
+          }`}>
+          <Mic size={16} />
+          {audioUrl 
+            ? <span>已录制 ({audioDuration}秒) 点击重新录制</span>
+            : <span>语音录制</span>
+          }
+        </button>
+        
+        {/* 已录制音频的播放 */}
+        {audioUrl && (
+          <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+            <audio controls src={audioUrl} className="flex-1 h-8" />
+            <button 
+              onClick={() => { setAudioUrl(''); setAudioDuration(0); }}
+              className="p-1 rounded hover:bg-red-500/20 transition-colors"
+            >
+              <Trash2 size={14} className="text-red-400" />
+            </button>
+          </div>
+        )}
+      </div>
 
+      {/* 保存按钮 */}
       <button onClick={handleCreate} disabled={!content.trim() || uploading}
         className="w-full py-2.5 rounded-lg bg-gradient-to-br from-orange-500/40 to-amber-500/40 hover:from-orange-500/60 hover:to-amber-500/60 disabled:opacity-30 disabled:cursor-not-allowed text-orange-300 text-sm transition-all flex items-center justify-center gap-2">
         {uploading ? (
@@ -268,6 +283,13 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
           </>
         )}
       </button>
+
+      {/* 语音录制弹窗 */}
+      <VoiceRecorderModal
+        isOpen={showVoiceRecorder}
+        onClose={() => setShowVoiceRecorder(false)}
+        onConfirm={handleVoiceConfirm}
+      />
 
       {/* 错误提示对话框 */}
       <ConfirmDialog

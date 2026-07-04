@@ -1,14 +1,15 @@
 /**
  * 魔法日记 - 单条日记展示/编辑组件
- * 支持图片显示和编辑
+ * 支持图片显示/编辑 + 语音录制/播放
  */
 
 "use client";
 
 import { useState, useRef } from 'react';
-import { Edit3, Trash2, Image as ImageIcon, X } from 'lucide-react';
+import { Edit3, Trash2, Image as ImageIcon, X, Mic } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary';
 import { MOOD_OPTIONS } from './diary-constants';
+import { VoiceRecorderModal } from './VoiceRecorderModal';
 import { authFetch } from '@/lib/api-client';
 
 function validateImage(file: File, maxMB = 10): { valid: boolean; error?: string } {
@@ -19,7 +20,7 @@ function validateImage(file: File, maxMB = 10): { valid: boolean; error?: string
 
 interface DiaryEntryItemProps {
   entry: DiaryEntry;
-  onUpdate: (id: string, data: { title: string; content: string; mood?: string; weather?: string; images?: string[] }) => Promise<void>;
+  onUpdate: (id: string, data: { title: string; content: string; mood?: string; weather?: string; images?: string[]; audioUrl?: string }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
@@ -33,6 +34,35 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 语音编辑状态
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [editAudioUrl, setEditAudioUrl] = useState<string>(entry.audioUrl || '');
+  const [editAudioDuration, setEditAudioDuration] = useState<number>(entry.voiceDuration || 0);
+
+  // 处理语音录制确认
+  const handleVoiceConfirm = async (audioBlob: Blob, durationSeconds: number) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      const uploadRes = await authFetch('/api/diary/audio-upload', {
+        method: 'POST',
+        body: formData,
+        headers: {},
+      });
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}));
+        throw new Error(errData.error || '音频上传失败');
+      }
+      const data = await uploadRes.json();
+      setEditAudioUrl(data.url);
+      setEditAudioDuration(durationSeconds);
+      setShowVoiceRecorder(false);
+    } catch (err: any) {
+      alert(err.message || '音频上传失败');
+      setShowVoiceRecorder(false);
+    }
+  };
 
   const handleSave = async () => {
     setUploading(true);
@@ -62,6 +92,7 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
         mood: editMood || undefined,
         weather: editWeather || undefined,
         images: allImages.length > 0 ? allImages : undefined,
+        audioUrl: editAudioUrl || undefined,
       });
       setIsEditing(false);
       setNewImageFiles([]);
@@ -80,6 +111,8 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
     setEditWeather(entry.weather || '');
     setEditImages(entry.images || []);
     setNewImageFiles([]);
+    setEditAudioUrl(entry.audioUrl || '');
+    setEditAudioDuration(entry.voiceDuration || 0);
   };
 
   const handleSelectFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +126,7 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // 编辑模式
   if (isEditing) {
     return (
       <div className="space-y-2">
@@ -111,6 +145,7 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
           ))}
         </div>
 
+        {/* 图片编辑 */}
         <div>
           <div className="text-xs text-gray-400 mb-1">📸 图片</div>
           {(editImages.length > 0 || newImageFiles.length > 0) && (
@@ -145,6 +180,29 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
           )}
         </div>
 
+        {/* 语音录制 */}
+        <div>
+          <div className="text-xs text-gray-400 mb-1">🎤 语音</div>
+          {editAudioUrl && (
+            <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-green-500/10 border border-green-500/20">
+              <audio controls src={editAudioUrl} className="flex-1 h-8" />
+              <button 
+                onClick={() => { setEditAudioUrl(''); setEditAudioDuration(0); }}
+                className="p-1 rounded hover:bg-red-500/20 transition-colors"
+              >
+                <X size={14} className="text-red-400" />
+              </button>
+            </div>
+          )}
+          <button 
+            onClick={() => setShowVoiceRecorder(true)}
+            className="w-full py-1.5 rounded-lg flex items-center justify-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-gray-400 cursor-pointer"
+          >
+            <Mic size={12} />
+            <span>{editAudioUrl ? '重新录制' : '录制语音'}</span>
+          </button>
+        </div>
+
         <div className="flex gap-2">
           <button onClick={handleSave} disabled={uploading}
             className="flex-1 py-1.5 rounded-lg bg-orange-500/30 hover:bg-orange-500/50 disabled:opacity-30 text-orange-300 text-xs transition-colors">
@@ -155,10 +213,18 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
             取消
           </button>
         </div>
+
+        {/* 语音录制弹窗 */}
+        <VoiceRecorderModal
+          isOpen={showVoiceRecorder}
+          onClose={() => setShowVoiceRecorder(false)}
+          onConfirm={handleVoiceConfirm}
+        />
       </div>
     );
   }
 
+  // 查看模式
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
@@ -182,6 +248,7 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
 
       <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{entry.content}</p>
 
+      {/* 图片显示 */}
       {entry.images && entry.images.length > 0 && (
         <div className="grid grid-cols-3 gap-1.5 mt-2">
           {entry.images.map((url, idx) => (
@@ -192,7 +259,14 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
         </div>
       )}
 
-      {entry.voiceDuration && (
+      {/* 语音播放 */}
+      {entry.audioUrl && (
+        <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+          <audio controls src={entry.audioUrl} className="flex-1 h-8" />
+        </div>
+      )}
+
+      {entry.voiceDuration && !entry.audioUrl && (
         <div className="mt-2 text-xs text-gray-500">🎤 语音时长 {entry.voiceDuration} 秒</div>
       )}
     </div>

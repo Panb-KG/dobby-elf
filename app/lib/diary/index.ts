@@ -29,6 +29,7 @@ export interface DiaryEntry {
   weather?: string;
   isVoice?: boolean;
   voiceDuration?: number;
+  audioUrl?: string; // 语音录音 URL
   images?: string[];
   createdAt: string;
   updatedAt: string;
@@ -83,6 +84,7 @@ export async function createDiaryEntry(
     weather?: string;
     isVoice?: boolean;
     voiceDuration?: number;
+    audioUrl?: string; // 语音录音 URL
     images?: string[];
   } = {}
 ): Promise<DiaryEntry> {
@@ -96,6 +98,7 @@ export async function createDiaryEntry(
       mood: options.mood,
       weather: options.weather,
       voice_duration: options.voiceDuration,
+      audio_url: options.audioUrl,
     },
   });
 
@@ -115,6 +118,7 @@ export async function updateDiaryEntry(
     content?: string;
     mood?: string;
     weather?: string;
+    audioUrl?: string; // 语音录音 URL
     images?: string[];
   }
 ): Promise<boolean> {
@@ -140,6 +144,7 @@ export async function updateDiaryEntry(
       title: updates.title ?? raw.metadata?.title,
       mood: updates.mood ?? raw.metadata?.mood,
       weather: updates.weather ?? raw.metadata?.weather,
+      audio_url: updates.audioUrl ?? raw.metadata?.audio_url,
     };
     return await updateDiaryRaw(id, userId, {
       rawContent: updates.content ?? raw.raw_content,

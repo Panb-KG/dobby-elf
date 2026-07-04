@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   const body = await req.json();
-  const { date, title, content, mood, weather, isVoice, voiceDuration, images } = body;
+  const { date, title, content, mood, weather, isVoice, voiceDuration, audioUrl, images } = body;
 
   if (!date || !content) {
     return NextResponse.json(
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       weather,
       isVoice,
       voiceDuration,
+      audioUrl,
       images,
     });
 
@@ -82,13 +83,14 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { title, content, mood, weather, images } = body;
+  const { title, content, mood, weather, audioUrl, images } = body;
 
   const updated = await updateDiaryEntry(id, user.id, {
     title,
     content,
     mood,
     weather,
+    audioUrl,
     images,
   });
 

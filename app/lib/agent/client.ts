@@ -246,6 +246,7 @@ export async function createDiaryEntry(data: {
   weather?: string;
   isVoice?: boolean;
   voiceDuration?: number;
+  audioUrl?: string; // 语音录音 URL
   images?: string[];
 }): Promise<{ entry: any }> {
   const response = await authFetch('/api/diary/entries', {
@@ -265,6 +266,7 @@ export async function updateDiaryEntry(id: string, data: {
   content?: string;
   mood?: string;
   weather?: string;
+  audioUrl?: string; // 语音录音 URL
   images?: string[];
 }): Promise<{ success: boolean }> {
   const response = await authFetch(`/api/diary/entries?id=${id}`, {
