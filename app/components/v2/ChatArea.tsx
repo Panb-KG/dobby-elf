@@ -31,7 +31,7 @@ export function ChatArea({ agentChat, isVoiceActive, onToggleVoice, onSend }: Ch
               <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</div>
               {msg.role === 'model' && i === agentChat.messages.length - 1 && agentChat.lastIntent && (
                 <div className="mt-2 text-xs text-gray-500">
-                  {agentChat.toolsUsed.length > 0 && (
+                  {agentChat.toolsUsed && agentChat.toolsUsed.length > 0 && (
                     <span className="mr-2">🔧 {agentChat.toolsUsed.join(', ')}</span>
                   )}
                 </div>

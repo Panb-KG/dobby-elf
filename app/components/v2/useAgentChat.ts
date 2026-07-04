@@ -30,6 +30,8 @@ export interface UseAgentChatReturn {
   lastIntent: IntentType | null;
   /** 知识库引用 */
   knowledgeRefs: string[];
+  /** 使用的工具列表 */
+  toolsUsed: string[];
 }
 
 export function useAgentChat(): UseAgentChatReturn {
@@ -48,6 +50,7 @@ export function useAgentChat(): UseAgentChatReturn {
   const [panelAction, setPanelAction] = useState<PanelAction | null>(null);
   const [lastIntent, setLastIntent] = useState<IntentType | null>(null);
   const [knowledgeRefs, setKnowledgeRefs] = useState<string[]>([]);
+  const [toolsUsed, setToolsUsed] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
@@ -98,6 +101,7 @@ export function useAgentChat(): UseAgentChatReturn {
       setPanelAction(response.panelAction || null);
       setLastIntent(response.intent);
       setKnowledgeRefs(response.knowledgeRefs || []);
+      setToolsUsed(response.toolsUsed || []);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
 
@@ -133,5 +137,6 @@ export function useAgentChat(): UseAgentChatReturn {
     panelAction,
     lastIntent,
     knowledgeRefs,
+    toolsUsed,
   };
 }

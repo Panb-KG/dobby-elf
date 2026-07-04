@@ -14,7 +14,7 @@ import {
   searchDiaries,
   convertRawToDiaryEntry,
   convertProcessedToDiaryEntry,
-} from './supabase-diary';
+} from '../supabase-diary';
 
 export interface DiaryEntry {
   id: string;

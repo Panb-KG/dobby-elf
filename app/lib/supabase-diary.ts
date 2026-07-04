@@ -4,13 +4,22 @@
  * 提供日记的 CRUD 操作，支持原始输入和 AI 整理后的日记
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { DiaryEntry } from './diary';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let supabaseInstance: SupabaseClient | null = null;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase 环境变量未配置：NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    }
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseInstance;
+}
 
 // ===== 数据库表类型定义 =====
 
@@ -63,7 +72,7 @@ export async function saveDiaryRaw(
     metadata?: any;
   } = {}
 ): Promise<DiaryRaw> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_raw')
     .insert({
       user_id: userId,
@@ -90,7 +99,7 @@ export async function getDiaryRaws(
   userId: string,
   limit = 50
 ): Promise<DiaryRaw[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_raw')
     .select('*')
     .eq('user_id', userId)
@@ -115,7 +124,7 @@ export async function upsertDiaryProcessed(
   diaryDate: string,
   diary: Partial<DiaryProcessed>
 ): Promise<DiaryProcessed> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_processed')
     .upsert({
       user_id: userId,
@@ -142,7 +151,7 @@ export async function getDiaryProcessed(
   userId: string,
   date: string
 ): Promise<DiaryProcessed | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
     .eq('user_id', userId)
@@ -164,7 +173,7 @@ export async function getDiaryProcessedList(
   userId: string,
   limit = 30
 ): Promise<DiaryProcessed[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
     .eq('user_id', userId)
@@ -186,7 +195,7 @@ export async function deleteDiaryProcessed(
   userId: string,
   diaryDate: string
 ): Promise<boolean> {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('diary_processed')
     .delete()
     .eq('user_id', userId)
@@ -209,7 +218,7 @@ export async function searchDiaries(
   userId: string,
   query: string
 ): Promise<DiaryProcessed[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
     .eq('user_id', userId)

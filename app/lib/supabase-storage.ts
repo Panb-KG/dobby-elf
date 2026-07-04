@@ -4,12 +4,21 @@
  * 提供图片上传到 Supabase Storage 的功能
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let supabaseInstance: SupabaseClient | null = null;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase 环境变量未配置');
+    }
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseInstance;
+}
 
 const BUCKET_NAME = 'diary-images';
 
@@ -30,7 +39,7 @@ export async function uploadImage(
   const fileName = `${userId}/${timestamp}_${randomStr}.${ext}`;
 
   // 上传文件
-  const { data, error } = await supabase.storage
+  const { data, error } = await getSupabase().storage
     .from(BUCKET_NAME)
     .upload(fileName, file, {
       cacheControl: '3600',
@@ -43,7 +52,7 @@ export async function uploadImage(
   }
 
   // 获取公开访问 URL
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = getSupabase().storage
     .from(BUCKET_NAME)
     .getPublicUrl(fileName);
 
@@ -77,7 +86,7 @@ export async function deleteImage(imageUrl: string): Promise<boolean> {
     const userId = urlParts[urlParts.length - 2];
     const path = `${userId}/${fileName}`;
 
-    const { error } = await supabase.storage
+    const { error } = await getSupabase().storage
       .from(BUCKET_NAME)
       .remove([path]);
 
