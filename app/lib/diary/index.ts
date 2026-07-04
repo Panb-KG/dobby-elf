@@ -7,6 +7,9 @@
 import {
   saveDiaryRaw,
   getDiaryRaws,
+  getDiaryRawById,
+  updateDiaryRaw,
+  deleteDiaryRawById,
   upsertDiaryProcessed,
   getDiaryProcessed,
   getDiaryProcessedList,
@@ -100,7 +103,9 @@ export async function createDiaryEntry(
 }
 
 /**
- * 更新日记（更新整理后的日记）
+ * 更新日记
+ * 
+ * 优先更新 diary_processed，如果不存在则更新 diary_raw
  */
 export async function updateDiaryEntry(
   id: string,
@@ -113,17 +118,37 @@ export async function updateDiaryEntry(
     images?: string[];
   }
 ): Promise<boolean> {
-  // 这里需要查询出 diary_date，简化处理：假设 id 就是 diary_date
-  const diaryDate = id; // 实际应该从数据库查询
-  
-  const existing = await getDiaryProcessed(userId, diaryDate);
-  if (!existing) return false;
+  // 先尝试查找 diary_processed（通过 id 查）
+  // 但 diary_processed 的主键是 id，先尝试
+  const processed = await getDiaryProcessed(userId, id);
+  if (processed) {
+    await upsertDiaryProcessed(userId, processed.diary_date, {
+      title: updates.title,
+      content: updates.content,
+      mood: updates.mood,
+      weather: updates.weather,
+      images: updates.images,
+    });
+    return true;
+  }
 
-  await upsertDiaryProcessed(userId, diaryDate, {
-    ...updates,
-  });
+  // 如果不存在 processed，查找 diary_raw
+  const raw = await getDiaryRawById(id, userId);
+  if (raw) {
+    const newMetadata = {
+      ...raw.metadata,
+      title: updates.title ?? raw.metadata?.title,
+      mood: updates.mood ?? raw.metadata?.mood,
+      weather: updates.weather ?? raw.metadata?.weather,
+    };
+    return await updateDiaryRaw(id, userId, {
+      rawContent: updates.content ?? raw.raw_content,
+      imageUrls: updates.images ?? raw.image_urls,
+      metadata: newMetadata,
+    });
+  }
 
-  return true;
+  return false;
 }
 
 /**
@@ -133,10 +158,18 @@ export async function deleteDiaryEntry(
   id: string,
   userId: string
 ): Promise<boolean> {
-  // 这里需要查询出 diary_date，简化处理：假设 id 就是 diary_date
-  const diaryDate = id;
-  
-  return await deleteDiaryProcessed(userId, diaryDate);
+  // 先尝试删除 diary_processed（通过 id）
+  // 再尝试删除 diary_raw
+  const raw = await getDiaryRawById(id, userId);
+  if (raw) {
+    const date = raw.metadata?.date || new Date(raw.created_at).toISOString().split('T')[0];
+    // 同时删除关联的 processed 日记
+    await deleteDiaryProcessed(userId, date);
+    return await deleteDiaryRawById(id, userId);
+  }
+
+  // 尝试直接删除 processed
+  return await deleteDiaryProcessed(userId, id);
 }
 
 /**

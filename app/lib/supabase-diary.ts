@@ -94,6 +94,77 @@ export async function saveDiaryRaw(
 }
 
 /**
+ * 按 ID 获取单条原始日记
+ */
+export async function getDiaryRawById(
+  id: string,
+  userId: string
+): Promise<DiaryRaw | null> {
+  const { data, error } = await getSupabase()
+    .from('diary_raw')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('查询原始日记失败:', error);
+    return null;
+  }
+  return data as DiaryRaw | null;
+}
+
+/**
+ * 更新原始日记
+ */
+export async function updateDiaryRaw(
+  id: string,
+  userId: string,
+  updates: {
+    rawContent?: string;
+    imageUrls?: string[];
+    metadata?: any;
+  }
+): Promise<boolean> {
+  const updateData: any = { updated_at: new Date().toISOString() };
+  if (updates.rawContent !== undefined) updateData.raw_content = updates.rawContent;
+  if (updates.imageUrls !== undefined) updateData.image_urls = updates.imageUrls;
+  if (updates.metadata !== undefined) updateData.metadata = updates.metadata;
+
+  const { error } = await getSupabase()
+    .from('diary_raw')
+    .update(updateData)
+    .eq('id', id)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('更新原始日记失败:', error);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 按 ID 删除原始日记
+ */
+export async function deleteDiaryRawById(
+  id: string,
+  userId: string
+): Promise<boolean> {
+  const { error } = await getSupabase()
+    .from('diary_raw')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('删除原始日记失败:', error);
+    return false;
+  }
+  return true;
+}
+
+/**
  * 获取用户的原始输入记录
  */
 export async function getDiaryRaws(
@@ -244,7 +315,7 @@ export function convertRawToDiaryEntry(raw: DiaryRaw): DiaryEntry {
     id: raw.id,
     userId: raw.user_id,
     date: raw.metadata?.date || new Date(raw.created_at).toISOString().split('T')[0],
-    title: '无标题',
+    title: raw.metadata?.title || '无标题',
     content: raw.raw_content,
     mood: raw.metadata?.mood,
     weather: raw.metadata?.weather,
