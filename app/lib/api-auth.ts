@@ -23,7 +23,7 @@ function getAuthSupabase(): SupabaseClient {
 /**
  * 验证请求中的 Supabase Access Token，返回用户信息
  */
-export async function requireAuth(req: NextRequest): Promise<{ userId: string; email: string } | null> {
+export async function requireAuth(req: NextRequest): Promise<{ id: string; email: string } | null> {
   try {
     // 从 header 提取 Bearer token
     const authHeader = req.headers.get('authorization');
@@ -41,7 +41,7 @@ export async function requireAuth(req: NextRequest): Promise<{ userId: string; e
     }
 
     return {
-      userId: user.id,
+      id: user.id,
       email: user.email || '',
     };
   } catch {
