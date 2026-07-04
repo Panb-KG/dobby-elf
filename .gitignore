@@ -38,3 +38,5 @@ data/*.db-shm
 *.tmp
 *.bak
 .env
+test-results-*.png
+tests/
