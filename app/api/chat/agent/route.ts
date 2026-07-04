@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
   }
 
   const config = {
-    model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen-turbo',
+    model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen3.6-flash',
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
-      'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
     apiKey: process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '',
     maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '2048'),
     temperature: parseFloat(process.env.AGENT_TEMPERATURE || '0.7'),
@@ -131,9 +131,9 @@ export async function GET(req: NextRequest) {
   }
 
   const config = {
-    model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen-turbo',
+    model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen3.6-flash',
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
-      'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
     apiKey: process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '',
     maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '2048'),
     temperature: parseFloat(process.env.AGENT_TEMPERATURE || '0.7'),

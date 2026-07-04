@@ -132,7 +132,7 @@ export async function llmIntentRecognition(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'qwen-turbo',
+        model: process.env.AGENT_MODEL || 'qwen3.6-flash',
         messages: [
           { role: 'system', content: INTENT_PROMPT },
           { role: 'user', content: text },
