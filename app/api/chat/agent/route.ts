@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
       'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
     apiKey: process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '',
-    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '2048'),
+    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '512'),
     temperature: parseFloat(process.env.AGENT_TEMPERATURE || '0.7'),
     stream: false,
     safetyLevel: 'strict',
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
       'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
     apiKey: process.env.TOKEN_PLAN_API_KEY || process.env.DASHSCOPE_API_KEY || '',
-    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '2048'),
+    maxTokens: parseInt(process.env.AGENT_MAX_TOKENS || '512'),
     temperature: parseFloat(process.env.AGENT_TEMPERATURE || '0.7'),
     stream: true,
     safetyLevel: 'strict',
