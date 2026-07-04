@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  console.log('[Agent] 配置:', { model: config.model, baseUrl: config.baseUrl, apiKeyPrefix: config.apiKey.substring(0, 8) + '...' });
+
   try {
     const body = await req.json();
     const { messages, systemInstruction } = body;
@@ -97,9 +99,10 @@ export async function POST(req: NextRequest) {
       knowledgeRefs: response.knowledgeRefs,
     });
   } catch (error) {
-    logError('[Agent Chat] 错误:', getErrorMessage(error));
+    const errMsg = getErrorMessage(error);
+    logError('[Agent Chat] 错误:', errMsg);
     return NextResponse.json(
-      { error: '魔法出了点小问题⚡ 请稍后再试' },
+      { error: `魔法出了点小问题⚡ 请稍后再试（${errMsg}）` },
       { status: 500 }
     );
   }

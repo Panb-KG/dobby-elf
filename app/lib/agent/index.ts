@@ -152,8 +152,11 @@ async function callLLM(
   config: AgentConfig,
   intent: IntentType
 ): Promise<{ text: string }> {
+  const apiUrl = `${config.baseUrl}/chat/completions`;
+  console.log('[LLM] 调用:', apiUrl, '模型:', config.model, '意图:', intent);
+  
   try {
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +165,7 @@ async function callLLM(
       body: JSON.stringify({
         model: config.model,
         messages,
-        stream: false,  // Agent 编排层用非流式，前端可以用 SSE
+        stream: false,
         max_tokens: config.maxTokens,
         temperature: config.temperature,
       }),
@@ -170,7 +173,9 @@ async function callLLM(
     });
 
     if (!response.ok) {
-      throw new Error(`LLM API 错误: ${response.status}`);
+      const errorText = await response.text().catch(() => '');
+      console.error('[LLM] API 错误:', response.status, response.statusText, errorText.substring(0, 500));
+      throw new Error(`LLM API 错误: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -179,6 +184,7 @@ async function callLLM(
     return { text };
   } catch (error) {
     const msg = error instanceof Error ? error.message : '未知错误';
+    console.error('[LLM] 异常:', msg);
     return { text: `魔法出了点小问题⚡ 请稍后再试试。（${msg}）` };
   }
 }

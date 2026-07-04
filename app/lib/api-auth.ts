@@ -4,10 +4,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let authSupabase: SupabaseClient | null = null;
+
+function getAuthSupabase(): SupabaseClient {
+  if (!authSupabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      throw new Error('Supabase 环境变量未配置');
+    }
+    authSupabase = createClient(url, key);
+  }
+  return authSupabase;
+}
 
 /**
  * 验证请求中的 Supabase Access Token，返回用户信息
@@ -23,7 +34,7 @@ export async function requireAuth(req: NextRequest): Promise<{ userId: string; e
     const token = authHeader.slice(7);
 
     // 用 anon key 创建客户端，验证 token
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = getAuthSupabase();
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
