@@ -78,7 +78,7 @@ export default function GrowthTreePanel({ tree, onWater, waterMessage }: GrowthT
               />
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {nextStage.minLevel - tree.treeLevel} 级后升级为 {nextStage.emoji} {nextStage.name}
+              {nextStage.minLevel - treeLevel} 级后升级为 {nextStage.emoji} {nextStage.name}
             </div>
           </div>
         )}
@@ -144,8 +144,8 @@ export default function GrowthTreePanel({ tree, onWater, waterMessage }: GrowthT
         </h4>
         <div className="space-y-1">
           {TREE_STAGES.map(stage => {
-            const isUnlocked = tree.treeLevel >= stage.minLevel;
-            const isCurrent = tree.treeLevel >= stage.minLevel && tree.treeLevel <= stage.maxLevel;
+            const isUnlocked = treeLevel >= stage.minLevel;
+            const isCurrent = treeLevel >= stage.minLevel && treeLevel <= stage.maxLevel;
             return (
               <div
                 key={stage.name}
