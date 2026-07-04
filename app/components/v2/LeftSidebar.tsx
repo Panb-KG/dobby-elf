@@ -49,7 +49,7 @@ export function LeftSidebar({
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium truncate">{user.displayName || user.username}</div>
               <div className="text-xs text-gray-400">
-                {isGuest ? '👤 访客模式' : (growthTree ? `${growthTree.treeStage}` : '魔法学徒')}
+                {isGuest ? '👤 访客模式' : (growthTree?.treeStage ? `${growthTree.treeStage}` : '🌱 魔法学徒')}
               </div>
             </div>
           </div>
@@ -94,8 +94,8 @@ export function LeftSidebar({
         {!isLeftCollapsed && growthTree && (
           <div className="mt-4 mx-2 p-3 rounded-xl bg-gradient-to-br from-green-900/30 to-emerald-900/30 border border-green-800/30">
             <div className="text-xs text-green-400 mb-1">🌱 成长之树</div>
-            <div className="text-lg font-bold">{growthTree.treeStage}</div>
-            <div className="text-xs text-gray-400 mt-1">等级 Lv.{growthTree.treeLevel} · {growthTree.totalPoints} 积分</div>
+            <div className="text-lg font-bold">{growthTree.treeStage || '🌱 种子'}</div>
+            <div className="text-xs text-gray-400 mt-1">等级 Lv.{growthTree.treeLevel ?? 1} · {growthTree.totalPoints ?? 0} 积分</div>
             <button onClick={onWater} className="mt-2 w-full py-1.5 text-xs rounded-lg bg-green-600/30 hover:bg-green-600/50 transition-colors text-green-300">
               💧 浇水
             </button>

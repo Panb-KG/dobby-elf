@@ -141,6 +141,7 @@ export default function PageV2() {
     
     setLeftTab(actionId as LeftTab);
     const panelMap: Record<string, { type: PanelType; title: string }> = {
+      knowledge: { type: 'knowledge_card', title: '知识库' },
       tree: { type: 'growth_tree', title: '成长之树' },
       score: { type: 'parent_score', title: '亲子打分' },
       diary: { type: 'diary', title: '魔法日记' },

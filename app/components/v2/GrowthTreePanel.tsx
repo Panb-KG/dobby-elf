@@ -43,11 +43,15 @@ export default function GrowthTreePanel({ tree, onWater, waterMessage }: GrowthT
     );
   }
 
+  const treeLevel = tree.treeLevel ?? 1;
+  const totalPoints = tree.totalPoints ?? 0;
+  const waterCount = tree.waterCount ?? 0;
+
   // 当前阶段进度
-  const currentStage = TREE_STAGES.find(s => tree.treeLevel >= s.minLevel && tree.treeLevel <= s.maxLevel) || TREE_STAGES[0];
-  const nextStage = TREE_STAGES.find(s => s.minLevel > tree.treeLevel);
+  const currentStage = TREE_STAGES.find(s => treeLevel >= s.minLevel && treeLevel <= s.maxLevel) || TREE_STAGES[0];
+  const nextStage = TREE_STAGES.find(s => s.minLevel > treeLevel);
   const progressToNext = nextStage
-    ? ((tree.treeLevel - currentStage.minLevel) / (nextStage.minLevel - currentStage.minLevel)) * 100
+    ? ((treeLevel - currentStage.minLevel) / (nextStage.minLevel - currentStage.minLevel)) * 100
     : 100;
 
   return (
@@ -57,7 +61,7 @@ export default function GrowthTreePanel({ tree, onWater, waterMessage }: GrowthT
         <div className="text-6xl mb-2">{currentStage.emoji}</div>
         <div className="text-lg font-bold">{currentStage.name}</div>
         <div className="text-sm text-gray-400 mt-1">
-          Lv.{tree.treeLevel} · {tree.totalPoints} 积分
+          Lv.{treeLevel} · {totalPoints} 积分
         </div>
 
         {/* 升级进度条 */}
@@ -98,11 +102,11 @@ export default function GrowthTreePanel({ tree, onWater, waterMessage }: GrowthT
       {/* 统计 */}
       <div className="grid grid-cols-2 gap-3">
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-          <div className="text-2xl font-bold text-orange-400">{tree.totalPoints}</div>
+          <div className="text-2xl font-bold text-orange-400">{totalPoints}</div>
           <div className="text-xs text-gray-400 mt-1">总积分</div>
         </div>
         <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
-          <div className="text-2xl font-bold text-blue-400">{tree.waterCount}</div>
+          <div className="text-2xl font-bold text-blue-400">{waterCount}</div>
           <div className="text-xs text-gray-400 mt-1">浇水次数</div>
         </div>
       </div>
