@@ -8,7 +8,8 @@ import { useState, useRef, useCallback } from 'react';
 import { Mic, Square, Save, X, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { MOOD_OPTIONS, WEATHER_OPTIONS } from './diary-constants';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { uploadMultipleImages, validateImageFile } from '@/lib/supabase-storage';
+import { validateImageFile } from '@/lib/supabase-storage';
+import { authFetch } from '@/lib/api-client';
 
 interface DiaryNewFormProps {
   selectedDate: string;
@@ -97,10 +98,22 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
     
     setUploading(true);
     try {
-      // 上传图片
+      // 通过服务端 API 上传图片（使用 Service Role Key 绕过 Storage Policy）
       let uploadedUrls: string[] = [];
       if (images.length > 0) {
-        uploadedUrls = await uploadMultipleImages(images, userId);
+        const formData = new FormData();
+        images.forEach(file => formData.append('images', file));
+        const uploadRes = await authFetch('/api/diary/upload', {
+          method: 'POST',
+          body: formData,
+          headers: {}, // 不设 Content-Type，让浏览器自动设置 multipart boundary
+        });
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errData.error || '图片上传失败');
+        }
+        const uploadData = await uploadRes.json();
+        uploadedUrls = uploadData.urls || [];
       }
       
       await onCreate({
