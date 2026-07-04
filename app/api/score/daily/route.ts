@@ -14,7 +14,7 @@ import { getTodayScores, recordDailyScore, getDailyTotal, addGrowthPoints } from
 export async function GET(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const body = await req.json();

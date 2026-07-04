@@ -1,6 +1,8 @@
 /**
  * API 鉴权工具（Supabase 版本）
  * 从 Authorization header 读取 Bearer token，用 Supabase 验证
+ * 
+ * TODO: 登录功能搁置期间，未登录用户返回默认访客身份
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -22,14 +24,15 @@ function getAuthSupabase(): SupabaseClient {
 
 /**
  * 验证请求中的 Supabase Access Token，返回用户信息
- * 如果没有有效 token，返回 null
+ * TODO: 登录功能搁置期间，未登录用户返回默认访客身份
  */
 export async function requireAuth(req: NextRequest): Promise<{ userId: string; email: string } | null> {
   try {
     // 从 header 提取 Bearer token
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return null;
+      // TODO: 登录功能搁置期间，返回访客身份
+      return { userId: 'guest', email: '' };
     }
     const token = authHeader.slice(7);
 
@@ -38,7 +41,8 @@ export async function requireAuth(req: NextRequest): Promise<{ userId: string; e
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return null;
+      // TODO: 登录功能搁置期间，验证失败也返回访客身份
+      return { userId: 'guest', email: '' };
     }
 
     return {
@@ -46,7 +50,8 @@ export async function requireAuth(req: NextRequest): Promise<{ userId: string; e
       email: user.email || '',
     };
   } catch {
-    return null;
+    // TODO: 登录功能搁置期间，异常也返回访客身份
+    return { userId: 'guest', email: '' };
   }
 }
 

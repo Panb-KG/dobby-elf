@@ -32,7 +32,7 @@ interface ChatApiError {
 
 export async function POST(req: NextRequest) {
   // 鉴权
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) {
     return unauthorizedResponse();
   }

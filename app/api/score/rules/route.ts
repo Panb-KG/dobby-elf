@@ -15,7 +15,7 @@ import { getScoreRules, addScoreRule, deleteScoreRule, PRESET_RULES } from '@/li
 export async function GET(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const rules = getScoreRules(user.id);
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const body = await req.json();
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   ensureV2Schema();
 
   // 鉴权
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) {
     return unauthorizedResponse();
   }
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
   // 确保 v2 数据库 schema 已就绪
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) {
     return unauthorizedResponse();
   }

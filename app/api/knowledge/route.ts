@@ -15,7 +15,7 @@ import { getErrorMessage } from '@/lib/error-helper';
 export async function GET(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);

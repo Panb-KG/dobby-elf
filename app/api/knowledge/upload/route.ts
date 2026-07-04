@@ -24,7 +24,7 @@ import { getErrorMessage } from '@/lib/error-helper';
 export async function POST(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   try {

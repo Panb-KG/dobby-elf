@@ -11,12 +11,17 @@ import { getDiaryDates } from '@/lib/diary';
 
 export async function GET(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get('limit') || '30');
 
-  const dates = getDiaryDates(user.id, limit);
-  return NextResponse.json({ dates });
+  try {
+    const dates = await getDiaryDates(user.id, limit);
+    return NextResponse.json({ dates: dates || [] });
+  } catch (error) {
+    console.error('[Diary Dates] 错误:', error);
+    return NextResponse.json({ dates: [] });
+  }
 }

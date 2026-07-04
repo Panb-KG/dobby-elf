@@ -21,19 +21,24 @@ import { addGrowthPoints } from '@/lib/growth';
 
 export async function GET(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-  const entries = getDiaryEntries(user.id, date);
-  return NextResponse.json({ entries, date, total: entries.length });
+  try {
+    const entries = await getDiaryEntries(user.id, date);
+    return NextResponse.json({ entries: entries || [], date, total: (entries || []).length });
+  } catch (error) {
+    console.error('[Diary Entries] 错误:', error);
+    return NextResponse.json({ entries: [], date, total: 0 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const body = await req.json();
@@ -47,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const entry = createDiaryEntry(user.id, date, title || '无标题', content, {
+    const entry = await createDiaryEntry(user.id, date, title || '无标题', content, {
       mood,
       weather,
       isVoice,
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
@@ -79,7 +84,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   const { title, content, mood, weather, images } = body;
 
-  const updated = updateDiaryEntry(id, user.id, {
+  const updated = await updateDiaryEntry(id, user.id, {
     title,
     content,
     mood,
@@ -96,7 +101,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
@@ -105,7 +110,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'id 参数不能为空' }, { status: 400 });
   }
 
-  const deleted = deleteDiaryEntry(id, user.id);
+  const deleted = await deleteDiaryEntry(id, user.id);
 
   if (!deleted) {
     return NextResponse.json({ error: '删除失败，日记不存在或无权限' }, { status: 404 });

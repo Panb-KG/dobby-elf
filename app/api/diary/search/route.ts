@@ -11,7 +11,7 @@ import { searchDiary } from '@/lib/diary';
 
 export async function GET(req: NextRequest) {
   ensureV2Schema();
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   const { searchParams } = new URL(req.url);
@@ -21,6 +21,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ entries: [] });
   }
 
-  const entries = searchDiary(user.id, q.trim());
-  return NextResponse.json({ entries, total: entries.length });
+  try {
+    const entries = await searchDiary(user.id, q.trim());
+    return NextResponse.json({ entries: entries || [], total: (entries || []).length });
+  } catch (error) {
+    console.error('[Diary Search] 错误:', error);
+    return NextResponse.json({ entries: [], total: 0 });
+  }
 }

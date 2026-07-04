@@ -13,7 +13,7 @@ import { getGrowthTree, createGrowthTree } from '@/lib/growth';
 export async function GET(req: NextRequest) {
   ensureV2Schema();
 
-  const user = requireAuth(req);
+  const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   let tree = getGrowthTree(user.id);

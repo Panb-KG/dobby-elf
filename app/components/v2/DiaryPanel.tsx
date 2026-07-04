@@ -49,13 +49,15 @@ export default function DiaryPanel() {
     try {
       setLoading(true);
       const [entriesRes, datesRes] = await Promise.all([
-        getDiaryEntries(selectedDate),
-        getDiaryDates(30),
+        getDiaryEntries(selectedDate).catch(() => ({ entries: [] })),
+        getDiaryDates(30).catch(() => ({ dates: [] })),
       ]);
-      setEntries(entriesRes.entries || []);
-      setDiaryDates(datesRes.dates || []);
+      setEntries(Array.isArray(entriesRes?.entries) ? entriesRes.entries : []);
+      setDiaryDates(Array.isArray(datesRes?.dates) ? datesRes.dates : []);
     } catch (e) {
       console.error('加载日记失败', e);
+      setEntries([]);
+      setDiaryDates([]);
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export default function DiaryPanel() {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const hasEntryOnDate = diaryDates.some(d => d.date === selectedDate);
+  const hasEntryOnDate = Array.isArray(diaryDates) && diaryDates.some(d => d.date === selectedDate);
 
   if (loading && entries.length === 0) {
     return (
