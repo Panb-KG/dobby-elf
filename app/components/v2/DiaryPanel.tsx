@@ -201,7 +201,12 @@ export default function DiaryPanel() {
           <Plus size={16} />写一篇魔法日记 ✨
         </button>
       ) : (
-        <DiaryNewForm selectedDate={selectedDate} onCreate={handleCreate} onCancel={() => setShowNewForm(false)} />
+        <DiaryNewForm 
+          selectedDate={selectedDate} 
+          userId="guest" // TODO: 从 page.tsx 传入真实 userId
+          onCreate={handleCreate} 
+          onCancel={() => setShowNewForm(false)} 
+        />
       )}
 
       {/* 日记列表 */}
