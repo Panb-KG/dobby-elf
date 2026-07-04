@@ -23,6 +23,22 @@ function getSupabaseStorage(): SupabaseClient {
   return createClient(url, key);
 }
 
+async function ensureBucket(supabase: SupabaseClient) {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets?.some(b => b.name === BUCKET_NAME);
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(BUCKET_NAME, {
+      public: true,
+      fileSizeLimit: MAX_SIZE_MB * 1024 * 1024,
+      allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+    });
+    if (error) {
+      console.error('[Diary Upload] 创建 bucket 失败:', error);
+      throw new Error(`Storage bucket 创建失败: ${error.message}`);
+    }
+  }
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
@@ -39,6 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseStorage();
+    await ensureBucket(supabase);
     const urls: string[] = [];
 
     for (const file of files) {

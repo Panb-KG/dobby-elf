@@ -27,8 +27,12 @@ function getToken(): string | null {
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const token = getToken();
   
+  // FormData 时不设 Content-Type（让浏览器自动设置 multipart boundary）
+  const isFormData = options.body instanceof FormData;
+  const defaultContentType = isFormData ? {} : { 'Content-Type': 'application/json' };
+  
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...defaultContentType,
     ...options.headers,
   };
 
