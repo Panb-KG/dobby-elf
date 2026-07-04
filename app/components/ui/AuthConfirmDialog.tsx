@@ -54,7 +54,10 @@ export default function AuthConfirmDialog({
             取消
           </button>
           <button
-            onClick={onLogin}
+            onClick={() => {
+              // TODO: 暂时搁置登录注册流程
+              alert('🔐 登录/注册功能开发中，敬请期待！');
+            }}
             className="flex-1 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-lg font-medium transition-all duration-200 shadow-lg shadow-orange-500/25"
           >
             🔐 去登录

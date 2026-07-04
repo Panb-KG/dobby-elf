@@ -57,7 +57,10 @@ export function LeftSidebar({
           {/* 访客提示登录 */}
           {isGuest && onLogin && (
             <button
-              onClick={onLogin}
+              onClick={() => {
+                // TODO: 暂时搁置登录注册流程
+                alert('🔐 登录/注册功能开发中，敬请期待！');
+              }}
               className="mt-2 w-full py-1.5 text-xs rounded-lg bg-blue-600/30 hover:bg-blue-600/50 transition-colors text-blue-300 font-medium"
             >
               🔐 登录/注册
@@ -106,7 +109,10 @@ export function LeftSidebar({
         <div className="p-2 border-t border-orange-900/20">
           {isGuest ? (
             <button
-              onClick={onLogin}
+              onClick={() => {
+                // TODO: 暂时搁置登录注册流程
+                alert('🔐 登录/注册功能开发中，敬请期待！');
+              }}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-sm transition-colors font-medium"
             >
               🔐 <span>登录/注册以保存进度</span>
