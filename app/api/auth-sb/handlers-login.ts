@@ -1,6 +1,85 @@
 import { NextResponse } from 'next/server';
 import { getSupabase, getSupabaseAnon, toFakeEmail, generateToken } from './helpers';
 
+// 测试用户自动登录（单用户测试阶段，程序默认以 Leon 身份登录）
+export async function handleAutoLogin(body: any) {
+  const client = getSupabase();
+  if (!client) return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
+
+  // 从环境变量获取测试用户凭据
+  const testUsername = process.env.TEST_USER_USERNAME || 'leon';
+  const testPassword = process.env.TEST_USER_PASSWORD;
+  
+  if (!testPassword) {
+    return NextResponse.json({ error: '测试用户密码未配置（TEST_USER_PASSWORD）' }, { status: 503 });
+  }
+
+  const anonClient = getSupabaseAnon();
+  if (!anonClient) return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
+
+  // 用 Supabase Auth 登录获取真实 session token
+  const fakeEmail = toFakeEmail(testUsername);
+  const { data: authData, error: authError } = await anonClient.auth.signInWithPassword({
+    email: fakeEmail,
+    password: testPassword,
+  });
+
+  if (authError || !authData.user) {
+    console.error('[AutoLogin] Auth 失败:', authError?.message);
+    return NextResponse.json({ error: '自动登录失败：' + (authError?.message || '用户不存在') }, { status: 401 });
+  }
+
+  // 获取用户资料
+  const { data: profile } = await client
+    .from('profiles')
+    .select('*')
+    .eq('id', authData.user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    // 自动创建 profile
+    const { data: newProfile } = await client
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        username: testUsername,
+        display_name: 'Leon',
+        role: 'student',
+        grade: 3,
+        points: 0, level: 1, tree_growth: 0, is_active: true,
+      })
+      .select().single();
+
+    if (!newProfile) {
+      return NextResponse.json({ error: '创建测试用户资料失败' }, { status: 500 });
+    }
+
+    const token = authData.session?.access_token || generateToken();
+    return NextResponse.json({
+      user: {
+        id: newProfile.id, username: newProfile.username,
+        role: newProfile.role || 'student', grade: newProfile.grade,
+        displayName: newProfile.display_name || newProfile.username,
+        points: newProfile.points || 0, level: String(newProfile.level || 1),
+        treeGrowth: newProfile.tree_growth || 0, dailyTasks: [],
+      },
+      token,
+    });
+  }
+
+  const token = authData.session?.access_token || generateToken();
+  return NextResponse.json({
+    user: {
+      id: profile.id, username: profile.username,
+      role: profile.role || 'student', grade: profile.grade,
+      displayName: profile.display_name || profile.username,
+      points: profile.points || 0, level: String(profile.level || 1),
+      treeGrowth: profile.tree_growth || 0, dailyTasks: [],
+    },
+    token,
+  });
+}
+
 // 家长登录（用户名+密码，通过 Supabase Auth 验证）
 export async function handleLogin(body: any) {
   const { username, password } = body;

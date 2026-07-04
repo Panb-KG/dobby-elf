@@ -59,15 +59,26 @@ export function useAuth(): UseAuthReturn {
                 setUser(data.user);
                 setIsGuest(false);
                 console.log('[Auth] User restored from server');
-              } else if (response.status === 401) {
-                // Token 已过期，但保留本地用户数据作为离线模式
-                console.log('[Auth] Token expired, using offline mode');
-                setUser(parsed);
-                setIsGuest(false);
               } else {
-                // 其他错误（5xx等），使用本地缓存
-                setUser(parsed);
-                setIsGuest(false);
+                // Token 已过期或无效，尝试自动重新登录
+                console.log('[Auth] Token expired/invalid, attempting auto re-login...');
+                const autoRes = await fetch('/api/auth-sb', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'auto_login' }),
+                });
+                if (autoRes.ok) {
+                  const autoData = await autoRes.json();
+                  setUser(autoData.user);
+                  localStorage.setItem(USER_DATA_KEY, JSON.stringify(autoData.user));
+                  localStorage.setItem(AUTH_TOKEN_KEY, autoData.token);
+                  setIsGuest(false);
+                  console.log('[Auth] Auto re-login success:', autoData.user.username);
+                } else {
+                  console.log('[Auth] Auto re-login failed, using cached data');
+                  setUser(parsed);
+                  setIsGuest(false);
+                }
               }
             } catch (networkError) {
               // 网络错误，仍然使用本地缓存（离线模式）
@@ -80,16 +91,36 @@ export function useAuth(): UseAuthReturn {
             setIsGuest(false);
           }
         } else {
-          // 没有登录信息，标记为访客
-          console.log('[Auth] No auth found, guest mode');
-          setIsGuest(true);
+          // 没有登录信息，尝试自动登录测试用户
+          console.log('[Auth] No auth found, attempting auto-login...');
+          try {
+            const autoRes = await fetch('/api/auth-sb', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'auto_login' }),
+            });
+            if (autoRes.ok) {
+              const autoData = await autoRes.json();
+              setUser(autoData.user);
+              localStorage.setItem(USER_DATA_KEY, JSON.stringify(autoData.user));
+              localStorage.setItem(AUTH_TOKEN_KEY, autoData.token);
+              setIsGuest(false);
+              console.log('[Auth] Auto-login success:', autoData.user.username);
+            } else {
+              console.log('[Auth] Auto-login failed, entering guest mode');
+              setIsGuest(true);
+            }
+          } catch (autoErr) {
+            console.log('[Auth] Auto-login error:', autoErr);
+            setIsGuest(true);
+          }
         }
       } catch (err) {
         error('Failed to restore auth:', err);
         // 出错也允许访客模式
         setIsGuest(true);
       } finally {
-        console.log('[Auth] Auth ready, isGuest:', true);
+        console.log('[Auth] Auth ready, isGuest:', isGuest);
         setIsAuthReady(true);
       }
     };

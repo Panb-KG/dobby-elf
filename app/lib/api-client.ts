@@ -43,13 +43,29 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
     credentials: 'include', // 包含 cookie
   });
 
-  // 401 未授权
+  // 401 未授权 - 尝试自动重新登录
   if (response.status === 401) {
-    // 不立即清除 token，允许离线模式继续使用
-    // 只在关键操作（如需要服务器验证的操作）时才强制重新登录
-    console.log('[API] 401 Unauthorized, but keeping session for offline mode');
-    
-    // 触发一个通知事件，让组件决定是否需要重新认证
+    console.log('[API] 401 Unauthorized, attempting auto re-login...');
+    try {
+      const autoRes = await fetch('/api/auth-sb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto_login' }),
+      });
+      if (autoRes.ok) {
+        const autoData = await autoRes.json();
+        localStorage.setItem('dobi_auth_token', autoData.token);
+        localStorage.setItem('dobi_user_data', JSON.stringify(autoData.user));
+        console.log('[API] Auto re-login success, retrying original request...');
+        // 用新 token 重试原始请求
+        const newHeaders: HeadersInit = { ...options.headers as Record<string, string> };
+        (newHeaders as Record<string, string>)['Authorization'] = `Bearer ${autoData.token}`;
+        return fetch(url, { ...options, headers: newHeaders, credentials: 'include' });
+      }
+    } catch (e) {
+      console.log('[API] Auto re-login failed:', e);
+    }
+    // 重新登录失败，触发事件通知
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('auth-token-expired', { detail: { url } }));
     }

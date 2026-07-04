@@ -21,6 +21,7 @@ import { DiaryNewForm } from './DiaryNewForm';
 import { DiaryEntryItem } from './DiaryEntryItem';
 import { formatDate } from './diary-constants';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { authFetch } from '@/lib/api-client';
 
 export default function DiaryPanel() {
   const [selectedDate, setSelectedDate] = useState(
@@ -71,7 +72,7 @@ export default function DiaryPanel() {
     }
     try {
       setIsSearching(true);
-      const res = await fetch(`/api/diary/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await authFetch(`/api/diary/search?q=${encodeURIComponent(searchQuery.trim())}`);
       const data = await res.json();
       setSearchResults(data.entries || []);
     } catch {

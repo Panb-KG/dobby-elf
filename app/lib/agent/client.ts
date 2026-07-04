@@ -6,6 +6,7 @@
  */
 
 import type { IntentType, PanelAction } from '@/lib/agent/types';
+import { authFetch } from '@/lib/api-client';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'model' | 'system';
@@ -29,7 +30,7 @@ export interface AgentChatResponse {
 export async function agentChat(
   messages: ChatMessage[]
 ): Promise<AgentChatResponse> {
-  const response = await fetch('/api/chat/agent', {
+  const response = await authFetch('/api/chat/agent', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -60,9 +61,12 @@ export async function agentChatStream(
   const msgStr = encodeURIComponent(message);
 
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('dobi_auth_token') : null;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(
       `/api/chat/agent?message=${msgStr}&history=${historyStr}`,
-      { signal: controller.signal }
+      { signal: controller.signal, headers }
     );
 
     if (!response.ok) {
@@ -112,7 +116,7 @@ export async function searchKnowledge(
   if (options?.category) params.set('category', options.category);
   if (options?.grade) params.set('grade', String(options.grade));
 
-  const response = await fetch(`/api/knowledge?${params}`);
+  const response = await authFetch(`/api/knowledge?${params}`);
   if (!response.ok) throw new Error('搜索失败');
   return response.json();
 }
@@ -127,7 +131,7 @@ export async function uploadKnowledge(data: {
   content: string;
   metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; totalChunks: number }> {
-  const response = await fetch('/api/knowledge/upload', {
+  const response = await authFetch('/api/knowledge/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -143,7 +147,7 @@ export async function uploadKnowledge(data: {
  * 获取成长之树状态
  */
 export async function getGrowthTree(): Promise<{ tree: any }> {
-  const response = await fetch('/api/growth/tree');
+  const response = await authFetch('/api/growth/tree');
   if (!response.ok) throw new Error('获取失败');
   return response.json();
 }
@@ -152,7 +156,7 @@ export async function getGrowthTree(): Promise<{ tree: any }> {
  * 浇水
  */
 export async function waterTree(): Promise<{ watered: boolean; tree: any; message: string }> {
-  const response = await fetch('/api/growth/water', { method: 'POST' });
+  const response = await authFetch('/api/growth/water', { method: 'POST' });
   if (!response.ok) throw new Error('浇水失败');
   return response.json();
 }
@@ -161,7 +165,7 @@ export async function waterTree(): Promise<{ watered: boolean; tree: any; messag
  * 获取打分规则
  */
 export async function getScoreRules(): Promise<{ rules: any[]; presets: any[] }> {
-  const response = await fetch('/api/score/rules');
+  const response = await authFetch('/api/score/rules');
   if (!response.ok) throw new Error('获取规则失败');
   return response.json();
 }
@@ -176,7 +180,7 @@ export async function addScoreRule(data: {
   icon?: string;
   category?: string;
 }): Promise<{ rule: any }> {
-  const response = await fetch('/api/score/rules', {
+  const response = await authFetch('/api/score/rules', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -195,7 +199,7 @@ export async function recordDailyScore(data: {
   scoredBy?: string;
   date?: string;
 }): Promise<{ record: any }> {
-  const response = await fetch('/api/score/daily', {
+  const response = await authFetch('/api/score/daily', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -212,7 +216,7 @@ export async function recordDailyScore(data: {
  */
 export async function getTodayScores(date?: string): Promise<{ records: any[]; total: any }> {
   const params = date ? `?date=${date}` : '';
-  const response = await fetch(`/api/score/daily${params}`);
+  const response = await authFetch(`/api/score/daily${params}`);
   if (!response.ok) throw new Error('获取失败');
   return response.json();
 }
@@ -221,7 +225,7 @@ export async function getTodayScores(date?: string): Promise<{ records: any[]; t
  * 获取成长积分记录
  */
 export async function getPointRecords(limit = 20): Promise<{ records: any[]; total: number }> {
-  const response = await fetch(`/api/growth/records?limit=${limit}`);
+  const response = await authFetch(`/api/growth/records?limit=${limit}`);
   if (!response.ok) throw new Error('获取失败');
   return response.json();
 }
@@ -229,7 +233,7 @@ export async function getPointRecords(limit = 20): Promise<{ records: any[]; tot
 // ===== 魔法日记 =====
 
 export async function getDiaryEntries(date: string): Promise<{ entries: any[]; date: string; total: number }> {
-  const response = await fetch(`/api/diary/entries?date=${date}`);
+  const response = await authFetch(`/api/diary/entries?date=${date}`);
   if (!response.ok) throw new Error('获取失败');
   return response.json();
 }
@@ -244,7 +248,7 @@ export async function createDiaryEntry(data: {
   voiceDuration?: number;
   images?: string[];
 }): Promise<{ entry: any }> {
-  const response = await fetch('/api/diary/entries', {
+  const response = await authFetch('/api/diary/entries', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -263,7 +267,7 @@ export async function updateDiaryEntry(id: string, data: {
   weather?: string;
   images?: string[];
 }): Promise<{ success: boolean }> {
-  const response = await fetch(`/api/diary/entries?id=${id}`, {
+  const response = await authFetch(`/api/diary/entries?id=${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -273,19 +277,19 @@ export async function updateDiaryEntry(id: string, data: {
 }
 
 export async function deleteDiaryEntry(id: string): Promise<{ success: boolean }> {
-  const response = await fetch(`/api/diary/entries?id=${id}`, { method: 'DELETE' });
+  const response = await authFetch(`/api/diary/entries?id=${id}`, { method: 'DELETE' });
   if (!response.ok) throw new Error('删除失败');
   return response.json();
 }
 
 export async function getDiaryDates(limit = 30): Promise<{ dates: any[] }> {
-  const response = await fetch(`/api/diary/dates?limit=${limit}`);
+  const response = await authFetch(`/api/diary/dates?limit=${limit}`);
   if (!response.ok) throw new Error('获取失败');
   return response.json();
 }
 
 export async function searchDiary(q: string): Promise<{ entries: any[]; total: number }> {
-  const response = await fetch(`/api/diary/search?q=${encodeURIComponent(q)}`);
+  const response = await authFetch(`/api/diary/search?q=${encodeURIComponent(q)}`);
   if (!response.ok) throw new Error('搜索失败');
   return response.json();
 }

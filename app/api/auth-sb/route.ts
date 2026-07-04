@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseUrl, supabaseServiceKey, getSupabase } from './helpers';
 import { handleRegisterParent, handleRegisterStudent } from './handlers-register';
-import { handleLogin, handleChildLogin } from './handlers-login';
+import { handleLogin, handleChildLogin, handleAutoLogin } from './handlers-login';
 
 /**
  * Supabase 认证 API（服务端，使用 service_role key）
@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
         return handleLogin(body);
       case 'child_login':
         return handleChildLogin(body);
+      case 'auto_login':
+        return handleAutoLogin(body);
       default:
         return NextResponse.json({ error: '无效的操作' }, { status: 400 });
     }
@@ -52,19 +54,22 @@ export async function GET(request: NextRequest) {
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) return NextResponse.json({ error: '未登录' }, { status: 401 });
 
-    const userId = searchParams.get('user_id');
-    if (!userId) return NextResponse.json({ error: '登录已过期' }, { status: 401 });
-
     const client = getSupabase();
     if (!client) return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
+
+    // 用 token 验证用户身份并获取 user id
+    const { data: { user }, error: authError } = await client.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: '登录已过期' }, { status: 401 });
+    }
 
     const { data: profile } = await client
       .from('profiles')
       .select('*')
-      .eq('id', userId)
-      .single();
+      .eq('id', user.id)
+      .maybeSingle();
 
-    if (!profile) return NextResponse.json({ error: '登录已过期' }, { status: 401 });
+    if (!profile) return NextResponse.json({ error: '用户资料不存在' }, { status: 404 });
 
     return NextResponse.json({
       user: {
