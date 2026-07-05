@@ -39,4 +39,9 @@ data/*.db-shm
 *.bak
 .env
 test-results-*.png
-tests/
+# Ignore screenshot PNGs in tests/, but allow test code
+tests/*.png
+!tests/*.test.ts
+!tests/*.spec.ts
+!tests/api/
+!tests/setup.ts
