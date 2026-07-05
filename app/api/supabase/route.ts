@@ -58,6 +58,26 @@ export async function GET(request: Request) {
         return NextResponse.json(data);
       }
 
+      case 'homework': {
+        const { data, error } = await client
+          .from('homework')
+          .select('*')
+          .eq('user_id', userId)
+          .order('due_date', { ascending: true });
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+
+      case 'achievements': {
+        const { data, error } = await client
+          .from('achievements')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+
       default:
         return NextResponse.json({ error: '无效的类型' }, { status: 400 });
     }
@@ -114,6 +134,51 @@ export async function POST(request: Request) {
         return NextResponse.json(data);
       }
 
+      case 'homework': {
+        const { id, user_id, subject, title, status, due_date, image } = body;
+        if (id) {
+          // 更新已有作业
+          const { data, error } = await client
+            .from('homework')
+            .update({ subject, title, status, due_date, image })
+            .eq('id', id)
+            .eq('user_id', user_id)
+            .select()
+            .single();
+          if (error) throw error;
+          return NextResponse.json(data);
+        }
+        const { data, error } = await client
+          .from('homework')
+          .insert({ user_id, subject, title, status, due_date, image })
+          .select()
+          .single();
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+
+      case 'achievement': {
+        const { id, user_id, title, date, type, icon_name, color, points } = body;
+        if (id) {
+          const { data, error } = await client
+            .from('achievements')
+            .update({ title, date, type, icon_name, color, points })
+            .eq('id', id)
+            .eq('user_id', user_id)
+            .select()
+            .single();
+          if (error) throw error;
+          return NextResponse.json(data);
+        }
+        const { data, error } = await client
+          .from('achievements')
+          .insert({ user_id, title, date, type, icon_name, color, points })
+          .select()
+          .single();
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+
       default:
         return NextResponse.json({ error: '无效的类型' }, { status: 400 });
     }
@@ -137,10 +202,28 @@ export async function DELETE(request: Request) {
   try {
     switch (type) {
       case 'course': {
-        const { error } = await client
-          .from('courses')
-          .delete()
-          .eq('id', id);
+        const userId = searchParams.get('user_id');
+        const query = client.from('courses').delete().eq('id', id);
+        if (userId) query.eq('user_id', userId);
+        const { error } = await query;
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      case 'homework': {
+        const userId = searchParams.get('user_id');
+        const query = client.from('homework').delete().eq('id', id);
+        if (userId) query.eq('user_id', userId);
+        const { error } = await query;
+        if (error) throw error;
+        return NextResponse.json({ success: true });
+      }
+
+      case 'achievement': {
+        const userId = searchParams.get('user_id');
+        const query = client.from('achievements').delete().eq('id', id);
+        if (userId) query.eq('user_id', userId);
+        const { error } = await query;
         if (error) throw error;
         return NextResponse.json({ success: true });
       }

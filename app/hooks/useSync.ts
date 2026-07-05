@@ -68,9 +68,9 @@ export function useSync(options: UseSyncOptions) {
         data: syncData,
       });
       onSuccess?.(table);
-    } catch (error) {
-      error(`Sync failed for ${table}:`, error);
-      onError?.(table, error as Error);
+    } catch (syncErr) {
+      error(`Sync failed for ${table}:`, syncErr);
+      onError?.(table, syncErr as Error);
     }
   }, [userId, enabled, onSuccess, onError]);
 

@@ -14,6 +14,7 @@ import { ShortcutsSidebar } from './layout/ShortcutsSidebar';
 import { MobileNav } from './layout/MobileNav';
 import { RightSidebarContent } from './RightSidebarContent';
 import { ReminderToast } from './layout/ReminderToast';
+import { SyncIndicator } from './layout/SyncIndicator';
 import type { MagicLayoutProps } from './layout/types';
 import type { VoiceChatProps } from './chat/types';
 
@@ -129,6 +130,7 @@ export default function MagicLayout(props: MagicLayoutProps) {
         </AnimatePresence>
       </main>
       <MobileNav activeTab={activeTab} onTabChange={onTabChange} />
+      <SyncIndicator />
     </div>
   );
 }
