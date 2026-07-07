@@ -5,222 +5,51 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
-import { Edit3, Trash2, Image as ImageIcon, X, Mic } from 'lucide-react';
+import { useState } from 'react';
+import { Edit3, Trash2 } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary';
-import { MOOD_OPTIONS } from './diary-constants';
-import { VoiceRecorderModal } from './VoiceRecorderModal';
-import { authFetch } from '@/lib/api-client';
-
-function validateImage(file: File, maxMB = 10): { valid: boolean; error?: string } {
-  if (!file.type.startsWith('image/')) return { valid: false, error: '请选择图片文件' };
-  if (file.size > maxMB * 1024 * 1024) return { valid: false, error: `图片不能超过 ${maxMB}MB` };
-  return { valid: true };
-}
+import { DiaryEntryEditor } from './DiaryEntryEditor';
 
 interface DiaryEntryItemProps {
   entry: DiaryEntry;
-  onUpdate: (id: string, data: { title: string; content: string; mood?: string; weather?: string; images?: string[]; audioUrl?: string }) => Promise<void>;
+  onUpdate: (id: string, data: {
+    title: string;
+    content: string;
+    mood?: string;
+    weather?: string;
+    images?: string[];
+    audioUrl?: string;
+  }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
 
 export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(entry.title || '');
-  const [editContent, setEditContent] = useState(entry.content);
-  const [editMood, setEditMood] = useState(entry.mood || '');
-  const [editWeather, setEditWeather] = useState(entry.weather || '');
-  const [editImages, setEditImages] = useState<string[]>(entry.images || []);
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 语音编辑状态
-  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
-  const [editAudioUrl, setEditAudioUrl] = useState<string>(entry.audioUrl || '');
-  const [editAudioDuration, setEditAudioDuration] = useState<number>(entry.voiceDuration || 0);
-
-  // 处理语音录制确认
-  const handleVoiceConfirm = async (audioBlob: Blob, durationSeconds: number) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
-      const uploadRes = await authFetch('/api/diary/audio-upload', {
-        method: 'POST',
-        body: formData,
-        headers: {},
-      });
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json().catch(() => ({}));
-        throw new Error(errData.error || '音频上传失败');
-      }
-      const data = await uploadRes.json();
-      setEditAudioUrl(data.url);
-      setEditAudioDuration(durationSeconds);
-      setShowVoiceRecorder(false);
-    } catch (err: any) {
-      alert(err.message || '音频上传失败');
-      setShowVoiceRecorder(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setUploading(true);
-    try {
-      let newUrls: string[] = [];
-      if (newImageFiles.length > 0) {
-        const formData = new FormData();
-        newImageFiles.forEach(f => formData.append('images', f));
-        const uploadRes = await authFetch('/api/diary/upload', {
-          method: 'POST',
-          body: formData,
-          headers: {},
-        });
-        if (!uploadRes.ok) {
-          const errData = await uploadRes.json().catch(() => ({}));
-          throw new Error(errData.error || '图片上传失败');
-        }
-        const uploadData = await uploadRes.json();
-        newUrls = uploadData.urls || [];
-      }
-
-      const allImages = [...editImages, ...newUrls];
-
-      await onUpdate(entry.id, {
-        title: editTitle || '无标题',
-        content: editContent,
-        mood: editMood || undefined,
-        weather: editWeather || undefined,
-        images: allImages.length > 0 ? allImages : undefined,
-        audioUrl: editAudioUrl || undefined,
-      });
-      setIsEditing(false);
-      setNewImageFiles([]);
-    } catch (e: any) {
-      alert(e.message || '保存失败');
-    } finally {
-      setUploading(false);
-    }
+  const handleSave = async (data: {
+    title: string;
+    content: string;
+    mood?: string;
+    weather?: string;
+    images?: string[];
+    audioUrl?: string;
+  }) => {
+    await onUpdate(entry.id, data);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setEditTitle(entry.title || '');
-    setEditContent(entry.content);
-    setEditMood(entry.mood || '');
-    setEditWeather(entry.weather || '');
-    setEditImages(entry.images || []);
-    setNewImageFiles([]);
-    setEditAudioUrl(entry.audioUrl || '');
-    setEditAudioDuration(entry.voiceDuration || 0);
-  };
-
-  const handleSelectFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const valid: File[] = [];
-    for (const file of files) {
-      const check = validateImage(file, 10);
-      if (check.valid) valid.push(file);
-    }
-    setNewImageFiles(prev => [...prev, ...valid].slice(0, 5));
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // 编辑模式
   if (isEditing) {
     return (
-      <div className="space-y-2">
-        <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)}
-          placeholder="日记标题"
-          className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-orange-500/50" />
-        <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
-          className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-orange-500/50 resize-none" />
-
-        <div className="flex gap-1 flex-wrap">
-          {MOOD_OPTIONS.map(m => (
-            <button key={m.emoji} onClick={() => setEditMood(editMood === m.emoji ? '' : m.emoji)}
-              className={`px-2 py-0.5 rounded text-sm ${editMood === m.emoji ? 'bg-orange-500/30' : 'hover:bg-white/10'}`}>
-              {m.emoji}
-            </button>
-          ))}
-        </div>
-
-        {/* 图片编辑 */}
-        <div>
-          <div className="text-xs text-gray-400 mb-1">📸 图片</div>
-          {(editImages.length > 0 || newImageFiles.length > 0) && (
-            <div className="grid grid-cols-4 gap-1.5 mb-2">
-              {editImages.map((url, idx) => (
-                <div key={`existing-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-white/10">
-                  <img src={url} alt={`图片 ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button onClick={() => setEditImages(prev => prev.filter((_, i) => i !== idx))}
-                    className="absolute top-0.5 right-0.5 p-0.5 bg-red-500/80 rounded-full hover:bg-red-600">
-                    <X size={10} className="text-white" />
-                  </button>
-                </div>
-              ))}
-              {newImageFiles.map((file, idx) => (
-                <div key={`new-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-white/10 border border-orange-500/30">
-                  <img src={URL.createObjectURL(file)} alt={`新图 ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button onClick={() => setNewImageFiles(prev => prev.filter((_, i) => i !== idx))}
-                    className="absolute top-0.5 right-0.5 p-0.5 bg-red-500/80 rounded-full hover:bg-red-600">
-                    <X size={10} className="text-white" />
-                  </button>
-                  <div className="absolute bottom-0 left-0 right-0 bg-orange-500/60 text-[9px] text-white text-center py-0.5">新增</div>
-                </div>
-              ))}
-            </div>
-          )}
-          {editImages.length + newImageFiles.length < 5 && (
-            <label className="w-full py-1.5 rounded-lg flex items-center justify-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-gray-400 cursor-pointer">
-              <ImageIcon size={12} />
-              <span>添加图片</span>
-              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleSelectFiles} />
-            </label>
-          )}
-        </div>
-
-        {/* 语音录制 */}
-        <div>
-          <div className="text-xs text-gray-400 mb-1">🎤 语音</div>
-          {editAudioUrl && (
-            <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-green-500/10 border border-green-500/20">
-              <audio controls src={editAudioUrl} className="flex-1 h-8" />
-              <button 
-                onClick={() => { setEditAudioUrl(''); setEditAudioDuration(0); }}
-                className="p-1 rounded hover:bg-red-500/20 transition-colors"
-              >
-                <X size={14} className="text-red-400" />
-              </button>
-            </div>
-          )}
-          <button 
-            onClick={() => setShowVoiceRecorder(true)}
-            className="w-full py-1.5 rounded-lg flex items-center justify-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-gray-400 cursor-pointer"
-          >
-            <Mic size={12} />
-            <span>{editAudioUrl ? '重新录制' : '录制语音'}</span>
-          </button>
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={handleSave} disabled={uploading}
-            className="flex-1 py-1.5 rounded-lg bg-orange-500/30 hover:bg-orange-500/50 disabled:opacity-30 text-orange-300 text-xs transition-colors">
-            {uploading ? '上传中...' : '保存'}
-          </button>
-          <button onClick={handleCancel}
-            className="py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 text-xs transition-colors">
-            取消
-          </button>
-        </div>
-
-        {/* 语音录制弹窗 */}
-        <VoiceRecorderModal
-          isOpen={showVoiceRecorder}
-          onClose={() => setShowVoiceRecorder(false)}
-          onConfirm={handleVoiceConfirm}
-        />
-      </div>
+      <DiaryEntryEditor
+        entry={entry}
+        onSave={handleSave}
+        onCancel={handleCancel}
+      />
     );
   }
 

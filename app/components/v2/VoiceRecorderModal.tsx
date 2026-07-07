@@ -1,16 +1,15 @@
 /**
  * 语音录制弹窗
- * 
+ *
  * 使用 MediaRecorder 录制音频，AudioContext + AnalyserNode 显示电平
  * 支持：录音、暂停/继续、回放、重录、确认
  */
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Pause, Play, Square, RotateCcw, Check, X, Loader2 } from 'lucide-react';
-
-type RecordingState = 'idle' | 'recording' | 'paused' | 'stopped';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { AudioLevelBars } from '@/components/v2/AudioLevelBars';
 
 interface VoiceRecorderModalProps {
   isOpen: boolean;
@@ -19,244 +18,32 @@ interface VoiceRecorderModalProps {
   maxDurationMs?: number; // 默认 5 分钟
 }
 
-export function VoiceRecorderModal({ isOpen, onClose, onConfirm, maxDurationMs = 300000 }: VoiceRecorderModalProps) {
-  const [state, setState] = useState<RecordingState>('idle');
-  const [duration, setDuration] = useState(0); // 录制时长（秒）
-  const [level, setLevel] = useState(0); // 0-100 电平
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<number>(0);
-  const startTimeRef = useRef<number>(0);
-  const pausedDurationRef = useRef<number>(0);
-  const audioBlobRef = useRef<Blob | null>(null);
-  const audioUrlRef = useRef<string>('');
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const maxTimerRef = useRef<number>(0);
-
-  // 清理所有资源
-  const cleanup = useCallback(() => {
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (maxTimerRef.current) clearTimeout(maxTimerRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(() => {});
-      audioContextRef.current = null;
-    }
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current = null;
-    }
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = '';
-    }
-    mediaRecorderRef.current = null;
-    analyserRef.current = null;
-    chunksRef.current = [];
-    audioBlobRef.current = null;
-    pausedDurationRef.current = 0;
-  }, []);
-
-  // 关闭弹窗
-  const handleClose = useCallback(() => {
-    cleanup();
-    setState('idle');
-    setDuration(0);
-    setLevel(0);
-    setIsPlaying(false);
-    setUploading(false);
-    onClose();
-  }, [cleanup, onClose]);
-
-  // 更新电平表
-  const updateLevel = useCallback(() => {
-    if (!analyserRef.current) return;
-    const analyser = analyserRef.current;
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-    // 计算平均电平 (0-255 -> 0-100)
-    const avg = data.reduce((sum, v) => sum + v, 0) / data.length;
-    setLevel(Math.min(100, Math.round((avg / 128) * 100)));
-    animFrameRef.current = requestAnimationFrame(updateLevel);
-  }, []);
-
-  // 更新计时器
-  const updateTimer = useCallback(() => {
-    if (!startTimeRef.current) return;
-    const elapsed = Date.now() - startTimeRef.current - pausedDurationRef.current;
-    setDuration(Math.floor(elapsed / 1000));
-  }, []);
-
-  // 开始录音
-  const startRecording = useCallback(async () => {
-    try {
-      cleanup();
-      chunksRef.current = [];
-      audioBlobRef.current = null;
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      // 设置 AudioContext + AnalyserNode
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = audioContext;
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      // 创建 MediaRecorder
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4';
-      const recorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = recorder;
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        audioBlobRef.current = blob;
-        audioUrlRef.current = URL.createObjectURL(blob);
-        setLevel(0);
-        setState('stopped');
-      };
-
-      recorder.start(100); // 每 100ms 收集一次数据
-      startTimeRef.current = Date.now();
-      pausedDurationRef.current = 0;
-      setState('recording');
-
-      // 启动电平动画
-      animFrameRef.current = requestAnimationFrame(updateLevel);
-      // 启动计时器
-      timerRef.current = window.setInterval(updateTimer, 200);
-      // 最大时长自动停止
-      maxTimerRef.current = window.setTimeout(() => {
-        if (recorder.state === 'recording' || recorder.state === 'paused') {
-          recorder.stop();
-          if (timerRef.current) clearInterval(timerRef.current);
-        }
-      }, maxDurationMs);
-
-    } catch (err) {
-      console.error('[VoiceRecorder] 无法获取麦克风:', err);
-      alert('无法访问麦克风，请检查浏览器权限');
-    }
-  }, [cleanup, updateLevel, updateTimer, maxDurationMs]);
-
-  // 暂停/继续
-  const togglePause = useCallback(() => {
-    const recorder = mediaRecorderRef.current;
-    if (!recorder) return;
-
-    if (state === 'recording') {
-      recorder.pause();
-      setState('paused');
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    } else if (state === 'paused') {
-      recorder.resume();
-      setState('recording');
-      animFrameRef.current = requestAnimationFrame(updateLevel);
-    }
-  }, [state, updateLevel]);
-
-  // 停止录制
-  const stopRecording = useCallback(() => {
-    const recorder = mediaRecorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return;
-    recorder.stop();
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (maxTimerRef.current) clearTimeout(maxTimerRef.current);
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    setLevel(0);
-  }, []);
-
-  // 播放录音
-  const playRecording = useCallback(() => {
-    if (!audioUrlRef.current || isPlaying) return;
-    const audio = new Audio(audioUrlRef.current);
-    audioElementRef.current = audio;
-    audio.onended = () => {
-      setIsPlaying(false);
-      audioElementRef.current = null;
-    };
-    audio.play();
-    setIsPlaying(true);
-  }, [isPlaying]);
-
-  // 停止播放
-  const stopPlaying = useCallback(() => {
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.currentTime = 0;
-      audioElementRef.current = null;
-    }
-    setIsPlaying(false);
-  }, []);
-
-  // 重新录制
-  const reRecord = useCallback(() => {
-    stopPlaying();
-    setDuration(0);
-    setLevel(0);
-    setState('idle');
-    // 稍等一下让清理完成
-    setTimeout(() => startRecording(), 100);
-  }, [stopPlaying, startRecording]);
-
-  // 确认录制
-  const confirmRecording = useCallback(async () => {
-    if (!audioBlobRef.current) return;
-    setUploading(true);
-    onConfirm(audioBlobRef.current, duration);
-    // 不自动关闭，由父组件控制
-  }, [duration, onConfirm]);
-
-  // 弹窗关闭时清理
-  useEffect(() => {
-    if (!isOpen) {
-      cleanup();
-      setState('idle');
-      setDuration(0);
-      setLevel(0);
-    }
-  }, [isOpen, cleanup]);
-
-  // 格式化时间 mm:ss
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
+export function VoiceRecorderModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  maxDurationMs = 300000,
+}: VoiceRecorderModalProps) {
+  const {
+    state,
+    duration,
+    level,
+    isPlaying,
+    uploading,
+    startRecording,
+    togglePause,
+    stopRecording,
+    playRecording,
+    stopPlaying,
+    reRecord,
+    confirmRecording,
+    formatTime,
+    handleClose,
+  } = useAudioRecorder({ onConfirm, maxDurationMs, isOpen, onClose });
 
   if (!isOpen) return null;
 
-  // 电平条数量
   const barCount = 24;
-  const levelBars = Array.from({ length: barCount }, (_, i) => {
-    const threshold = (i / barCount) * 100;
-    const active = level > threshold;
-    const height = active ? 30 + Math.random() * 70 : 15 + Math.random() * 10;
-    return { active, height };
-  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={handleClose}>
@@ -283,24 +70,7 @@ export function VoiceRecorderModal({ isOpen, onClose, onConfirm, maxDurationMs =
         </div>
 
         {/* 电平可视化 */}
-        <div className="flex items-end justify-center gap-[2px] h-16 mb-4 px-2">
-          {levelBars.map((bar, i) => (
-            <div
-              key={i}
-              className="w-[6px] rounded-t transition-all duration-75"
-              style={{
-                height: `${bar.height}%`,
-                backgroundColor: bar.active
-                  ? i > barCount * 0.7
-                    ? '#ef4444'
-                    : i > barCount * 0.4
-                      ? '#f59e0b'
-                      : '#22c55e'
-                  : 'rgba(255,255,255,0.1)',
-              }}
-            />
-          ))}
-        </div>
+        <AudioLevelBars level={level} barCount={barCount} />
 
         {/* 录音中的脉冲动画 */}
         {state === 'recording' && (

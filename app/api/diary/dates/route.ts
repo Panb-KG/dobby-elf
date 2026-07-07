@@ -22,6 +22,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ dates: dates || [] });
   } catch (error) {
     console.error('[Diary Dates] 错误:', error);
-    return NextResponse.json({ dates: [] });
+    return NextResponse.json({ error: '获取日记日期失败' }, { status: 500 });
   }
 }

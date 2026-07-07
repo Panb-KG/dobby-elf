@@ -26,6 +26,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ entries: entries || [], total: (entries || []).length });
   } catch (error) {
     console.error('[Diary Search] 错误:', error);
-    return NextResponse.json({ entries: [], total: 0 });
+    return NextResponse.json({ error: '搜索失败，请稍后重试' }, { status: 500 });
   }
 }

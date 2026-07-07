@@ -5,12 +5,12 @@
 
 "use client";
 
-import { useState, useRef, useCallback } from 'react';
-import { Mic, Save, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Mic, Save, X, Trash2 } from 'lucide-react';
 import { MOOD_OPTIONS, WEATHER_OPTIONS } from './diary-constants';
 import { VoiceRecorderModal } from './VoiceRecorderModal';
+import { DiaryImagePicker } from './DiaryImagePicker';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { validateImageFile } from '@/lib/supabase-storage';
 import { authFetch } from '@/lib/api-client';
 
 interface DiaryNewFormProps {
@@ -36,7 +36,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
   const [mood, setMood] = useState('');
   const [weather, setWeather] = useState('');
   const [images, setImages] = useState<File[]>([]);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   // 语音录制状态
@@ -124,7 +123,6 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
       setMood('');
       setWeather('');
       setImages([]);
-      setImageUrls([]);
       setAudioUrl('');
       setAudioDuration(0);
     } catch (error: any) {
@@ -180,64 +178,12 @@ export function DiaryNewForm({ selectedDate, userId, onCreate, onCancel }: Diary
         className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/50 resize-none" />
 
       {/* 图片上传 */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-gray-400">📸 添加照片</span>
-          {images.length > 0 && (
-            <span className="text-xs text-orange-400">已选择 {images.length} 张</span>
-          )}
-        </div>
-        
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-white/10">
-                <img
-                  src={URL.createObjectURL(img)}
-                  alt={`预览 ${idx + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  onClick={() => {
-                    setImages(prev => prev.filter((_, i) => i !== idx));
-                  }}
-                  className="absolute top-1 right-1 p-1 bg-red-500/80 rounded-full hover:bg-red-600 transition-colors"
-                >
-                  <Trash2 size={12} className="text-white" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        <label className="w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-all bg-white/10 hover:bg-white/20 text-gray-300 cursor-pointer">
-          <ImageIcon size={16} />
-          <span>选择照片（最多 5 张）</span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const files = Array.from(e.target.files || []);
-              if (files.length === 0) return;
-              
-              const validFiles: File[] = [];
-              for (const file of files) {
-                const validation = validateImageFile(file, 10);
-                if (!validation.valid) {
-                  setDialogConfig({ isOpen: true, message: validation.error!, type: 'warning' });
-                  return;
-                }
-                validFiles.push(file);
-              }
-              
-              const newImages = [...images, ...validFiles].slice(0, 5);
-              setImages(newImages);
-            }}
-          />
-        </label>
-      </div>
+      <DiaryImagePicker
+        maxImages={5}
+        maxSizeMB={10}
+        onChange={setImages}
+        onError={(message, type) => setDialogConfig({ isOpen: true, message, type })}
+      />
 
       {/* 语音录制 */}
       <div>

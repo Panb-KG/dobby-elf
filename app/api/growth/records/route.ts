@@ -19,7 +19,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get('limit') || '20');
 
-  const records = getPointRecords(user.id, limit);
-
-  return NextResponse.json({ records, total: records.length });
+  try {
+    const records = getPointRecords(user.id, limit);
+    return NextResponse.json({ records, total: records.length });
+  } catch (error) {
+    console.error('[Growth Records] 错误:', error);
+    return NextResponse.json({ error: '获取积分记录失败' }, { status: 500 });
+  }
 }

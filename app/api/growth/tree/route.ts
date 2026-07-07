@@ -16,10 +16,14 @@ export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  let tree = getGrowthTree(user.id);
-  if (!tree) {
-    tree = createGrowthTree(user.id);
+  try {
+    let tree = getGrowthTree(user.id);
+    if (!tree) {
+      tree = createGrowthTree(user.id);
+    }
+    return NextResponse.json({ tree });
+  } catch (error) {
+    console.error('[Growth Tree] 错误:', error);
+    return NextResponse.json({ error: '获取成长之树状态失败' }, { status: 500 });
   }
-
-  return NextResponse.json({ tree });
 }

@@ -14,14 +14,19 @@ export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  await ensureScoreTables();
-  const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date') || undefined;
+  try {
+    await ensureScoreTables();
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get('date') || undefined;
 
-  const records = await getTodayScores(user.id, date);
-  const total = await getDailyTotal(user.id, date);
+    const records = await getTodayScores(user.id, date);
+    const total = await getDailyTotal(user.id, date);
 
-  return NextResponse.json({ records, total });
+    return NextResponse.json({ records, total });
+  } catch (error) {
+    console.error('[Score Daily] 错误:', error);
+    return NextResponse.json({ error: '获取打分记录失败' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

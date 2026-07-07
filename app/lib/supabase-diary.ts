@@ -5,14 +5,13 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { DiaryEntry } from './diary';
+import { DiaryRaw, DiaryProcessed } from './supabase-diary-types';
 
 let supabaseInstance: SupabaseClient | null = null;
 
 function getSupabase(): SupabaseClient {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    // 服务端优先使用 Service Role Key（绕过 RLS），访客模式下必须
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Supabase 环境变量未配置：需要 NEXT_PUBLIC_SUPABASE_URL 和 SUPABASE_SERVICE_ROLE_KEY（或 NEXT_PUBLIC_SUPABASE_ANON_KEY）');
@@ -20,44 +19,6 @@ function getSupabase(): SupabaseClient {
     supabaseInstance = createClient(supabaseUrl, supabaseKey);
   }
   return supabaseInstance;
-}
-
-// ===== 数据库表类型定义 =====
-
-export interface DiaryRaw {
-  id: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  input_type: 'voice' | 'text' | 'image';
-  raw_content: string;
-  image_urls?: string[];
-  metadata?: {
-    date?: string;
-    location?: string;
-    weather?: string;
-    mood?: string;
-    voice_duration?: number;
-    audio_url?: string; // 语音录音 URL
-    [key: string]: any;
-  };
-}
-
-export interface DiaryProcessed {
-  id: string;
-  user_id: string;
-  diary_date: string;
-  title: string;
-  content: string;
-  images?: string[];
-  tags?: string[];
-  subject_links?: string[];
-  mood?: string;
-  weather?: string;
-  location?: string;
-  ai_summary?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 // ===== 原始输入操作 =====
@@ -69,10 +30,7 @@ export async function saveDiaryRaw(
   userId: string,
   inputType: 'voice' | 'text' | 'image',
   rawContent: string,
-  options: {
-    imageUrls?: string[];
-    metadata?: any;
-  } = {}
+  options: { imageUrls?: string[]; metadata?: any } = {}
 ): Promise<DiaryRaw> {
   const { data, error } = await getSupabase()
     .from('diary_raw')
@@ -97,10 +55,7 @@ export async function saveDiaryRaw(
 /**
  * 按 ID 获取单条原始日记
  */
-export async function getDiaryRawById(
-  id: string,
-  userId: string
-): Promise<DiaryRaw | null> {
+export async function getDiaryRawById(id: string, userId: string): Promise<DiaryRaw | null> {
   const { data, error } = await getSupabase()
     .from('diary_raw')
     .select('*')
@@ -121,11 +76,7 @@ export async function getDiaryRawById(
 export async function updateDiaryRaw(
   id: string,
   userId: string,
-  updates: {
-    rawContent?: string;
-    imageUrls?: string[];
-    metadata?: any;
-  }
+  updates: { rawContent?: string; imageUrls?: string[]; metadata?: any }
 ): Promise<boolean> {
   const updateData: any = { updated_at: new Date().toISOString() };
   if (updates.rawContent !== undefined) updateData.raw_content = updates.rawContent;
@@ -148,10 +99,7 @@ export async function updateDiaryRaw(
 /**
  * 按 ID 删除原始日记
  */
-export async function deleteDiaryRawById(
-  id: string,
-  userId: string
-): Promise<boolean> {
+export async function deleteDiaryRawById(id: string, userId: string): Promise<boolean> {
   const { error } = await getSupabase()
     .from('diary_raw')
     .delete()
@@ -168,10 +116,7 @@ export async function deleteDiaryRawById(
 /**
  * 获取用户的原始输入记录
  */
-export async function getDiaryRaws(
-  userId: string,
-  limit = 50
-): Promise<DiaryRaw[]> {
+export async function getDiaryRaws(userId: string, limit = 50): Promise<DiaryRaw[]> {
   const { data, error } = await getSupabase()
     .from('diary_raw')
     .select('*')
@@ -220,10 +165,7 @@ export async function upsertDiaryProcessed(
 /**
  * 获取某日的整理后日记
  */
-export async function getDiaryProcessed(
-  userId: string,
-  date: string
-): Promise<DiaryProcessed | null> {
+export async function getDiaryProcessed(userId: string, date: string): Promise<DiaryProcessed | null> {
   const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
@@ -242,10 +184,7 @@ export async function getDiaryProcessed(
 /**
  * 获取用户所有整理后的日记（按日期倒序）
  */
-export async function getDiaryProcessedList(
-  userId: string,
-  limit = 30
-): Promise<DiaryProcessed[]> {
+export async function getDiaryProcessedList(userId: string, limit = 30): Promise<DiaryProcessed[]> {
   const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
@@ -264,10 +203,7 @@ export async function getDiaryProcessedList(
 /**
  * 删除整理后的日记
  */
-export async function deleteDiaryProcessed(
-  userId: string,
-  diaryDate: string
-): Promise<boolean> {
+export async function deleteDiaryProcessed(userId: string, diaryDate: string): Promise<boolean> {
   const { error } = await getSupabase()
     .from('diary_processed')
     .delete()
@@ -287,10 +223,7 @@ export async function deleteDiaryProcessed(
 /**
  * 搜索日记内容
  */
-export async function searchDiaries(
-  userId: string,
-  query: string
-): Promise<DiaryProcessed[]> {
+export async function searchDiaries(userId: string, query: string): Promise<DiaryProcessed[]> {
   const { data, error } = await getSupabase()
     .from('diary_processed')
     .select('*')
@@ -306,44 +239,6 @@ export async function searchDiaries(
   return (data as DiaryProcessed[]) || [];
 }
 
-// ===== 工具函数 =====
-
-/**
- * 将原始输入转换为标准 DiaryEntry 格式（兼容旧接口）
- */
-export function convertRawToDiaryEntry(raw: DiaryRaw): DiaryEntry {
-  return {
-    id: raw.id,
-    userId: raw.user_id,
-    date: raw.metadata?.date || new Date(raw.created_at).toISOString().split('T')[0],
-    title: raw.metadata?.title || '无标题',
-    content: raw.raw_content,
-    mood: raw.metadata?.mood,
-    weather: raw.metadata?.weather,
-    isVoice: raw.input_type === 'voice',
-    voiceDuration: raw.metadata?.voice_duration,
-    audioUrl: raw.metadata?.audio_url,
-    images: raw.image_urls || [],
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at,
-  };
-}
-
-/**
- * 将整理后日记转换为标准 DiaryEntry 格式
- */
-export function convertProcessedToDiaryEntry(processed: DiaryProcessed): DiaryEntry {
-  return {
-    id: processed.id,
-    userId: processed.user_id,
-    date: processed.diary_date,
-    title: processed.title,
-    content: processed.content,
-    mood: processed.mood,
-    weather: processed.weather,
-    isVoice: false,
-    images: processed.images || [],
-    createdAt: processed.created_at,
-    updatedAt: processed.updated_at,
-  };
-}
+// 重新导出类型和转换函数
+export { DiaryRaw, DiaryProcessed } from './supabase-diary-types';
+export { convertRawToDiaryEntry, convertProcessedToDiaryEntry } from './supabase-diary-types';

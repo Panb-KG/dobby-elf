@@ -16,9 +16,14 @@ export async function GET(req: NextRequest) {
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
-  await ensureScoreTables();
-  const rules = await getScoreRules(user.id);
-  return NextResponse.json({ rules, presets: PRESET_RULES });
+  try {
+    await ensureScoreTables();
+    const rules = await getScoreRules(user.id);
+    return NextResponse.json({ rules, presets: PRESET_RULES });
+  } catch (error) {
+    console.error('[Score Rules] 错误:', error);
+    return NextResponse.json({ error: '获取打分规则失败' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -56,6 +61,11 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'id 参数不能为空' }, { status: 400 });
   }
 
-  const deleted = await deleteScoreRule(id, user.id);
-  return NextResponse.json({ deleted });
+  try {
+    const deleted = await deleteScoreRule(id, user.id);
+    return NextResponse.json({ deleted });
+  } catch (error) {
+    console.error('[Score Rules DELETE] 错误:', error);
+    return NextResponse.json({ error: '删除规则失败' }, { status: 500 });
+  }
 }
