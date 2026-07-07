@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Pencil, CheckCircle, Circle, Plus, X, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { HomeworkTask } from '../../types';
@@ -13,7 +13,7 @@ interface HomeworkModuleProps {
   onImageUpload: (file: File) => void;
 }
 
-export function HomeworkModule({
+export const HomeworkModule = memo(function HomeworkModule({
   tasks,
   onAddTask,
   onToggleStatus,
@@ -191,4 +191,4 @@ export function HomeworkModule({
       </div>
     </div>
   );
-}
+});

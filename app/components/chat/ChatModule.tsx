@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from 'react';
 import type { Message } from '../../types';
 import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
@@ -20,7 +21,7 @@ export interface ChatModuleProps {
   voiceChat?: VoiceChatProps;
 }
 
-export function ChatModule({
+export const ChatModule = memo(function ChatModule({
   messages, input, isLoading, onSend, onInputChange, onShortcut, shortcuts,
   isComplexContent, onComplexContentClick, showDailyAdventure, onToggleDailyAdventure, voiceChat,
 }: ChatModuleProps) {
@@ -45,4 +46,4 @@ export function ChatModule({
       />
     </div>
   );
-}
+});

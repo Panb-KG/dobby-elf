@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { recordDailyScore as apiRecordDailyScore } from '@/lib/agent/client';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
@@ -11,7 +11,7 @@ interface ScoreRuleItemProps {
   onScored: () => void;
 }
 
-export function ScoreRuleItem({ rule, isScored, existingScore, onScored }: ScoreRuleItemProps) {
+export const ScoreRuleItem = memo(function ScoreRuleItem({ rule, isScored, existingScore, onScored }: ScoreRuleItemProps) {
   const [scoring, setScoring] = useState<Record<string, number>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
   
@@ -89,4 +89,4 @@ export function ScoreRuleItem({ rule, isScored, existingScore, onScored }: Score
       />
     </div>
   );
-}
+});

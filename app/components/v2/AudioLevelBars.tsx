@@ -4,12 +4,14 @@
 
 "use client";
 
+import { memo } from 'react';
+
 interface AudioLevelBarsProps {
   level: number;
   barCount?: number;
 }
 
-export function AudioLevelBars({ level, barCount = 24 }: AudioLevelBarsProps) {
+export const AudioLevelBars = memo(function AudioLevelBars({ level, barCount = 24 }: AudioLevelBarsProps) {
   const bars = Array.from({ length: barCount }, (_, i) => {
     const threshold = (i / barCount) * 100;
     const active = level > threshold;
@@ -37,4 +39,4 @@ export function AudioLevelBars({ level, barCount = 24 }: AudioLevelBarsProps) {
       ))}
     </div>
   );
-}
+});

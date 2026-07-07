@@ -4,6 +4,7 @@
 
 "use client";
 
+import { memo } from 'react';
 import { Mic, Send, Square, Loader2 } from 'lucide-react';
 import type { UseAgentChatReturn } from './useAgentChat';
 import { QUICK_PROMPTS } from './v2-constants';
@@ -15,7 +16,7 @@ interface ChatAreaProps {
   onSend: () => void;
 }
 
-export function ChatArea({ agentChat, isVoiceActive, onToggleVoice, onSend }: ChatAreaProps) {
+export const ChatArea = memo(function ChatArea({ agentChat, isVoiceActive, onToggleVoice, onSend }: ChatAreaProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* 聊天消息 */}
@@ -110,4 +111,4 @@ export function ChatArea({ agentChat, isVoiceActive, onToggleVoice, onSend }: Ch
       </div>
     </div>
   );
-}
+});

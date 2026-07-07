@@ -4,6 +4,7 @@
 
 "use client";
 
+import { memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -30,7 +31,7 @@ interface RightPanelProps {
   onClose: () => void;
 }
 
-export function RightPanel({
+export const RightPanel = memo(function RightPanel({
   isRightOpen, panelType, panelTitle, panelData,
   growthTree, userId, knowledgeRefs, onWater, waterMessage, onClose,
 }: RightPanelProps) {
@@ -80,4 +81,4 @@ export function RightPanel({
       )}
     </AnimatePresence>
   );
-}
+});

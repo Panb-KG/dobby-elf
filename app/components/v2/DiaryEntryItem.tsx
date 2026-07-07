@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
 import type { DiaryEntry } from '@/lib/diary';
 import { DiaryEntryEditor } from './DiaryEntryEditor';
@@ -23,7 +23,7 @@ interface DiaryEntryItemProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProps) {
+export const DiaryEntryItem = memo(function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSave = async (data: {
@@ -100,4 +100,4 @@ export function DiaryEntryItem({ entry, onUpdate, onDelete }: DiaryEntryItemProp
       )}
     </div>
   );
-}
+});

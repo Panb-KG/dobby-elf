@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { motion } from 'motion/react';
 import { Calendar, Plus, X, Camera, Loader2 } from 'lucide-react';
 import { error as logError } from '../../lib/console';
@@ -24,7 +24,7 @@ export interface CourseModuleProps {
 
 const DAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-export function CourseModule({
+export const CourseModule = memo(function CourseModule({
   courses,
   scheduleView,
   selectedDay,
@@ -269,4 +269,4 @@ export function CourseModule({
       )}
     </div>
   );
-}
+});

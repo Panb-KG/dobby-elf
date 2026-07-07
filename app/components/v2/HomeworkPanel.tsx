@@ -4,13 +4,13 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import type { UseHomeworkReturn } from '@/hooks/useHomework';
 import { Sparkles, Plus, Trash2, CheckCircle2, Circle, Clock } from 'lucide-react';
 
-export function HomeworkPanel({ homework }: { homework: UseHomeworkReturn }) {
+export const HomeworkPanel = memo(function HomeworkPanel({ homework }: { homework: UseHomeworkReturn }) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTask, setNewTask] = useState({
     subject: '数学',
@@ -189,4 +189,4 @@ export function HomeworkPanel({ homework }: { homework: UseHomeworkReturn }) {
       </div>
     </div>
   );
-}
+});

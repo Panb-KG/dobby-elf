@@ -17,7 +17,7 @@
  * - 鼓励为主，不是压力
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { motion } from 'motion/react';
 import {
   Sun, Moon, CloudSun, Sparkles, Flame, Star,
@@ -38,7 +38,7 @@ interface DailyAdventureProps {
   onQuickAction: (action: string) => void;
 }
 
-export function DailyAdventure({
+export const DailyAdventure = memo(function DailyAdventure({
   courses,
   dailyTasks,
   points,
@@ -253,4 +253,4 @@ export function DailyAdventure({
       </motion.div>
     </div>
   );
-}
+});

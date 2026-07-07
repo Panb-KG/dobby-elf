@@ -5,6 +5,7 @@
  * 包含 DailyAdventure + ChatModule + 动画效果
  */
 
+import { useCallback, memo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { DailyAdventure } from '../DailyAdventure';
 import { ChatModule } from '../chat/ChatModule';
@@ -46,13 +47,29 @@ interface LayoutMainProps {
   voiceChat: VoiceChatProps;
 }
 
-export function LayoutMain({
+export const LayoutMain = memo(function LayoutMain({
   chat, course, shortcuts, dailyTasks, points, level, streak,
   showDailyAdventure, onToggleDailyAdventure, onCompleteTask,
   shortcutButtons, isComplexContent, handleComplexContentClick,
   isRightSidebarOpen, onRightSidebarChange, onSidebarContentTypeChange,
   onTabChange, voiceChat,
 }: LayoutMainProps) {
+  const handleQuickAction = useCallback((action: string) => {
+    onToggleDailyAdventure();
+    if (action === 'schedule') {
+      onRightSidebarChange(true);
+      onSidebarContentTypeChange('schedule');
+    } else if (action === 'homework') {
+      onTabChange('homework');
+    } else if (action === 'focus') {
+      onRightSidebarChange(true);
+      onSidebarContentTypeChange('focus');
+    } else if (action === 'achievements') {
+      onRightSidebarChange(true);
+      onSidebarContentTypeChange('achievements');
+    }
+  }, [onToggleDailyAdventure, onRightSidebarChange, onSidebarContentTypeChange, onTabChange]);
+
   return (
     <section className="flex-1 flex flex-col glass-panel overflow-hidden relative">
       <AnimatePresence>
@@ -71,21 +88,7 @@ export function LayoutMain({
               level={level}
               streak={streak}
               onCompleteTask={onCompleteTask}
-              onQuickAction={(action) => {
-                onToggleDailyAdventure();
-                if (action === 'schedule') {
-                  onRightSidebarChange(true);
-                  onSidebarContentTypeChange('schedule');
-                } else if (action === 'homework') {
-                  onTabChange('homework');
-                } else if (action === 'focus') {
-                  onRightSidebarChange(true);
-                  onSidebarContentTypeChange('focus');
-                } else if (action === 'achievements') {
-                  onRightSidebarChange(true);
-                  onSidebarContentTypeChange('achievements');
-                }
-              }}
+              onQuickAction={handleQuickAction}
             />
           </motion.div>
         )}
@@ -109,4 +112,4 @@ export function LayoutMain({
       </div>
     </section>
   );
-}
+});

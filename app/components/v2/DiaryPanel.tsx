@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   Plus, ChevronLeft, ChevronRight, Search,
   Sparkles, BookOpen,
@@ -23,7 +23,7 @@ import { formatDate } from './diary-constants';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { authFetch } from '@/lib/api-client';
 
-export default function DiaryPanel() {
+export default memo(function DiaryPanel() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -239,4 +239,4 @@ export default function DiaryPanel() {
       />
     </div>
   );
-}
+});

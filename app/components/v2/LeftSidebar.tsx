@@ -4,6 +4,7 @@
 
 "use client";
 
+import { memo } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { User } from '@/types';
 import type { GrowthTreeNode } from '@/lib/growth/tree';
@@ -23,7 +24,7 @@ interface LeftSidebarProps {
   onLogin?: () => void; // 显示登录弹窗
 }
 
-export function LeftSidebar({
+export const LeftSidebar = memo(function LeftSidebar({
   isLeftCollapsed, onToggleCollapse, user, isGuest, growthTree,
   leftTab, onActionClick, onWater, waterMessage, onLogout, onLogin,
 }: LeftSidebarProps) {
@@ -126,4 +127,4 @@ export function LeftSidebar({
       )}
     </div>
   );
-}
+});

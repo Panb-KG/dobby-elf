@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -17,7 +17,7 @@ interface ChatMessagesProps {
   voiceChat?: VoiceChatProps;
 }
 
-export function ChatMessages({ messages, isComplexContent, onComplexContentClick, voiceChat }: ChatMessagesProps) {
+export const ChatMessages = memo(function ChatMessages({ messages, isComplexContent, onComplexContentClick, voiceChat }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -116,4 +116,4 @@ export function ChatMessages({ messages, isComplexContent, onComplexContentClick
       <div ref={messagesEndRef} />
     </div>
   );
-}
+});

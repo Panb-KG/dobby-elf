@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Award, Trophy, Star, Medal, TrendingUp, Leaf, CheckCircle, Circle, Droplets } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -17,7 +17,7 @@ interface AchievementModuleProps {
   onAddAchievement: () => void;
 }
 
-export function AchievementModule({
+export const AchievementModule = memo(function AchievementModule({
   points,
   level,
   treeGrowth,
@@ -187,4 +187,4 @@ export function AchievementModule({
       </button>
     </div>
   );
-}
+});
