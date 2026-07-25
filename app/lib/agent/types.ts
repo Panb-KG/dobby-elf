@@ -104,20 +104,8 @@ export interface KnowledgeSearchRequest {
   type?: 'textbook' | 'question' | 'outline' | 'reference';
 }
 
-export interface KnowledgeSearchResult {
-  id: string;
-  source: string;
-  category: string;
-  title: string;
-  content: string;
-  score: number;
-  metadata: {
-    grade: number;
-    chapter: string;
-    page?: number;
-    type: string;
-  };
-}
+// 复用 knowledge 模块的 KnowledgeSearchResult，避免重复定义
+export type { KnowledgeSearchResult } from '../knowledge/types';
 
 // ===== 成长之树 =====
 

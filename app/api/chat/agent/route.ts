@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { processMessage, processMessageStream } from '@/lib/agent';
+import type { AgentConfig } from '@/lib/agent/types';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
 import { ensureV2Schema } from '@/lib/db-migration-v2';
 import { addGrowthPoints } from '@/lib/growth';
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     return unauthorizedResponse();
   }
 
-  const config = {
+  const config: AgentConfig = {
     model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen3.6-flash',
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
       'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
@@ -133,7 +134,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const config = {
+  const config: AgentConfig = {
     model: process.env.AGENT_MODEL || process.env.DASHSCOPE_MODEL || 'qwen3.6-flash',
     baseUrl: process.env.TOKEN_PLAN_BASE_URL || process.env.DASHSCOPE_BASE_URL ||
       'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',

@@ -42,8 +42,8 @@ export class DobiService {
       if (!response.ok) throw new Error('Image generation failed');
       const data = await response.json();
       return data.url;
-    } catch (error) {
-      error("Image generation failed:", error);
+    } catch (err) {
+      error("Image generation failed:", err);
       return null;
     }
   }
@@ -128,8 +128,8 @@ export class DobiService {
           } catch (e) { /* ignore parse errors */ }
         }
       }
-    } catch (error) {
-      error('Chat stream error:', error);
+    } catch (err) {
+      error('Chat stream error:', err);
       yield '哎呀,多比的魔法出了一点小状况... 请稍后再试。🪄';
     }
   }

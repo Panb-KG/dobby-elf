@@ -43,8 +43,8 @@ export default function AdminTasksPage() {
       if (res.ok) {
         setTasks(data.tasks);
       }
-    } catch (error) {
-      error('Failed to fetch tasks:', error);
+    } catch (err) {
+      error('Failed to fetch tasks:', err);
     } finally {
       setLoading(false);
     }
@@ -64,8 +64,8 @@ export default function AdminTasksPage() {
       if (res.ok) {
         fetchTasks();
       }
-    } catch (error) {
-      error('Failed to toggle task:', error);
+    } catch (err) {
+      error('Failed to toggle task:', err);
     }
   };
 
@@ -78,8 +78,8 @@ export default function AdminTasksPage() {
       if (res.ok) {
         fetchTasks();
       }
-    } catch (error) {
-      error('Failed to delete task:', error);
+    } catch (err) {
+      error('Failed to delete task:', err);
     }
   };
 
@@ -92,8 +92,8 @@ export default function AdminTasksPage() {
         setDialogConfig({ isOpen: true, message: '任务已触发执行', type: 'success' });
         fetchTasks();
       }
-    } catch (error) {
-      error('Failed to run task:', error);
+    } catch (err) {
+      error('Failed to run task:', err);
       setDialogConfig({ isOpen: true, message: '运行任务失败', type: 'error' });
     }
   };

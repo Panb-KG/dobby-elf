@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSecurityHeaders } from './app/lib/security';
 
 /**
  * API 中间件
@@ -43,16 +44,26 @@ export async function middleware(req: NextRequest) {
     );
   }
   
+  // 注入安全头
+  const securityHeaders = getSecurityHeaders();
+  
   // OPTIONS 预检请求处理
   if (req.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 204 });
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    for (const [key, value] of Object.entries(securityHeaders)) {
+      response.headers.set(key, value);
+    }
     return response;
   }
   
-  return NextResponse.next();
+  const response = NextResponse.next();
+  for (const [key, value] of Object.entries(securityHeaders)) {
+    response.headers.set(key, value);
+  }
+  return response;
 }
 
 export const config = {

@@ -8,8 +8,8 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { agentChat } from '@/lib/agent/client';
-import type { ChatMessage, AgentChatResponse, PanelAction, IntentType } from '@/lib/agent/types';
+import { agentChat, type ChatMessage, type AgentChatResponse } from '@/lib/agent/client';
+import type { PanelAction, IntentType } from '@/lib/agent/types';
 import type { Message } from '@/types';
 import { StorageKeys, setStorage } from '@/lib/storage';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -78,7 +78,7 @@ export function useAgentChat(): UseAgentChatReturn {
       // 构建 API 消息格式
       const apiMessages: ChatMessage[] = messagesRef.current.map(m => ({
         role: m.role === 'model' ? 'assistant' : m.role,
-        content: m.text || m.content || '',
+        content: m.text || '',
       }));
       apiMessages.push({ role: 'user', content: text.trim() });
 

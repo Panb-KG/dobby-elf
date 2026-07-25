@@ -72,9 +72,9 @@ export async function processMessage(
       });
       if (results.length > 0) {
         knowledgeContext = '\n\n【参考资料】\n' + results.map((r, i) =>
-          `${i + 1}. 【${r.category}】${r.title}\n${r.content.substring(0, 500)}`
+          `${i + 1}. 【${r.item.category}】${r.item.title}\n${r.item.content.substring(0, 500)}`
         ).join('\n\n');
-        knowledgeRefs = results.map(r => r.id);
+        knowledgeRefs = results.map(r => r.item.id);
         toolsUsed.push('search_knowledge');
       }
     } catch {
@@ -180,7 +180,7 @@ export async function processMessageStream(
       const results = await searchKnowledge({ query: userMessage, topK: 5 });
       if (results.length > 0) {
         knowledgeContext = '\n\n【参考资料】\n' + results.map((r, i) =>
-          `${i + 1}. 【${r.category}】${r.title}\n${r.content.substring(0, 500)}`
+          `${i + 1}. 【${r.item.category}】${r.item.title}\n${r.item.content.substring(0, 500)}`
         ).join('\n\n');
       }
     } catch { /* ignore */ }

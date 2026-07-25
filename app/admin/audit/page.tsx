@@ -43,8 +43,8 @@ export default function AdminAuditPage() {
         setLogs(data.logs);
         setTotal(data.pagination.total);
       }
-    } catch (error) {
-      error('Failed to fetch audit logs:', error);
+    } catch (err) {
+      error('Failed to fetch audit logs:', err);
     } finally {
       setLoading(false);
     }

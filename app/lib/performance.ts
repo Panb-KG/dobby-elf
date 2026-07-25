@@ -4,7 +4,6 @@ import { log } from './console';
  * 
  * 功能：
  * - 防抖/节流
- * - 懒加载
  * - 性能监控
  */
 
@@ -98,82 +97,9 @@ export async function measureAsyncPerformance<T>(label: string, fn: () => Promis
   return result;
 }
 
-/**
- * 图片懒加载
- * 
- * @param src 图片 URL
- * @param placeholder 占位图 URL
- * @returns JSX 元素
- */
-export function lazyLoadImage(src: string, placeholder?: string): HTMLImageElement {
-  const img = new Image();
-  img.loading = 'lazy';
-  img.src = src;
-  
-  if (placeholder) {
-    img.srcset = `${placeholder} 1x, ${src} 2x`;
-  }
-  
-  return img;
-}
-
-/**
- * 代码分割辅助
- * 
- * @param importFn 动态导入函数
- * @returns Promise
- */
-export function dynamicImport<T extends Record<string, any>>(
-  importFn: () => Promise<T>
-): Promise<T> {
-  return importFn();
-}
-
-/**
- * 内存使用监控
- * 
- * @returns 内存使用情况
- */
-export function getMemoryUsage(): {
-  used: number;
-  total: number;
-  limit: number;
-} | null {
-  if (typeof performance === 'undefined' || !(performance as any).memory) {
-    return null;
-  }
-  
-  const memory = (performance as any).memory;
-  
-  return {
-    used: memory.usedJSHeapSize,
-    total: memory.totalJSHeapSize,
-    limit: memory.jsHeapSizeLimit,
-  };
-}
-
-/**
- * 渲染性能监控
- * 
- * @param callback 渲染完成回调
- */
-export function observeRenderPerformance(callback: (entry: PerformanceEntry) => void): void {
-  if (typeof PerformanceObserver === 'undefined') return;
-  
-  const observer = new PerformanceObserver((list) => {
-    list.getEntries().forEach(callback);
-  });
-  
-  observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
-}
-
 export default {
   debounce,
   throttle,
   measurePerformance,
   measureAsyncPerformance,
-  lazyLoadImage,
-  dynamicImport,
-  getMemoryUsage,
-  observeRenderPerformance,
 };

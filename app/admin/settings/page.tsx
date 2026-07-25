@@ -22,8 +22,8 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         setSettings(data);
       }
-    } catch (error) {
-      error('Failed to fetch settings:', error);
+    } catch (err) {
+      error('Failed to fetch settings:', err);
     } finally {
       setLoading(false);
     }

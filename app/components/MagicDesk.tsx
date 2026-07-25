@@ -19,7 +19,13 @@ import DobiMascot from './DobiMascot';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export const MagicDesk = () => {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Array<{
+    id: number;
+    role: 'bot' | 'user';
+    content: string;
+    emo: string;
+    attachment?: string;
+  }>>([
     { 
       id: 1, 
       role: 'bot', 

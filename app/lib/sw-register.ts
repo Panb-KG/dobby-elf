@@ -37,8 +37,8 @@ export async function registerSW(): Promise<ServiceWorkerRegistration | null> {
     });
 
     return registration;
-  } catch (error) {
-    error('[SW] Registration failed:', error);
+  } catch (err) {
+    log('[SW] Registration failed:', err);
     return null;
   }
 }
@@ -51,8 +51,8 @@ export async function unregisterSW(): Promise<boolean> {
   try {
     const registration = await navigator.serviceWorker.ready;
     return await registration.unregister();
-  } catch (error) {
-    error('[SW] Unregistration failed:', error);
+  } catch (err) {
+    log('[SW] Unregistration failed:', err);
     return false;
   }
 }

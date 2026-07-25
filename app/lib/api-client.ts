@@ -29,11 +29,10 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
   
   // FormData 时不设 Content-Type（让浏览器自动设置 multipart boundary）
   const isFormData = options.body instanceof FormData;
-  const defaultContentType = isFormData ? {} : { 'Content-Type': 'application/json' };
   
-  const headers: HeadersInit = {
-    ...defaultContentType,
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(options.headers as Record<string, string> || {}),
   };
 
   // 添加 Authorization header

@@ -13,7 +13,7 @@ import { QUICK_ACTIONS, type LeftTab, type PanelType } from './v2-constants';
 interface LeftSidebarProps {
   isLeftCollapsed: boolean;
   onToggleCollapse: () => void;
-  user: User;
+  user: User | null;
   isGuest: boolean; // 是否为访客
   growthTree: GrowthTreeNode | null;
   leftTab: LeftTab;

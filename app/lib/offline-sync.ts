@@ -7,6 +7,8 @@
  * - 冲突检测与解决（同记录取最新 timestamp）
  */
 
+import { error } from './console';
+
 export interface SyncOperation {
   id: string;
   type: 'create' | 'update' | 'delete';

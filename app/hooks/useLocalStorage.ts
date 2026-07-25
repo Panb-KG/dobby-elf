@@ -99,8 +99,8 @@ export function useLocalStorage<T>(options: UseLocalStorageOptions<T>) {
     try {
       removeStorage(key, { prefix, ttl });
       setValue(defaultValue);
-    } catch (error) {
-      error(`[useLocalStorage] Failed to remove "${key}":`, error);
+    } catch (err) {
+      error(`[useLocalStorage] Failed to remove "${key}":`, err);
     }
   }, [key, defaultValue, prefix, ttl]);
 

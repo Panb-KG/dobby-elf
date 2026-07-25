@@ -86,20 +86,20 @@ export default function KnowledgeCardPanel({ refs, data, title }: KnowledgeCardP
       <div className="space-y-2">
         {results.map(result => (
           <div
-            key={result.id}
+            key={result.item.id}
             className="p-3 rounded-xl bg-white/5 border border-white/10"
           >
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300">
-                {result.category}
+                {result.item.category}
               </span>
-              <span className="text-xs text-gray-500">{result.source}</span>
+              <span className="text-xs text-gray-500">{result.item.source}</span>
             </div>
             <h5 className="text-sm font-medium text-orange-300 mb-1">
-              {result.title}
+              {result.item.title}
             </h5>
             <p className="text-xs text-gray-300 leading-relaxed line-clamp-4">
-              {result.content}
+              {result.item.content}
             </p>
             <div className="mt-1 text-xs text-gray-500">
               相关度: {Math.round(result.score * 100)}%

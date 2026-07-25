@@ -50,8 +50,8 @@ export default function AdminUsersPage() {
         setUsers(data.users);
         setTotal(data.pagination.total);
       }
-    } catch (error) {
-      error('Failed to fetch users:', error);
+    } catch (err) {
+      error('Failed to fetch users:', err);
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function AdminUsersPage() {
       } else {
         setDialogConfig({ isOpen: true, message: data.error || '删除失败', type: 'error' });
       }
-    } catch (error) {
-      error('Failed to delete user:', error);
+    } catch (err) {
+      error('Failed to delete user:', err);
       setDialogConfig({ isOpen: true, message: '删除失败', type: 'error' });
     }
   };

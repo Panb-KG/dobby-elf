@@ -42,8 +42,8 @@ export default function AdminApiRecordsPage() {
         setRecords(data.records);
         setTotal(data.pagination.total);
       }
-    } catch (error) {
-      error('Failed to fetch API records:', error);
+    } catch (err) {
+      error('Failed to fetch API records:', err);
     } finally {
       setLoading(false);
     }

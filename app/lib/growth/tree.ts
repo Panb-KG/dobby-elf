@@ -9,8 +9,8 @@ export interface GrowthPointRecord {
   id: string; userId: string; points: number; reason: string; source: string; createdAt: string;
 }
 
-export function getGrowthTree(): GrowthTreeNode | null { return null; }
-export function createGrowthTree(): GrowthTreeNode { return {} as GrowthTreeNode; }
-export function addGrowthPoints() { return { tree: {} as GrowthTreeNode, record: {} as GrowthPointRecord }; }
-export function waterTree() { return { tree: {} as GrowthTreeNode, watered: false }; }
-export function getPointRecords(): GrowthPointRecord[] { return []; }
+export function getGrowthTree(_userId?: string): GrowthTreeNode | null { return null; }
+export function createGrowthTree(_userId?: string): GrowthTreeNode { return {} as GrowthTreeNode; }
+export function addGrowthPoints(_userId?: string, _points?: number, _reason?: string, _source?: string) { return { tree: {} as GrowthTreeNode, record: {} as GrowthPointRecord }; }
+export function waterTree(_userId?: string) { return { tree: {} as GrowthTreeNode, watered: false }; }
+export function getPointRecords(_userId?: string, _limit?: number): GrowthPointRecord[] { return []; }
