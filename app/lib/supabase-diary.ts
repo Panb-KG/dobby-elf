@@ -240,5 +240,5 @@ export async function searchDiaries(userId: string, query: string): Promise<Diar
 }
 
 // 重新导出类型和转换函数
-export { DiaryRaw, DiaryProcessed } from './supabase-diary-types';
+export type { DiaryRaw, DiaryProcessed } from './supabase-diary-types';
 export { convertRawToDiaryEntry, convertProcessedToDiaryEntry } from './supabase-diary-types';
