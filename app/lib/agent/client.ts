@@ -230,6 +230,31 @@ export async function getPointRecords(limit = 20): Promise<{ records: any[]; tot
   return response.json();
 }
 
+/**
+ * 完成作业（触发成长积分）
+ */
+export async function completeHomework(homeworkId: string): Promise<void> {
+  const response = await authFetch('/api/homework', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: homeworkId, status: 'completed' }),
+  });
+  if (!response.ok) throw new Error('更新失败');
+}
+
+/**
+ * 完成专注（触发成长积分）
+ */
+export async function completeFocusSession(durationSeconds: number): Promise<{ points: number; message: string }> {
+  const response = await authFetch('/api/growth/focus', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ duration: durationSeconds }),
+  });
+  if (!response.ok) throw new Error('专注积分失败');
+  return response.json();
+}
+
 // ===== 魔法日记 =====
 
 export async function getDiaryEntries(date: string): Promise<{ entries: any[]; date: string; total: number }> {

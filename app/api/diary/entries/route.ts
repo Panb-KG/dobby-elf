@@ -10,7 +10,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { ensureV2Schema } from '@/lib/db-migration-v2';
 import {
   getDiaryEntries,
   createDiaryEntry,
@@ -20,7 +19,6 @@ import {
 import { addGrowthPoints } from '@/lib/growth';
 
 export async function GET(req: NextRequest) {
-  ensureV2Schema();
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
@@ -37,7 +35,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  ensureV2Schema();
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
@@ -62,7 +59,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 写日记奖励积分
-    addGrowthPoints(user.id, 5, '写了一篇魔法日记 📝', 'diary');
+    try { await addGrowthPoints(user.id, 5, '写了一篇魔法日记 📝', 'diary'); } catch { /* ignore */ }
 
     return NextResponse.json({ entry });
   } catch (error) {
@@ -72,7 +69,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  ensureV2Schema();
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
@@ -102,7 +98,6 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  ensureV2Schema();
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 

@@ -28,12 +28,13 @@ interface RightPanelProps {
   knowledgeRefs: UseAgentChatReturn['knowledgeRefs'];
   onWater: () => void;
   waterMessage: string | null;
+  onScoreCompleted?: () => void;
   onClose: () => void;
 }
 
 export const RightPanel = memo(function RightPanel({
   isRightOpen, panelType, panelTitle, panelData,
-  growthTree, userId, knowledgeRefs, onWater, waterMessage, onClose,
+  growthTree, userId, knowledgeRefs, onWater, waterMessage, onScoreCompleted, onClose,
 }: RightPanelProps) {
   return (
     <AnimatePresence>
@@ -56,7 +57,7 @@ export const RightPanel = memo(function RightPanel({
             {panelType === 'growth_tree' && (
               <GrowthTreePanel tree={growthTree} onWater={onWater} waterMessage={waterMessage} />
             )}
-            {panelType === 'parent_score' && <ParentScorePanel userId={userId} />}
+            {panelType === 'parent_score' && <ParentScorePanel userId={userId} onScoreCompleted={onScoreCompleted} />}
             {panelType === 'diary' && <DiaryPanel />}
             {panelType === 'knowledge_card' && (
               <KnowledgeCardPanel refs={knowledgeRefs} data={panelData} title={panelTitle} />

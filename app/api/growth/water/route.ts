@@ -7,17 +7,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { ensureV2Schema } from '@/lib/db-migration-v2';
-import { waterTree, createGrowthTree } from '@/lib/growth';
+import { waterTree, ensureGrowthTables } from '@/lib/growth';
 
 export async function POST(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   try {
-    const result = waterTree(user.id);
+    await ensureGrowthTables();
+    const result = await waterTree(user.id);
     return NextResponse.json({
       watered: result.watered,
       tree: result.tree,

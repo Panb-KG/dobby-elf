@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     // 发放成长积分（每次问答 +1）
     try {
-      addGrowthPoints(user.id, 1, '完成一次问答 💬', 'chat');
+      await addGrowthPoints(user.id, 1, '完成一次问答 💬', 'chat');
     } catch {
       // 积分失败不影响聊天
     }

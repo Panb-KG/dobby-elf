@@ -45,6 +45,7 @@ export default function PageV2() {
   const [rightPanelData, setRightPanelData] = useState<Record<string, unknown> | undefined>();
   const [rightPanelTitle, setRightPanelTitle] = useState('');
   const [growthTree, setGrowthTree] = useState<GrowthTreeNode | null>(null);
+  const [growthRefreshKey, setGrowthRefreshKey] = useState(0);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [waterMessage, setWaterMessage] = useState<string | null>(null);
 
@@ -73,11 +74,22 @@ export default function PageV2() {
   }, [agentChat.panelAction, isGuest]);
 
   // ===== 加载成长之树 =====
-  useEffect(() => {
+  const refreshGrowthTree = useCallback(() => {
     if (user && !isGuest) {
       getGrowthTree().then(res => setGrowthTree(res.tree)).catch(() => {});
     }
   }, [user, isGuest]);
+
+  useEffect(() => {
+    refreshGrowthTree();
+  }, [refreshGrowthTree, growthRefreshKey]);
+
+  // 切换到成长之树面板时刷新
+  useEffect(() => {
+    if (rightPanelType === 'growth_tree') {
+      refreshGrowthTree();
+    }
+  }, [rightPanelType, refreshGrowthTree]);
 
   // ===== 浇水 =====
   const handleWater = useCallback(async () => {
@@ -90,6 +102,11 @@ export default function PageV2() {
       setWaterMessage('浇水失败了，再试试？');
       setTimeout(() => setWaterMessage(null), 3000);
     }
+  }, []);
+
+  // 打分后刷新成长之树
+  const handleScoreCompleted = useCallback(() => {
+    setGrowthRefreshKey(k => k + 1);
   }, []);
 
   // ===== 语音输入 =====
@@ -205,6 +222,7 @@ export default function PageV2() {
           knowledgeRefs={agentChat.knowledgeRefs}
           onWater={handleWater}
           waterMessage={waterMessage}
+          onScoreCompleted={handleScoreCompleted}
           onClose={() => { setIsRightOpen(false); setRightPanelType('none'); }}
         />
 

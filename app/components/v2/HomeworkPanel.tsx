@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import type { UseHomeworkReturn } from '@/hooks/useHomework';
 import { Sparkles, Plus, Trash2, CheckCircle2, Circle, Clock } from 'lucide-react';
+import { completeHomework } from '@/lib/agent/client';
 
 export const HomeworkPanel = memo(function HomeworkPanel({ homework }: { homework: UseHomeworkReturn }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -45,6 +46,10 @@ export const HomeworkPanel = memo(function HomeworkPanel({ homework }: { homewor
     const idx = order.indexOf(currentStatus === 'overdue' ? 'pending' : currentStatus);
     const next = order[(idx + 1) % order.length];
     homework.updateTaskStatus(id, next as any);
+    // 完成作业时调用 API 奖励成长积分
+    if (next === 'completed') {
+      completeHomework(id).catch(() => {});
+    }
   };
 
   return (

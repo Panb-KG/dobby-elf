@@ -11,6 +11,7 @@ import { useCourses } from '@/hooks/useCourses';
 import { useHomework } from '@/hooks/useHomework';
 import { useFocus } from '@/hooks/useFocus';
 import { useAchievements } from '@/hooks/useAchievements';
+import { completeFocusSession } from '@/lib/agent/client';
 import {
   CourseSidebarContent,
   ExerciseSidebarContent,
@@ -95,6 +96,18 @@ export default function ClassicPanels({ type, userId }: ClassicPanelsProps) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [focus.isFocusing, focus.pauseFocus]);
+
+  // 专注完成后奖励成长积分
+  const prevSessionsRef = useRef(focus.sessions.length);
+  useEffect(() => {
+    if (focus.sessions.length > prevSessionsRef.current) {
+      const latestSession = focus.sessions[0];
+      if (latestSession?.completed && latestSession.duration > 0) {
+        completeFocusSession(latestSession.duration).catch(() => {});
+      }
+    }
+    prevSessionsRef.current = focus.sessions.length;
+  }, [focus.sessions]);
 
   // ===== Callbacks =====
   const completeTask = useCallback((taskId: string) => {

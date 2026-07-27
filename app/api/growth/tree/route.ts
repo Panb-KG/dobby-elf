@@ -7,19 +7,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { ensureV2Schema } from '@/lib/db-migration-v2';
-import { getGrowthTree, createGrowthTree } from '@/lib/growth';
+import { getGrowthTree, createGrowthTree, ensureGrowthTables } from '@/lib/growth';
 
 export async function GET(req: NextRequest) {
-  ensureV2Schema();
-
   const user = await requireAuth(req);
   if (!user) return unauthorizedResponse();
 
   try {
-    let tree = getGrowthTree(user.id);
+    await ensureGrowthTables();
+    let tree = await getGrowthTree(user.id);
     if (!tree) {
-      tree = createGrowthTree(user.id);
+      tree = await createGrowthTree(user.id);
     }
     return NextResponse.json({ tree });
   } catch (error) {

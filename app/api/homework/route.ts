@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from '@/lib/api-auth';
+import { addGrowthPoints, ensureGrowthTables } from '@/lib/growth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -114,6 +116,11 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const user = await requireAuth(request);
+  if (!user) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  }
+
   const body = await request.json();
   const { id, status } = body;
 
@@ -125,6 +132,10 @@ export async function PATCH(request: NextRequest) {
   if (!client) return NextResponse.json({ error: 'Supabase 未配置' }, { status: 503 });
 
   try {
+    // 查询旧状态，判断是否首次完成
+    const { data: old } = await client.from('homework').select('status').eq('id', id).maybeSingle();
+    const wasCompleted = old?.status === 'completed';
+
     const { data, error } = await client
       .from('homework')
       .update({ status })
@@ -134,6 +145,14 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // 完成作业时奖励成长积分（+3），避免重复奖励
+    if (status === 'completed' && !wasCompleted) {
+      try {
+        await ensureGrowthTables();
+        await addGrowthPoints(user.id, 3, '完成了一项作业 ✏️', 'homework');
+      } catch { /* ignore */ }
     }
 
     return NextResponse.json(data);

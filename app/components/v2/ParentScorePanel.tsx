@@ -12,9 +12,10 @@ import { ScoreRuleItem } from './ScoreRuleItem';
 
 interface ParentScorePanelProps {
   userId: string;
+  onScoreCompleted?: () => void;
 }
 
-export default function ParentScorePanel({ userId }: ParentScorePanelProps) {
+export default function ParentScorePanel({ userId, onScoreCompleted }: ParentScorePanelProps) {
   const [rules, setRules] = useState<any[]>([]);
   const [todayScores, setTodayScores] = useState<any[]>([]);
   const [dailyTotal, setDailyTotal] = useState({ total: 0, max: 0, percentage: 0 });
@@ -30,6 +31,8 @@ export default function ParentScorePanel({ userId }: ParentScorePanelProps) {
       setRules(rulesRes.rules || []);
       setTodayScores(scoresRes.records || []);
       setDailyTotal(scoresRes.total || { total: 0, max: 0, percentage: 0 });
+      // 通知父组件打分数据已更新
+      onScoreCompleted?.();
     } catch (e) { console.error('加载打分数据失败', e); }
     finally { setLoading(false); }
   };

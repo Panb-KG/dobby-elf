@@ -3,6 +3,7 @@ import { getErrorMessage } from '@/lib/error-helper';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { requireAuth, unauthorizedResponse } from '../../lib/api-auth';
+import { addGrowthPoints, ensureGrowthTables } from '@/lib/growth';
 
 export async function POST(req: NextRequest) {
   // 鉴权
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
     if (data.output?.choices?.[0]?.message?.content?.[0]?.image) {
       const imageUrl = data.output.choices[0].message.content[0].image;
       log('Image generated:', imageUrl.substring(0, 100) + '...');
+      // 生成图片奖励成长积分（+2）
+      try {
+        await ensureGrowthTables();
+        await addGrowthPoints(user.id, 2, '生成了一张创意图片 🎨', 'image');
+      } catch { /* ignore */ }
       return NextResponse.json({ url: imageUrl });
     } else if (data.code) {
       throw new Error(`${data.code}: ${data.message}`);
