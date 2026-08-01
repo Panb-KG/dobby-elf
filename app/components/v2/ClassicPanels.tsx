@@ -31,9 +31,9 @@ interface ClassicPanelsProps {
 export default function ClassicPanels({ type, userId }: ClassicPanelsProps) {
   // ===== Hooks =====
   const course = useCourses({ userId });
-  const homework = useHomework();
+  const homework = useHomework({ userId });
   const focus = useFocus({ defaultDuration: 25, autoSave: true });
-  const achievements = useAchievements({});
+  const achievements = useAchievements({ userId });
 
   // ===== Exercise state =====
   const [knowledgeGraph] = useState<KnowledgePoint[]>([

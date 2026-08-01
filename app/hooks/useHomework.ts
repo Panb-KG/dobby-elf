@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { useSync } from './useSync';
 import { StorageKeys } from '../lib/storage';
@@ -20,7 +20,10 @@ export interface UseHomeworkReturn {
 
 export interface UseHomeworkOptions {
   initialTasks?: HomeworkTask[];
+  userId?: string;
 }
+
+const USE_SUPABASE = true;
 
 /**
  * 作业管理 Hook
@@ -30,22 +33,10 @@ export interface UseHomeworkOptions {
  * - 状态管理（待完成/进行中/已完成）
  * - 按科目筛选
  * - 逾期检测
- * 
- * @example
- * ```tsx
- * const { tasks, addTask, updateTaskStatus } = useHomework();
- * 
- * addTask({
- *   subject: '数学',
- *   title: '练习册 P50-52',
- *   status: 'pending',
- *   dueDate: '2026-04-25',
- *   image: null,
- * });
- * ```
+ * - 从 Supabase 加载 & 同步写入
  */
 export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn {
-  const { initialTasks = [] } = options;
+  const { initialTasks = [], userId } = options;
   const [tasks, setTasks] = useLocalStorage<HomeworkTask[]>({
     key: StorageKeys.HOMEWORK,
     defaultValue: initialTasks,
@@ -53,8 +44,33 @@ export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<HomeworkStatus | 'all'>('all');
 
-  // 离线同步
-  const { sync } = useSync({ userId: 'local-user', enabled: true });
+  // 离线同步 — 传入真实 userId
+  const { sync } = useSync({ userId: userId || '', enabled: USE_SUPABASE && !!userId });
+
+  // 从 Supabase 加载作业
+  useEffect(() => {
+    if (!USE_SUPABASE || !userId) return;
+    const loadHomework = async () => {
+      try {
+        const res = await fetch(`/api/supabase?type=homework&user_id=${userId}`);
+        if (res.ok) {
+          const data: Record<string, unknown>[] = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const converted: HomeworkTask[] = data.map(row => ({
+              id: row.id as string,
+              subject: (row.subject as string) || '其他',
+              title: row.title as string,
+              status: ((row.status as string) || 'pending') as HomeworkStatus,
+              dueDate: (row.due_date as string) || '',
+              image: (row.image as string) || null,
+            }));
+            setTasks(converted);
+          }
+        }
+      } catch { /* fallback to local */ }
+    };
+    loadHomework();
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
     const newTask: HomeworkTask = {
@@ -63,25 +79,53 @@ export function useHomework(options: UseHomeworkOptions = {}): UseHomeworkReturn
     };
     setTasks(prev => [...prev, newTask]);
     
-    // 同步到服务器
-    sync('homework', { type: 'create', data: newTask }).catch(() => {});
-  }, [sync]);
+    // 同步到服务器（使用数据库字段名）
+    if (USE_SUPABASE && userId) {
+      sync('homework', {
+        type: 'create',
+        data: {
+          subject: newTask.subject,
+          title: newTask.title,
+          status: newTask.status,
+          due_date: newTask.dueDate || null,
+          image: newTask.image || null,
+        },
+      }).catch(() => {});
+    }
+  }, [sync, userId]);
 
   const updateTaskStatus = useCallback((id: string, status: HomeworkStatus) => {
     setTasks(prev =>
       prev.map(task => (task.id === id ? { ...task, status } : task))
     );
-  }, []);
+    // 同步状态更新到服务器
+    if (USE_SUPABASE && userId) {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        sync('homework', {
+          type: 'update',
+          data: {
+            id,
+            subject: task.subject,
+            title: task.title,
+            status,
+            due_date: task.dueDate || null,
+            image: task.image || null,
+          },
+        }).catch(() => {});
+      }
+    }
+  }, [sync, userId, tasks]);
 
   const deleteTask = useCallback((id: string) => {
     setTasks(prev => {
       const task = prev.find(t => t.id === id);
-      if (task) {
+      if (task && USE_SUPABASE && userId) {
         sync('homework', { type: 'delete', data: { id } }).catch(() => {});
       }
       return prev.filter(task => task.id !== id);
     });
-  }, [sync]);
+  }, [sync, userId]);
 
   const getTasksBySubject = useCallback(
     (subject: string) => {

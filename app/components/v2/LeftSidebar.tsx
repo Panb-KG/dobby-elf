@@ -8,7 +8,7 @@ import { memo } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { User } from '@/types';
 import type { GrowthTreeNode } from '@/lib/growth/tree';
-import { QUICK_ACTIONS, type LeftTab, type PanelType } from './v2-constants';
+import { QUICK_ACTIONS, getSortedActions, type LeftTab, type PanelType } from './v2-constants';
 
 interface LeftSidebarProps {
   isLeftCollapsed: boolean;
@@ -72,7 +72,7 @@ export const LeftSidebar = memo(function LeftSidebar({
 
       {/* 快捷操作 */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {QUICK_ACTIONS.map(action => {
+        {getSortedActions().map(action => {
           const Icon = action.icon;
           const isActive = leftTab === action.id;
           return (

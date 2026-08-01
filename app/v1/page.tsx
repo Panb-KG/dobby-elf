@@ -55,10 +55,10 @@ export default function Page() {
   const course = useCourses({ userId: user?.id });
 
   // ========== 作业状态 ==========
-  const homework = useHomework();
+  const homework = useHomework({ userId: user?.id });
 
   // ========== 成就状态 ==========
-  const achievements = useAchievements({ user });
+  const achievements = useAchievements({ user, userId: user?.id });
 
   // ========== 专注状态 ==========
   const focus = useFocus({ defaultDuration: 25, autoSave: true });

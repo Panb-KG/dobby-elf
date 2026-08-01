@@ -19,6 +19,7 @@ import { LeftSidebar } from '@/components/v2/LeftSidebar';
 import { ChatArea } from '@/components/v2/ChatArea';
 import { RightPanel } from '@/components/v2/RightPanel';
 import type { LeftTab, PanelType } from '@/components/v2/v2-constants';
+import { trackMenuClick } from '@/components/v2/v2-constants';
 import { requiresAuth, actionRequiresAuth, getAuthPrompt } from '@/lib/auth-guard';
 import AuthConfirmDialog from '@/components/ui/AuthConfirmDialog';
 
@@ -38,7 +39,7 @@ export default function PageV2() {
   const agentChat = useAgentChat();
 
   // ===== UI 状态 =====
-  const [leftTab, setLeftTab] = useState<LeftTab>('chat');
+  const [leftTab, setLeftTab] = useState<LeftTab>('schedule');
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightOpen, setIsRightOpen] = useState(false);
   const [rightPanelType, setRightPanelType] = useState<PanelType>('none');
@@ -157,6 +158,7 @@ export default function PageV2() {
     }
     
     setLeftTab(actionId as LeftTab);
+    trackMenuClick(actionId);
     const panelMap: Record<string, { type: PanelType; title: string }> = {
       knowledge: { type: 'knowledge_card', title: '知识库' },
       tree: { type: 'growth_tree', title: '成长之树' },
