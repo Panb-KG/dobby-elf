@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseUrl, supabaseServiceKey, getSupabase } from './helpers';
+import { getSupabaseUrl, getSupabaseServiceKey, getSupabase } from './helpers';
 import { handleRegisterParent, handleRegisterStudent } from './handlers-register';
 import { handleLogin, handleChildLogin, handleAutoLogin } from './handlers-login';
 
@@ -14,13 +14,24 @@ import { handleLogin, handleChildLogin, handleAutoLogin } from './handlers-login
  */
 
 export async function POST(request: NextRequest) {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseServiceKey = getSupabaseServiceKey();
   if (!supabaseUrl || !supabaseServiceKey) {
+    console.warn('[Auth] Supabase 未配置，使用本地回退模式');
+    // 即使 Supabase 未配置，也允许 auto_login 走本地回退
+    try {
+      const body = await request.json();
+      if (body.action === 'auto_login') {
+        return handleAutoLogin(body);
+      }
+    } catch { /* ignore */ }
     return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
   }
 
   try {
     const body = await request.json();
     const { action } = body;
+    console.log('[Auth] action=%s', action);
 
     switch (action) {
       case 'register_parent':
@@ -37,12 +48,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '无效的操作' }, { status: 400 });
     }
   } catch (err) {
-    console.error('Auth API error:', err);
+    console.error('[Auth] POST error:', err);
     return NextResponse.json({ error: '魔法出错了，请稍后再试' }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseServiceKey = getSupabaseServiceKey();
   if (!supabaseUrl || !supabaseServiceKey) {
     return NextResponse.json({ error: '认证服务未配置' }, { status: 503 });
   }

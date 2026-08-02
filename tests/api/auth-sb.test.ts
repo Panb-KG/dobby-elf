@@ -31,12 +31,14 @@ const mockSupabase = {
 };
 
 vi.mock('@/api/auth-sb/helpers', () => ({
-  supabaseUrl: 'https://test.supabase.co',
-  supabaseServiceKey: 'test-key',
+  getSupabaseUrl: vi.fn(() => 'https://test.supabase.co'),
+  getSupabaseServiceKey: vi.fn(() => 'test-key'),
+  getSupabaseAnonKey: vi.fn(() => 'test-anon-key'),
   getSupabase: vi.fn(() => mockSupabase),
   getSupabaseAnon: vi.fn(() => mockSupabase),
   toFakeEmail: vi.fn((u: string) => `${u}@dobby-elf.app`),
   generateToken: vi.fn(() => 'tk_test'),
+  getLocalUserId: vi.fn((u: string) => 'local_test123'),
 }));
 
 beforeEach(() => {
