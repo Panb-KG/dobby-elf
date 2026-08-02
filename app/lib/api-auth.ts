@@ -6,18 +6,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-let authSupabase: SupabaseClient | null = null;
-
 function getAuthSupabase(): SupabaseClient {
-  if (!authSupabase) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) {
-      throw new Error('Supabase 环境变量未配置');
-    }
-    authSupabase = createClient(url, key);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error('Supabase 环境变量未配置');
   }
-  return authSupabase;
+  // 每次创建新客户端，避免服务端 session 缓存导致 token 验证失败
+  return createClient(url, key, { auth: { persistSession: false } });
 }
 
 /**
