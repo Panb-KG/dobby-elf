@@ -15,7 +15,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,8 +22,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint || true
-      - run: npm test -- --run || true
+      - run: npm run lint
+      - run: npm test -- --run
       - uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: false
