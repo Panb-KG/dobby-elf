@@ -114,7 +114,8 @@ npm run healthcheck  # 健康检查（/api/health）
 
 - 单元测试: `tests/**/*.test.{ts,tsx}` 和 `app/**/*.test.{ts,tsx}`
 - E2E 测试: `tests/*.spec.ts`（Playwright）
-- 测试覆盖率阈值 80%（仅覆盖非 API、非数据库依赖文件）
+- 覆盖率策略: `coverage.include` 精确指定可测源文件，排除服务端模块（API、Supabase 依赖、agent、services 等 jsdom 不可测）
+- 覆盖率阈值: statements 60%, branches 55%, functions 60%, lines 60%
 - 组件测试使用 `@testing-library/react` + `jsdom` 环境
 
 ## CI/CD 流水线
