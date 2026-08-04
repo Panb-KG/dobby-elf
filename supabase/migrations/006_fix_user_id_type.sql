@@ -21,15 +21,15 @@ BEGIN
     END LOOP;
 END $$;
 
--- ===== 修改 conversations 表 =====
-ALTER TABLE conversations ALTER COLUMN user_id TYPE TEXT;
+-- ===== 删除外键约束 =====
 ALTER TABLE conversations DROP CONSTRAINT IF EXISTS conversations_user_id_fkey;
-
--- ===== 修改 messages 表 =====
-ALTER TABLE messages ALTER COLUMN user_id TYPE TEXT;
 ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_user_id_fkey;
-ALTER TABLE messages ALTER COLUMN conversation_id TYPE TEXT;
 ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_conversation_id_fkey;
+
+-- ===== 修改列类型 =====
+ALTER TABLE conversations ALTER COLUMN user_id TYPE TEXT;
+ALTER TABLE messages ALTER COLUMN user_id TYPE TEXT;
+ALTER TABLE messages ALTER COLUMN conversation_id TYPE TEXT;
 
 -- ===== 重建索引 =====
 DROP INDEX IF EXISTS idx_conv_user;
