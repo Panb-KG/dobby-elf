@@ -218,5 +218,29 @@ export interface BaseComponentProps {
   children?: React.ReactNode;
 }
 
+// ===== 会话与消息相关类型 =====
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+  /** 前端用：最新消息预览 */
+  lastMessage?: string;
+}
+
+export interface ChatRecord {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  images: string[] | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 // ===== 导出所有类型 =====
 // 所有类型已在上方直接 export，无需重复导出

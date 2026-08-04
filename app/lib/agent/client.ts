@@ -320,3 +320,63 @@ export async function searchDiary(q: string): Promise<{ entries: any[]; total: n
   if (!response.ok) throw new Error('搜索失败');
   return response.json();
 }
+
+// ===== 会话管理 =====
+
+export interface ConversationSummary {
+  id: string;
+  user_id: string;
+  title: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+  lastMessage?: string | null;
+}
+
+export async function getConversations(limit = 50): Promise<{ conversations: ConversationSummary[] }> {
+  const response = await authFetch(`/api/conversations?limit=${limit}`);
+  if (!response.ok) throw new Error('获取会话列表失败');
+  return response.json();
+}
+
+export async function createConversation(title?: string): Promise<{ conversation: ConversationSummary }> {
+  const response = await authFetch('/api/conversations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (!response.ok) throw new Error('创建会话失败');
+  return response.json();
+}
+
+export async function updateConversation(id: string, title: string): Promise<{ conversation: ConversationSummary }> {
+  const response = await authFetch('/api/conversations', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, title }),
+  });
+  if (!response.ok) throw new Error('更新会话失败');
+  return response.json();
+}
+
+export async function deleteConversation(id: string): Promise<{ success: boolean }> {
+  const response = await authFetch(`/api/conversations?id=${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error('删除会话失败');
+  return response.json();
+}
+
+export async function getConversationMessages(conversationId: string): Promise<{ messages: any[] }> {
+  const response = await authFetch(`/api/conversations/messages?conversation_id=${conversationId}`);
+  if (!response.ok) throw new Error('获取消息失败');
+  return response.json();
+}
+
+export async function saveConversationMessages(conversationId: string, messages: Array<{ role: string; content: string }>): Promise<{ success: boolean; count: number }> {
+  const response = await authFetch('/api/conversations/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ conversation_id: conversationId, messages }),
+  });
+  if (!response.ok) throw new Error('保存消息失败');
+  return response.json();
+}

@@ -49,6 +49,8 @@ export default function PageV2() {
   const [growthRefreshKey, setGrowthRefreshKey] = useState(0);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [waterMessage, setWaterMessage] = useState<string | null>(null);
+  /** 左栏模式：'chat' = 会话列表, 'menu' = 快捷菜单 */
+  const [sidebarMode, setSidebarMode] = useState<'chat' | 'menu'>('chat');
 
   const recognitionRef = useRef<any>(null);
 
@@ -206,6 +208,13 @@ export default function PageV2() {
           waterMessage={waterMessage}
           onLogout={logout}
           onLogin={() => setShowLoginModal(true)}
+          currentConvId={agentChat.currentConvId}
+          onSwitchConversation={agentChat.switchConversation}
+          onNewConversation={async (id) => {
+            await agentChat.newConversation();
+          }}
+          sidebarMode={sidebarMode}
+          onToggleSidebarMode={() => setSidebarMode(prev => prev === 'chat' ? 'menu' : 'chat')}
         />
 
         <ChatArea
