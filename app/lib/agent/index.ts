@@ -12,6 +12,7 @@ import { getToolsForIntent } from './tools';
 import { searchKnowledge } from '../knowledge';
 import { checkTextSafety, checkInputSafety, sanitizeContent, hybridSafetyCheck } from '../safety-filter';
 import { callLLM, inferPanelAction } from './llm-helper';
+import { extractMemoriesFromConversation, retrieveRelevantMemories } from './memory-extractor';
 
 /**
  * Agent 主入口
@@ -59,7 +60,19 @@ export async function processMessage(
     config.baseUrl
   );
 
-  // ===== Step 3: 知识库检索（如果是学科问答） =====
+  // ===== Step 3: 检索相关记忆并注入到 system prompt =====
+  let memoryContext = '';
+  try {
+    const memories = await retrieveRelevantMemories(userId, userMessage);
+    if (memories.length > 0) {
+      memoryContext = '\n\n【用户记忆】以下是关于该用户的重要信息，请在回复时参考：\n' +
+        memories.map((m, i) => `${i + 1}. ${m}`).join('\n');
+    }
+  } catch {
+    // 记忆检索失败不影响主流程
+  }
+
+  // ===== Step 4: 知识库检索（如果是学科问答） =====
   let knowledgeContext = '';
   let knowledgeRefs: string[] = [];
   const toolsUsed: string[] = [];
@@ -82,8 +95,13 @@ export async function processMessage(
     }
   }
 
-  // ===== Step 4: 构建完整 Prompt =====
+  // ===== Step 5: 构建完整 Prompt =====
   let systemPrompt = SYSTEM_PROMPT;
+
+  // 注入记忆上下文
+  if (memoryContext) {
+    systemPrompt += memoryContext;
+  }
 
   // 注入知识上下文
   if (knowledgeContext) {
@@ -97,10 +115,10 @@ export async function processMessage(
     { role: 'user' as const, content: userMessage },
   ];
 
-  // ===== Step 5: 调用 LLM =====
+  // ===== Step 6: 调用 LLM =====
   const response = await callLLM(messages, config, intent);
 
-  // ===== Step 6: 解析面板指令 =====
+  // ===== Step 7: 解析面板指令 =====
   let panelAction: PanelAction | undefined;
   const panelMatch = response.text.match(/\[PANEL:(\w+)\|(.+?)\]/);
 
@@ -126,7 +144,7 @@ export async function processMessage(
     panelAction = inferPanelAction(intent, knowledgeRefs);
   }
 
-  // ===== Step 7: 回复内容安全检查（关键词 + 敏感信息脱敏） =====
+  // ===== Step 8: 回复内容安全检查（关键词 + 敏感信息脱敏） =====
   const replySafety = checkTextSafety(response.text);
   if (replySafety.level === 'blocked') {
     response.text = replySafety.suggestion || '让我想想怎么回答你更好～';
@@ -134,7 +152,14 @@ export async function processMessage(
   // 敏感信息脱敏
   response.text = sanitizeContent(response.text);
 
-  // ===== Step 8: 返回结果 =====
+  // ===== Step 8: 异步提取记忆（不阻塞响应） =====
+  // 每轮对话结束后，后台提取记忆
+  const fullHistory = [...history, { role: 'user' as const, content: userMessage }, { role: 'assistant' as const, content: response.text }];
+  extractMemoriesFromConversation(fullHistory, userId).catch(err => {
+    console.error('[Agent] Memory extraction failed:', err);
+  });
+
+  // ===== Step 9: 返回结果 =====
   return {
     text: response.text,
     intent,

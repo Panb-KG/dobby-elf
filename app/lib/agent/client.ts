@@ -380,3 +380,64 @@ export async function saveConversationMessages(conversationId: string, messages:
   if (!response.ok) throw new Error('保存消息失败');
   return response.json();
 }
+
+// ===== 记忆系统 =====
+
+export interface Memory {
+  id: string;
+  user_id: string;
+  content: string;
+  category: string;
+  source_conversation_id: string | null;
+  source_message_id: string | null;
+  confidence: number;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getMemories(options?: { category?: string; tags?: string[]; limit?: number }): Promise<{ memories: Memory[] }> {
+  const params = new URLSearchParams();
+  if (options?.category) params.set('category', options.category);
+  if (options?.tags && options.tags.length > 0) params.set('tags', options.tags.join(','));
+  if (options?.limit) params.set('limit', String(options.limit));
+
+  const query = params.toString() ? `?${params}` : '';
+  const response = await authFetch(`/api/memories${query}`);
+  if (!response.ok) throw new Error('获取记忆失败');
+  return response.json();
+}
+
+export async function createMemory(data: {
+  content: string;
+  category: string;
+  source_conversation_id?: string;
+  source_message_id?: string;
+  confidence?: number;
+  tags?: string[];
+}): Promise<{ memory: Memory }> {
+  const response = await authFetch('/api/memories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('创建记忆失败');
+  return response.json();
+}
+
+export async function updateMemory(id: string, updates: Partial<Memory>): Promise<{ memory: Memory }> {
+  const response = await authFetch('/api/memories', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, ...updates }),
+  });
+  if (!response.ok) throw new Error('更新记忆失败');
+  return response.json();
+}
+
+export async function deleteMemory(id: string): Promise<{ success: boolean }> {
+  const response = await authFetch(`/api/memories?id=${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error('删除记忆失败');
+  return response.json();
+}

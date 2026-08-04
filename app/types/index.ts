@@ -242,5 +242,31 @@ export interface ChatRecord {
   created_at: string;
 }
 
+// ===== 记忆系统相关类型 =====
+
+export type MemoryCategory = 'user_profile' | 'learning_pref' | 'important_event' | 'conversation_habit' | 'general';
+
+export const MEMORY_CATEGORY_LABELS: Record<MemoryCategory, string> = {
+  user_profile: '用户画像',
+  learning_pref: '学习偏好',
+  important_event: '重要事件',
+  conversation_habit: '对话习惯',
+  general: '其他',
+};
+
+export interface Memory {
+  id: string;
+  user_id: string;
+  content: string;
+  category: MemoryCategory;
+  source_conversation_id: string | null;
+  source_message_id: string | null;
+  confidence: number;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // ===== 导出所有类型 =====
 // 所有类型已在上方直接 export，无需重复导出
