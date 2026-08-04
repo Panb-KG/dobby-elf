@@ -4,7 +4,7 @@
 
 "use client";
 
-import { memo } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { Mic, Send, Square, Loader2 } from 'lucide-react';
 import type { UseAgentChatReturn } from './useAgentChat';
 import { QUICK_PROMPTS } from './v2-constants';
@@ -17,10 +17,18 @@ interface ChatAreaProps {
 }
 
 export const ChatArea = memo(function ChatArea({ agentChat, isVoiceActive, onToggleVoice, onSend }: ChatAreaProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // 新消息时自动滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [agentChat.messages, agentChat.isLoading]);
+
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* 聊天消息 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {agentChat.messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
@@ -51,6 +59,7 @@ export const ChatArea = memo(function ChatArea({ agentChat, isVoiceActive, onTog
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 输入区 */}

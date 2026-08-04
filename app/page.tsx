@@ -52,7 +52,7 @@ export default function PageV2() {
 
   const recognitionRef = useRef<any>(null);
 
-  // ===== Agent 驱动右栏 =====
+  // ===== Agent 驱动右栏（仅更新内容，不自动弹出） =====
   useEffect(() => {
     if (agentChat.panelAction) {
       const action = agentChat.panelAction;
@@ -67,10 +67,10 @@ export default function PageV2() {
         return;
       }
       
+      // 仅更新面板内容，不自动打开右侧栏（用户可通过左侧菜单手动打开）
       setRightPanelType(action.type);
       setRightPanelTitle(action.title || '');
       setRightPanelData(action.data);
-      if (action.open) setIsRightOpen(true);
     }
   }, [agentChat.panelAction, isGuest]);
 
