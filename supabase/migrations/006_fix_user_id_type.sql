@@ -1,9 +1,25 @@
 -- 修复会话表 user_id 类型兼容性（支持本地回退模式）
 -- Migration 006
 
--- ===== 先删除 RLS 策略 =====
-DROP POLICY IF EXISTS "conversations_all" ON conversations;
-DROP POLICY IF EXISTS "messages_all" ON messages;
+-- ===== 先删除所有 RLS 策略 =====
+DO $$
+DECLARE
+    pol RECORD;
+BEGIN
+    FOR pol IN 
+        SELECT policyname FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'conversations'
+    LOOP
+        EXECUTE 'DROP POLICY IF EXISTS "' || pol.policyname || '" ON conversations';
+    END LOOP;
+    
+    FOR pol IN 
+        SELECT policyname FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'messages'
+    LOOP
+        EXECUTE 'DROP POLICY IF EXISTS "' || pol.policyname || '" ON messages';
+    END LOOP;
+END $$;
 
 -- ===== 修改 conversations 表 =====
 ALTER TABLE conversations ALTER COLUMN user_id TYPE TEXT;
