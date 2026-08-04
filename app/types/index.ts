@@ -222,7 +222,7 @@ export interface BaseComponentProps {
 
 export interface Conversation {
   id: string;
-  user_id: string;
+  user_id: string; // TEXT 类型，兼容本地回退模式（local_xxx）
   title: string;
   model: string;
   created_at: string;
@@ -233,8 +233,8 @@ export interface Conversation {
 
 export interface ChatRecord {
   id: string;
-  conversation_id: string;
-  user_id: string;
+  conversation_id: string; // TEXT 类型
+  user_id: string; // TEXT 类型，兼容本地回退模式
   role: 'user' | 'assistant' | 'system';
   content: string;
   images: string[] | null;
