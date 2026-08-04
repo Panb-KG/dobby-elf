@@ -18,6 +18,7 @@ import { PWAProvider } from '@/components/PWAProvider';
 import { LeftSidebar } from '@/components/v2/LeftSidebar';
 import { ChatArea } from '@/components/v2/ChatArea';
 import { RightPanel } from '@/components/v2/RightPanel';
+import { MemoryManager } from '@/components/v2/MemoryManager';
 import type { LeftTab, PanelType } from '@/components/v2/v2-constants';
 import { trackMenuClick } from '@/components/v2/v2-constants';
 import { requiresAuth, actionRequiresAuth, getAuthPrompt } from '@/lib/auth-guard';
@@ -172,6 +173,7 @@ export default function PageV2() {
       focus: { type: 'focus', title: '专注沙漏' },
       achievements: { type: 'achievements', title: '我的宝藏' },
       portfolio: { type: 'portfolio', title: '星光档案' },
+      memories: { type: 'memories', title: '我的记忆' },
     };
     const panel = panelMap[actionId];
     if (panel) {
@@ -278,6 +280,10 @@ export default function PageV2() {
               } else if (action.type === 'portfolio') {
                 setRightPanelType('portfolio');
                 setRightPanelTitle('星光档案');
+                setIsRightOpen(true);
+              } else if (action.type === 'memories') {
+                setRightPanelType('memories');
+                setRightPanelTitle('我的记忆');
                 setIsRightOpen(true);
               }
             }

@@ -4,7 +4,7 @@
 
 import {
   Calendar, BookOpen, Star, TreePine,
-  PenLine, Pencil, BrainCircuit, Hourglass, Trophy, Camera,
+  PenLine, Pencil, BrainCircuit, Hourglass, Trophy, Camera, Brain,
 } from 'lucide-react';
 
 export const QUICK_ACTIONS = [
@@ -52,8 +52,8 @@ export function getSortedActions(): QuickAction[] {
   }
 }
 
-export type LeftTab = 'knowledge' | 'diary' | 'tree' | 'score' | 'schedule' | 'homework' | 'exercise' | 'focus' | 'achievements' | 'portfolio';
-export type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary' | 'focus' | 'achievements' | 'portfolio';
+export type LeftTab = 'knowledge' | 'diary' | 'tree' | 'score' | 'schedule' | 'homework' | 'exercise' | 'focus' | 'achievements' | 'portfolio' | 'memories';
+export type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary' | 'focus' | 'achievements' | 'portfolio' | 'memories';
 
 export const QUICK_PROMPTS = [
   { label: '📚 查课表', text: '今天有什么课？' },

@@ -6,7 +6,7 @@
 "use client";
 
 import { memo, useState } from 'react';
-import { ChevronLeft, ChevronRight, X, MessageSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, MessageSquare, Brain } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import type { User } from '@/types';
 import type { GrowthTreeNode } from '@/lib/growth/tree';
@@ -121,6 +121,17 @@ export const LeftSidebar = memo(function LeftSidebar({
                     </div>
                   );
                 })}
+
+                {/* 我的记忆 */}
+                <button
+                  onClick={() => onActionClick('memories')}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    leftTab === 'memories' ? 'bg-purple-500/20 text-purple-400' : 'hover:bg-white/5 text-gray-300'
+                  }`}
+                >
+                  <Brain size={18} />
+                  <span className="text-sm">我的记忆</span>
+                </button>
 
                 {/* 成长之树快速展示 */}
                 {growthTree && (
