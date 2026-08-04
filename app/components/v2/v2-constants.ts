@@ -4,7 +4,7 @@
 
 import {
   Calendar, BookOpen, Star, TreePine,
-  PenLine, Pencil, BrainCircuit, Hourglass, Trophy,
+  PenLine, Pencil, BrainCircuit, Hourglass, Trophy, Camera,
 } from 'lucide-react';
 
 export const QUICK_ACTIONS = [
@@ -14,6 +14,7 @@ export const QUICK_ACTIONS = [
   { id: 'diary', label: '魔法日记', icon: PenLine, color: 'from-pink-500 to-pink-600' },
   { id: 'score', label: '亲子打分', icon: Star, color: 'from-amber-500 to-amber-600' },
   { id: 'tree', label: '成长之树', icon: TreePine, color: 'from-green-500 to-green-600' },
+  { id: 'portfolio', label: '星光档案', icon: Camera, color: 'from-indigo-500 to-indigo-600' },
   { id: 'focus', label: '专注沙漏', icon: Hourglass, color: 'from-teal-500 to-teal-600' },
   { id: 'achievements', label: '我的宝藏', icon: Trophy, color: 'from-yellow-500 to-yellow-600' },
   { id: 'knowledge', label: '知识库', icon: BookOpen, color: 'from-purple-500 to-purple-600' },
@@ -51,8 +52,8 @@ export function getSortedActions(): QuickAction[] {
   }
 }
 
-export type LeftTab = 'knowledge' | 'diary' | 'tree' | 'score' | 'schedule' | 'homework' | 'exercise' | 'focus' | 'achievements';
-export type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary' | 'focus' | 'achievements';
+export type LeftTab = 'knowledge' | 'diary' | 'tree' | 'score' | 'schedule' | 'homework' | 'exercise' | 'focus' | 'achievements' | 'portfolio';
+export type PanelType = 'none' | 'knowledge_card' | 'exercise' | 'schedule' | 'homework' | 'image' | 'growth_tree' | 'parent_score' | 'profile' | 'diary' | 'focus' | 'achievements' | 'portfolio';
 
 export const QUICK_PROMPTS = [
   { label: '📚 查课表', text: '今天有什么课？' },

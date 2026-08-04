@@ -1,0 +1,129 @@
+{
+  "summary": {
+    "projectName": "dobby-elf",
+    "locale": "zh-CN",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 25,
+    "overview": "项目拥有完整的 CI/CD 流水线和测试基础设施，但质量门禁被静默吞没，且缺少项目级 agent 指引，导致编码 agent 在无上下文约束的环境下运行。",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Workflows"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            ".github/workflows/ci-cd.yml"
+          ]
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ]
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "任务理解",
+        "score": 55,
+        "summary": "项目有 PRD 和 README 提供任务上下文，但无 AGENTS.md 或代码规则为 agent 提供约定、边界和路由指引。",
+        "findingRefs": [
+          "missing-agent-context-map"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "可控执行",
+        "score": 72,
+        "summary": "package.json 定义了 dev/build/lint/test 脚本，Node 版本通过 .node-version 固定，启动路径清晰。",
+        "findingRefs": [
+          "missing-agent-context-map"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "改动验证",
+        "score": 55,
+        "summary": "测试文件存在（23 个测试文件覆盖 195 个源文件），但 CI 中 lint 和 test 步骤均用 || true 吞没失败，质量门禁形同虚设。",
+        "findingRefs": [
+          "ci-quality-gate-bypassed",
+          "coverage-threshold-excludes-api"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "可靠交付",
+        "score": 55,
+        "summary": "部署流水线包含健康检查和 Slack 通知，但因 CI 门禁无法拦截失败，损坏代码可直接到达生产环境。",
+        "findingRefs": [
+          "ci-quality-gate-bypassed"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "经验沉淀",
+        "score": 35,
+        "summary": "观察窗口内无合格 Task Episode，无法评估学习捕获能力。",
+        "findingRefs": []
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "ci-quality-gate-bypassed",
+      "title": "CI/CD 质量门禁被静默绕过——lint 和测试失败不阻止部署",
+      "severity": "High",
+      "reason": "ci-cd.yml 中 test job 设置了 continue-on-error: true，且 lint 和 test 步骤均追加 || true，导致任何失败都被吞没。build job 声明 needs: test 但 test 永远不会失败，使得整条部署链路（test → build → docker → deploy）无法拦截损坏代码。事实：ci-cd.yml 第 18 行 continue-on-error: true，第 26 行 npm run lint || true，第 27 行 npm test -- --run || true。Owner：项目级 CI/CD 配置（.github/workflows/ci-cd.yml）。验证：读取 ci-cd.yml 确认 test/lint 步骤无法产生失败状态。",
+      "expectedOutput": [
+        "CI test job在lint或test失败时返回非零退出码",
+        "build job在test失败时被跳过"
+      ],
+      "expectedArtifact": ".github/workflows/ci-cd.yml",
+      "aiFixPrompt": "修复 CI/CD 质量门禁，使 lint 和测试失败能正确阻止后续构建和部署。\n\n## 步骤\n\n1. 移除 .github/workflows/ci-cd.yml 中 test job 的 continue-on-error: true\n2. 移除 lint 步骤的 || true\n3. 移除 test 步骤的 || true\n4. 确认 codecov 的 fail_ci_if_error 设置符合预期\n\n## 验证\n\n- 推送一个故意失败的 lint 变更，确认 CI job 状态为失败\n- 确认 build job 在 test 失败时不会运行",
+      "dimensionRefs": [
+        "change-validation",
+        "reliable-delivery"
+      ]
+    },
+    {
+      "id": "missing-agent-context-map",
+      "title": "项目级 agent 配置表面完全为空——195 个源文件无上下文指引",
+      "severity": "Medium",
+      "reason": "项目无 AGENTS.md、无 Rules、无 Skills、无 Hooks、无 MCPs、无 Custom Agents。所有 agent 定制表面为零。186 个文件集中在 app/ 目录下（components 66、lib 43、api 25、hooks 19、admin 10），agent 必须仅从代码推断架构约定、Supabase 模式、组件目录结构和 API 路由模式。唯一项目资产是 CI/CD 工作流，但无配套路由说明供 agent 消费。事实：lint envelope 全部为零，inventory envelope 仅含 1 个 workflow。验证：搜索项目根目录和 app/ 下无 AGENTS.md、.cursorrules、.editorconfig 或 eslint 配置。",
+      "expectedOutput": [
+        "项目根目录存在 AGENTS.md",
+        "内容覆盖目录结构、构建命令、关键约定"
+      ],
+      "expectedArtifact": "AGENTS.md",
+      "aiFixPrompt": "为项目创建 AGENTS.md，为编码 agent 提供项目上下文指引。\n\n## 步骤\n\n1. 在项目根目录创建 AGENTS.md\n2. 包含以下关键信息：\n   - 项目概述（Next.js + Supabase 儿童教育应用）\n   - 目录结构约定（app/components、app/lib、app/api、app/hooks）\n   - Supabase 模式约定和认证策略\n   - 构建和测试命令（npm run dev、npm test、npm run lint）\n   - 关键约束（如 API 路由需 Next.js 环境、数据库依赖外部文件）\n\n## 验证\n\n- 确认 AGENTS.md 存在于项目根目录\n- 确认内容覆盖主要目录和约定",
+      "dimensionRefs": [
+        "task-understanding",
+        "controlled-execution"
+      ]
+    },
+    {
+      "id": "coverage-threshold-excludes-api",
+      "title": "覆盖率阈值声明 80% 但整个 API 层被排除——阈值对核心代码不可执行",
+      "severity": "Low",
+      "reason": "vitest.config.ts 声明 80% 覆盖率阈值，但 exclude 列表包含 app/api/（25 个文件，整个 HTTP 表面）和 app/lib/db.ts。仅 23 个测试文件覆盖 195 个源文件（约 12% 测试比），阈值要么仅对窄范围有效，要么从未对最高变更风险的代码进行检查。事实：vitest.config.ts 第 28-29 行 exclude 包含 app/api/ 和 app/lib/db.ts，第 31-35 行 thresholds 设为 80%。验证：运行 npx vitest run --coverage 并确认 app/api/ 文件不在报告中。",
+      "expectedOutput": [
+        "覆盖率阈值与实际测量范围一致",
+        "排除范围有明确理由或被逐步覆盖"
+      ],
+      "expectedArtifact": "vitest.config.ts 及测试文件",
+      "aiFixPrompt": "审查并调整测试覆盖率策略，使覆盖率阈值反映实际测量范围。\n\n## 步骤\n\n1. 运行 npx vitest run --coverage 查看当前覆盖率报告\n2. 评估 app/api/ 排除是否仍合理（考虑是否有替代测试方案）\n3. 如果排除范围过大，为关键 API 路由添加集成测试或调整 exclude\n4. 如果排除是合理的，将 thresholds 调整为仅覆盖实际测量范围的合理值\n\n## 验证\n\n- 确认覆盖率报告范围与阈值匹配\n- 确认关键 API 路由有测试覆盖或排除理由被记录",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    }
+  ]
+}

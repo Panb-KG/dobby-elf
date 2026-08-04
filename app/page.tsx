@@ -169,6 +169,7 @@ export default function PageV2() {
       exercise: { type: 'exercise', title: '练习题' },
       focus: { type: 'focus', title: '专注沙漏' },
       achievements: { type: 'achievements', title: '我的宝藏' },
+      portfolio: { type: 'portfolio', title: '星光档案' },
     };
     const panel = panelMap[actionId];
     if (panel) {
@@ -264,6 +265,10 @@ export default function PageV2() {
               } else if (action.type === 'achievements') {
                 setRightPanelType('achievements');
                 setRightPanelTitle('我的宝藏');
+                setIsRightOpen(true);
+              } else if (action.type === 'portfolio') {
+                setRightPanelType('portfolio');
+                setRightPanelTitle('星光档案');
                 setIsRightOpen(true);
               }
             }

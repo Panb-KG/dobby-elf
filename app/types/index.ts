@@ -155,6 +155,54 @@ export interface Spell {
   icon?: string; // 图标名称（可选）
 }
 
+// ===== 星光档案相关类型 =====
+
+export type PortfolioCategory = 'award' | 'certificate' | 'report_card' | 'photo' | 'artwork' | 'activity' | 'other';
+
+export interface PortfolioItem {
+  id: string;
+  user_id: string;
+  category: PortfolioCategory;
+  title: string;
+  description: string | null;
+  event_date: string | null;
+  source: string | null;
+  storage_path: string | null;
+  thumbnail_path: string | null;
+  file_type: string | null;
+  tags: string[];
+  is_favorite: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  /** 前端用：文件 URL（通过签名 URL 或公开 URL 获取） */
+  fileUrl?: string;
+}
+
+export interface Resume {
+  id: string;
+  user_id: string;
+  purpose: string | null;
+  style: string | null;
+  time_range_start: string | null;
+  time_range_end: string | null;
+  extra_prompt: string | null;
+  title: string | null;
+  content: string | null;
+  portfolio_item_ids: string[];
+  created_at: string;
+}
+
+export const PORTFOLIO_CATEGORY_LABELS: Record<PortfolioCategory, string> = {
+  award: '🏆 奖状荣誉',
+  certificate: '📜 证书',
+  report_card: '📊 成绩单',
+  photo: '📷 重要照片',
+  artwork: '🎨 作品',
+  activity: '🎯 活动记录',
+  other: '📁 其他',
+};
+
 // ===== API 响应类型 =====
 
 export interface ApiResponse<T> {

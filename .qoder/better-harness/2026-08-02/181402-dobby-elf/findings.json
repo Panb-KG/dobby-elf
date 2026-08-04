@@ -1,0 +1,178 @@
+{
+  "summary": {
+    "projectName": "dobby-elf",
+    "locale": "zh-CN",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 25,
+    "overview": "项目具备基本的 CI/CD 管道和 Agent 指引，但高变更区域缺乏测试保护，生产环境无可观测性能力，编码约定通过单一通道传递。",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            ".github/workflows/ci-cd.yml"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "MCP",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Hooks",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Commands",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ]
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "任务理解",
+        "score": 68,
+        "summary": "AGENTS.md 提供了清晰的目录结构、Supabase 约定和关键约束，但全部编码指导通过单一 Rules 通道传递，无冗余路由。",
+        "findingRefs": [
+          "single-convention-routing-channel"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "可控执行",
+        "score": 58,
+        "summary": "项目可通过 npm run dev 启动并通过 /api/health 检查健康，但缺少环境诊断命令和生产可观测性能力。",
+        "findingRefs": [
+          "production-observability-gap"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "改动验证",
+        "score": 48,
+        "summary": "具备 lint + TypeScript + Vitest 三层检查，但 30 天内 churn 最高的日记模块完全无测试覆盖，E2E 测试未纳入 CI。",
+        "findingRefs": [
+          "diary-module-test-gap"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "可靠交付",
+        "score": 52,
+        "summary": "CI/CD 四阶管道完整（test→build→docker→deploy），但部署无回滚机制，生产验收不可观测。",
+        "findingRefs": [
+          "production-observability-gap"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "经验沉淀",
+        "score": 35,
+        "summary": "零会话证据可供分析，无 Memory 或 Skill 捕获重复性经验，编码约定完全依赖静态文档。",
+        "findingRefs": [
+          "single-convention-routing-channel"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "diary-module-test-gap",
+      "title": "高变更日记模块完全缺乏测试保护",
+      "severity": "Medium",
+      "reason": "30 天内 churn 最高的 5 个文件中有 4 个属于日记模块（supabase-diary.ts churn 514、DiaryEntryItem.tsx churn 451、DiaryNewForm.tsx churn 380），合计超过 16 次提交和 1300+ 行变更，涉及 raw/processed 双表切换、语音/图片上传等复杂逻辑，但 vitest 覆盖率 include 列表中无任何日记相关文件。现有测试仅覆盖 API 路由层（tests/api/），数据访问层和组件层完全无测试。",
+      "expectedOutput": [
+        "为 supabase-diary.ts 添加带 mock 的单元测试",
+        "为 DiaryEntryItem 和 DiaryNewForm 添加组件测试",
+        "vitest 覆盖率 include 列表包含日记模块核心文件"
+      ],
+      "expectedArtifact": "测试文件",
+      "aiFixPrompt": "/better-harness fix this issue\n\n为日记模块核心文件添加测试保护。\n\n1. 将 app/lib/supabase-diary.ts 加入 vitest.config.ts 的 coverage.include\n2. 创建 mock Supabase 连接的单元测试\n3. 为 DiaryEntryItem 和 DiaryNewForm 添加组件测试\n\n## Validation\n\n- 运行 npm test 确认新测试通过\n- 检查覆盖率报告中包含日记模块文件",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "production-observability-gap",
+      "title": "生产环境无可观测性能力",
+      "severity": "Medium",
+      "reason": "logger.ts 和 monitoring.ts 均为纯控制台输出，Docker 日志驱动配置为 json-file（10MB×3 轮转），无持久化日志、无错误追踪、无请求关联 ID。对于面向儿童的生产教育应用，当日记保存失败、AI 对话异常或认证问题时，运维团队无法通过结构化日志追溯根因。Sentry 集成硬编码为 disabled，Prometheus 配置被注释掉。",
+      "expectedOutput": [
+        "结构化 JSON 日志含 timestamp、level、context 字段",
+        "错误追踪服务（Sentry 或等效）已配置并启用",
+        "API 请求含唯一关联 ID 便于问题追溯"
+      ],
+      "expectedArtifact": "可观测性配置",
+      "aiFixPrompt": "/better-harness fix this issue\n\n为生产环境添加基础可观测性能力。\n\n1. 在 logger.ts 中集成结构化日志输出（JSON 格式，含 timestamp/level/context）\n2. 启用 monitoring.ts 中的 Sentry 集成或等效错误追踪\n3. 添加请求关联 ID 中间件\n\n## Validation\n\n- 确认日志输出为结构化 JSON 格式\n- 确认错误追踪服务已连接",
+      "dimensionRefs": [
+        "controlled-execution",
+        "reliable-delivery"
+      ]
+    },
+    {
+      "id": "single-convention-routing-channel",
+      "title": "全部编码约定通过单一 AGENTS.md 通道传递，无冗余路由",
+      "severity": "Low",
+      "reason": "AGENTS.md 是项目唯一的 Rule 资产（129 行），同时承担架构说明、数据库约定、API 规范、测试策略、CI/CD 描述等多重职责。Skills、Memory、Hooks 均为零。对于拥有 Supabase 集成、AI 模型调度、离线同步等复杂领域的项目，RLS 绕过策略、Service Role Key 使用时机等关键知识仅靠静态文档传递，重复性调试经验无法被捕获和复用。",
+      "expectedOutput": [
+        "评估 AGENTS.md 中哪些流程适合拆分为 Skill",
+        "若拆分，确认新资产有明确触发和路由",
+        "确认 AGENTS.md 保持总览角色"
+      ],
+      "expectedArtifact": "资产覆盖评估",
+      "aiFixPrompt": "/better-harness fix this issue\n\n评估是否需要将 AGENTS.md 中的重复性流程拆分为独立 Skill 或知识条目。\n\n1. 识别 AGENTS.md 中描述的多步骤流程（如 Supabase 查询模式、API 鉴权链路）\n2. 评估是否有至少两个独立 Task Episode 重复执行了这些流程\n3. 若有，将最稳定的流程提取为 Skill 或 Memory\n\n## Validation\n\n- 确认拆分后的资产有明确的触发条件和路由面\n- 确认 AGENTS.md 仍保持简洁的总览角色",
+      "dimensionRefs": [
+        "task-understanding",
+        "learning-capture"
+      ]
+    }
+  ]
+}

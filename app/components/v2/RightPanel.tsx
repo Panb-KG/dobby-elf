@@ -17,6 +17,7 @@ const ParentScorePanel = dynamic(() => import('@/components/v2/ParentScorePanel'
 const KnowledgeCardPanel = dynamic(() => import('@/components/v2/KnowledgeCardPanel'), { loading: () => null, ssr: false });
 const DiaryPanel = dynamic(() => import('@/components/v2/DiaryPanel'), { loading: () => null, ssr: false });
 const ClassicPanels = dynamic(() => import('@/components/v2/ClassicPanels'), { loading: () => null, ssr: false });
+const PortfolioPanel = dynamic(() => import('@/components/v2/PortfolioPanel'), { loading: () => null, ssr: false });
 
 interface RightPanelProps {
   isRightOpen: boolean;
@@ -59,6 +60,7 @@ export const RightPanel = memo(function RightPanel({
             )}
             {panelType === 'parent_score' && <ParentScorePanel userId={userId} onScoreCompleted={onScoreCompleted} />}
             {panelType === 'diary' && <DiaryPanel />}
+            {panelType === 'portfolio' && <PortfolioPanel userId={userId} />}
             {panelType === 'knowledge_card' && (
               <KnowledgeCardPanel refs={knowledgeRefs} data={panelData} title={panelTitle} />
             )}

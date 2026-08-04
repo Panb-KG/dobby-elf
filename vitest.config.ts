@@ -37,6 +37,10 @@ export default defineConfig({
         'app/components/DailyAdventure.tsx',
         'app/components/ErrorBoundary.tsx',
         'app/components/ui/LoadingScreen.tsx',
+        'app/lib/supabase-diary.ts',
+        'app/lib/supabase-diary-types.ts',
+        'app/components/v2/DiaryEntryItem.tsx',
+        'app/components/v2/DiaryNewForm.tsx',
       ],
       exclude: [
         'node_modules/',
